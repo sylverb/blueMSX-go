@@ -32,7 +32,6 @@
 extern "C" {
 #endif
 
-
 #ifdef __GNUC__
 #define __int64 long long
 #endif

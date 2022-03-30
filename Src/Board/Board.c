@@ -32,14 +32,18 @@
 #include "Coleco.h"
 #include "Adam.h"
 #include "AudioMixer.h"
-#include "YM2413.h"
+#include "YM2413_msx.h"
 #include "Y8950.h"
 #include "Moonsound.h"
 #include "SaveState.h"
+#ifndef MSX_NO_ZIP
 #include "ziphelper.h"
+#endif
 #include "ArchNotifications.h"
 #include "VideoManager.h"
+#ifndef TARGET_GNW
 #include "DebugDeviceManager.h"
+#endif
 #include "MegaromCartridge.h"
 #include "Disk.h"
 #include "VideoManager.h"
@@ -69,7 +73,7 @@ static BoardTimer* syncTimer;
 static BoardTimer* mixerTimer;
 static BoardTimer* stateTimer;
 static BoardTimer* breakpointTimer;
-static BoardDeviceInfo* boardDeviceInfo;
+static BoardDeviceInfo* boardDeviceInfo = NULL;
 static Machine* boardMachine;
 #ifdef __LIBRETRO__
 BoardInfo boardInfo;
@@ -136,6 +140,7 @@ void boardSetPeriodicCallback(BoardTimerCb cb, void* ref, UInt32 freq)
 // Capture stuff
 //------------------------------------------------------
 
+#ifndef TARGET_GNW
 #define CAPTURE_VERSION     3
 
 typedef struct {
@@ -295,16 +300,19 @@ void boardCaptureInit()
 
 void boardCaptureDestroy()
 {
-    boardCaptureStop();
+ #ifndef MSX_NO_SAVESTATE
+   boardCaptureStop();
 
     if (cap.timer != NULL) {
         boardTimerDestroy(cap.timer);
         cap.timer = NULL;
     }
+#endif
     cap.state = CAPTURE_IDLE;
 }
 
 void boardCaptureStart(const char* filename) {
+#ifndef MSX_NO_SAVESTATE
     FILE* f;
 
     if (cap.state == CAPTURE_REC) {
@@ -341,9 +349,11 @@ void boardCaptureStart(const char* filename) {
     }
 
     cap.startTime64 = boardSystemTime64();
+#endif
 }
 
 void boardCaptureStop() {
+#ifndef MSX_NO_SAVESTATE
     boardTimerRemove(cap.timer);
 
     if (cap.state == CAPTURE_REC) {
@@ -380,9 +390,9 @@ void boardCaptureStop() {
         saveStateClose(state);
         saveStateDestroy();
     }
-
     // go back to idle state
     cap.state = CAPTURE_IDLE;
+#endif
 }
 
 UInt8 boardCaptureUInt8(UInt8 logId, UInt8 value) {
@@ -399,7 +409,9 @@ UInt8 boardCaptureUInt8(UInt8 logId, UInt8 value) {
     }
     return value;
 }
+#endif
 
+#ifndef MSX_NO_SAVESTATE
 static void boardCaptureSaveState()
 {
     if (cap.state == CAPTURE_REC) {
@@ -471,6 +483,7 @@ static void boardCaptureLoadState()
         rleEncStartEncode(cap.inputs, sizeof(cap.inputs), cap.inputCnt);
     }
 }
+#endif
 
 //------------------------------------------------------
 
@@ -503,6 +516,7 @@ void boardSetFdcActive() {
     }
 }
 
+#ifdef ENABLE_BREAKPOINTS
 void boardSetBreakpoint(UInt16 address) {
     if (boardRunning) {
         boardInfo.setBreakpoint(boardInfo.cpuRef, address);
@@ -514,6 +528,7 @@ void boardClearBreakpoint(UInt16 address) {
         boardInfo.clearBreakpoint(boardInfo.cpuRef, address);
     }
 }
+#endif
 
 static void onFdcDone(void* ref, UInt32 time)
 {
@@ -553,7 +568,8 @@ static void onMixerSync(void* ref, UInt32 time)
 }
 
 static void onStateSync(void* ref, UInt32 time)
-{    
+{
+#ifndef MSX_NO_SAVESTATE
     if (enableSnapshots) {
         char memFilename[8];
         ramStateCur = (ramStateCur + 1) % ramMaxStates;
@@ -565,6 +581,7 @@ static void onStateSync(void* ref, UInt32 time)
         
         boardSaveState(memFilename, 0);
     }
+#endif
 
     boardTimerAdd(stateTimer, boardSystemTime() + stateFrequency);
 }
@@ -586,20 +603,32 @@ int boardInsertExternalDevices()
         if (boardDeviceInfo->carts[i].inserted) {
             boardChangeCartridge(i, boardDeviceInfo->carts[i].type, 
                                  boardDeviceInfo->carts[i].name,
+#ifndef MSX_NO_ZIP
                                  boardDeviceInfo->carts[i].inZipName);
+#else
+                                 NULL);
+#endif
         }
     }
 
     for (i = 0; i < MAXDRIVES; i++) {
         if (boardDeviceInfo->disks[i].inserted) {
             boardChangeDiskette(i, boardDeviceInfo->disks[i].name,
+#ifndef MSX_NO_ZIP
                                 boardDeviceInfo->disks[i].inZipName);
+#else
+                                NULL);
+#endif
         }
     }
 
     if (boardDeviceInfo->tapes[0].inserted) {
         boardChangeCassette(0, boardDeviceInfo->tapes[0].name,
+#ifndef MSX_NO_ZIP
                             boardDeviceInfo->tapes[0].inZipName);
+#else
+                            NULL);
+#endif
     }
     return 1;
 }
@@ -619,6 +648,7 @@ static void onBreakpointSync(void* ref, UInt32 time) {
     doSync(time, 1);
 }
 
+#ifndef MSX_NO_SAVESTATE
 int boardRewindOne() {
     UInt32 rewindTime;
     if (stateFrequency <= 0) {
@@ -673,6 +703,7 @@ void boardEnableSnapshots(int enable)
 {
     enableSnapshots = enable;
 }
+#endif
 
 int boardRun(Machine* machine, 
              BoardDeviceInfo* deviceInfo,
@@ -689,10 +720,13 @@ int boardRun(Machine* machine,
     syncToRealClock = syncCallback;
 
     videoManagerReset();
+#ifndef TARGET_GNW
     debugDeviceManagerReset();
+#endif
 
     boardMixer      = mixer;
     boardDeviceInfo = deviceInfo;
+    printf("boardRun set boardDeviceInfo %x\n",boardDeviceInfo);
     boardMachine    = machine;
 
     boardUpdateDisketteInfo();
@@ -716,6 +750,7 @@ int boardRun(Machine* machine,
     case BOARD_MSX_FORTE_II:
         success = msxCreate(machine, deviceInfo->video.vdpSyncMode, &boardInfo);
         break;
+#ifndef TARGET_GNW
     case BOARD_SVI:
         success = sviCreate(machine, deviceInfo->video.vdpSyncMode, &boardInfo);
         break;
@@ -730,16 +765,20 @@ int boardRun(Machine* machine,
     case BOARD_SF7000:
         success = sg1000Create(machine, deviceInfo->video.vdpSyncMode, &boardInfo);
         break;
+#endif
     default:
         success = 0;
     }
-    
+#ifndef TARGET_GNW
     boardCaptureInit();
+#endif
 
+#ifndef MSX_NO_SAVESTATE
     if (success && loadState) {
         boardInfo.loadState();
         boardCaptureLoadState();
     }
+#endif
 
     if (success) {
 #ifndef __LIBRETRO__
@@ -753,7 +792,9 @@ int boardRun(Machine* machine,
         if (stateFrequency > 0) {
             ramStateCur  = 0;
             ramMaxStates = reverseBufferCnt;
+#ifndef MSX_NO_ZIP
             memZipFileSystemCreate(ramMaxStates);
+#endif
             stateTimer = boardTimerCreate(onStateSync, NULL);
             breakpointTimer = boardTimerCreate(onBreakpointSync, NULL); 
             boardTimerAdd(stateTimer, boardSystemTime() + stateFrequency);
@@ -777,7 +818,7 @@ int boardRun(Machine* machine,
         if (!skipSync) {
             syncToRealClock(0, 0);
         }
-
+printf("boardInfo.run \n");
         boardInfo.run(boardInfo.cpuRef);
 
         if (periodicTimer != NULL) {
@@ -797,12 +838,16 @@ int boardRun(Machine* machine,
         }
         if (stateTimer != NULL) {
             boardTimerDestroy(stateTimer);
+#ifndef MSX_NO_ZIP
             memZipFileSystemDestroy();
+#endif
         }
     }
+#ifndef TARGET_GNW
     else {
         boardCaptureStop();
     }
+#endif
 
     boardRunning = 0;
 
@@ -865,7 +910,9 @@ void boardSetMachine(Machine* machine)
     boardType = machine->board.type;
     PatchReset(boardType);
 
+#ifndef TARGET_GNW
     joystickPortUpdateBoardInfo();
+#endif
 }
 
 void boardReset()
@@ -881,6 +928,7 @@ void boardSetDataBus(UInt8 value, UInt8 defValue, int useDef) {
     }
 }
 
+#ifndef MSX_NO_SAVESTATE
 static BoardType boardLoadState(void)
 {
     BoardDeviceInfo* di = boardDeviceInfo;
@@ -939,7 +987,7 @@ static BoardType boardLoadState(void)
     return boardType;
 }
 
-
+#ifndef MSX_NO_SAVESTATE
 void boardSaveState(const char* stateFile, int screenshot)
 {
     BoardDeviceInfo* di = boardDeviceInfo;
@@ -957,7 +1005,9 @@ void boardSaveState(const char* stateFile, int screenshot)
 
     saveStateCreateForWrite(stateFile);
     
+#ifndef MSX_NO_ZIP
     rv = zipSaveFile(stateFile, "version", 0, saveStateVersion, strlen(saveStateVersion) + 1);
+#endif
     if (!rv) {
         return;
     }
@@ -1020,7 +1070,9 @@ void boardSaveState(const char* stateFile, int screenshot)
 #ifdef WII
             zipSaveFile(stateFile, "screenshot.png", 1, bitmap, size);
 #else
+#ifndef MSX_NO_ZIP
             zipSaveFile(stateFile, "screenshot.bmp", 1, bitmap, size);
+#endif
 #endif
         }
         if( bitmap != NULL ) {
@@ -1031,11 +1083,13 @@ void boardSaveState(const char* stateFile, int screenshot)
     memset(buf, 0, 128);
     time(&ltime);
     strftime(buf, 128, "%X   %A, %B %d, %Y", localtime(&ltime));
+#ifndef MSX_NO_ZIP
     zipSaveFile(stateFile, "date.txt", 1, buf, strlen(buf) + 1);
-
+#endif
     saveStateDestroy();
 }
-
+#endif
+#endif
 
 void boardSetFrequency(int frequency)
 {
@@ -1119,6 +1173,7 @@ HdType boardGetHdType(int hdIndex)
 
 void boardChangeCartridge(int cartNo, RomType romType, char* cart, char* cartZip)
 {
+    printf("boardChangeCartridge %s\n",cart);
     if (cart && strlen(cart) == 0) {
         cart = NULL;
     }
@@ -1127,6 +1182,7 @@ void boardChangeCartridge(int cartNo, RomType romType, char* cart, char* cartZip
         cartZip = NULL;
     }
     
+#ifndef TARGET_GNW
     if (romType == ROM_UNKNOWN) {
         int size;
         UInt8* buf = romLoad(cart, cartZip, &size);
@@ -1136,8 +1192,9 @@ void boardChangeCartridge(int cartNo, RomType romType, char* cart, char* cartZip
             free(buf);
         }
     }
+#endif
 
-    if (boardDeviceInfo != NULL) {
+/*    if (boardDeviceInfo != NULL) {
         boardDeviceInfo->carts[cartNo].inserted = cart != NULL;
         boardDeviceInfo->carts[cartNo].type = romType;
 
@@ -1147,17 +1204,20 @@ void boardChangeCartridge(int cartNo, RomType romType, char* cart, char* cartZip
         if (boardDeviceInfo->carts[cartNo].inZipName != cartZip) {
            strcpy(boardDeviceInfo->carts[cartNo].inZipName, cartZip ? cartZip : "");
         }
-    }
+    }*/
 
+#ifndef TARGET_GNW
     useRom     -= romTypeIsRom(currentRomType[cartNo]);
     useMegaRom -= romTypeIsMegaRom(currentRomType[cartNo]);
     useMegaRam -= romTypeIsMegaRam(currentRomType[cartNo]);
     useFmPac   -= romTypeIsFmPac(currentRomType[cartNo]);
     hdType[cartNo] = HD_NONE;
     currentRomType[cartNo] = ROM_UNKNOWN;
+#endif
 
     if (cart != NULL) {
         currentRomType[cartNo] = romType;
+#ifndef TARGET_GNW
         useRom     += romTypeIsRom(romType);
         useMegaRom += romTypeIsMegaRom(romType);
         useMegaRam += romTypeIsMegaRam(romType);
@@ -1178,6 +1238,7 @@ void boardChangeCartridge(int cartNo, RomType romType, char* cart, char* cartZip
         if (currentRomType[cartNo] == SRAM_WAVESCSI512) hdType[cartNo] = HD_WAVESCSI;
         if (currentRomType[cartNo] == SRAM_WAVESCSI1MB) hdType[cartNo] = HD_WAVESCSI;
         if (currentRomType[cartNo] == ROM_GOUDASCSI)    hdType[cartNo] = HD_GOUDASCSI;
+#endif
     }
 
     if (boardRunning && cartNo < boardInfo.cartridgeCount) {
@@ -1194,7 +1255,11 @@ static void boardUpdateDisketteInfo()
     for (i = 0; i < MAXDRIVES; i++) {
         if (boardDeviceInfo->disks[i].inserted) {
             diskSetInfo(i, boardDeviceInfo->disks[i].name,
+#ifndef MSX_NO_ZIP
                         boardDeviceInfo->disks[i].inZipName);
+#else
+                        NULL);
+#endif
         }
         else {
             diskSetInfo(i, NULL, NULL);
@@ -1218,9 +1283,11 @@ void boardChangeDiskette(int driveId, char* fileName, const char* fileInZipFile)
         if (boardDeviceInfo->disks[driveId].name != fileName) {
            strcpy(boardDeviceInfo->disks[driveId].name, fileName ? fileName : "");
         }
+#ifndef MSX_NO_ZIP
         if (boardDeviceInfo->disks[driveId].inZipName != fileInZipFile) {
            strcpy(boardDeviceInfo->disks[driveId].inZipName, fileInZipFile ? fileInZipFile : "");
         }
+#endif
     }
 
     diskChange(driveId ,fileName, fileInZipFile);
@@ -1242,9 +1309,11 @@ void boardChangeCassette(int tapeId, char* name, const char* fileInZipFile)
         if (boardDeviceInfo->tapes[tapeId].name != name) {
             strcpy(boardDeviceInfo->tapes[tapeId].name, name ? name : "");
         }
+#ifndef MSX_NO_ZIP
         if (boardDeviceInfo->tapes[tapeId].inZipName != fileInZipFile) {
             strcpy(boardDeviceInfo->tapes[tapeId].inZipName, fileInZipFile ? fileInZipFile : "");
         }
+#endif
     }
 
     tapeInsert(name, fileInZipFile);
@@ -1429,7 +1498,9 @@ void boardInit(UInt32* systemTime)
 /////////////////////////////////////////////////////////////
 // Not board specific stuff....
 
+#ifndef MSX_NO_FILESYSTEM
 static char baseDirectory[512];
+#endif
 static int oversamplingYM2413    = 1;
 static int oversamplingY8950     = 1;
 static int oversamplingMoonsound = 1;
@@ -1438,6 +1509,7 @@ static int enableY8950           = 1;
 static int enableMoonsound       = 1;
 static int videoAutodetect       = 1;
 
+#ifndef MSX_NO_FILESYSTEM
 const char* boardGetBaseDirectory() {
     return baseDirectory;
 }
@@ -1445,6 +1517,7 @@ const char* boardGetBaseDirectory() {
 void boardSetDirectory(const char* dir) {
     strcpy(baseDirectory, dir);
 }
+#endif
 
 void boardSetYm2413Oversampling(int value) {
     oversamplingYM2413 = value;

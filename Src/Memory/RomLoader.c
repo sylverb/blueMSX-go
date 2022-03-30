@@ -26,7 +26,11 @@
 ******************************************************************************
 */
 #include "RomLoader.h"
+#ifndef TARGET_GNW
 #include "ziphelper.h"
+#else
+#include "rom_manager.h"
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -36,6 +40,7 @@
 
 UInt8* romLoad(const char *fileName, const char *fileInZipFile, int* size)
 {
+#ifndef TARGET_GNW
     UInt8* buf = NULL;
     FILE *file;
 
@@ -79,5 +84,22 @@ error:
     if (fileName && fileName[0])
       fflush(stdout);
     return NULL;
+#else
+    retro_emulator_file_t *rom_file;
+    printf("Looking for rom %s\n",fileName);
+
+    rom_system_t *rom_system = (rom_system_t *)rom_manager_system(&rom_mgr, "MSX_BIOS");
+    rom_file = (retro_emulator_file_t *)rom_manager_get_file((const rom_system_t *)rom_system,fileName);
+    if (rom_file == NULL) {
+        rom_system = (rom_system_t *)rom_manager_system(&rom_mgr, "MSX");
+        rom_file = (retro_emulator_file_t *)rom_manager_get_file((const rom_system_t *)rom_system,fileName);
+    }
+    if (rom_file == NULL) {
+        printf("%s rom not found\n",fileName);
+        return NULL;
+    }
+    printf("Found rom %s at 0x%x\n",fileName,rom_file->address);
+    return (UInt8*)rom_file->address;
+#endif
 }
 

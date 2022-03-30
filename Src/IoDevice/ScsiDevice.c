@@ -289,7 +289,9 @@ static void scsiDeviceStartStopUnit(SCSIDEVICE* scsi)
         if (diskPresent(scsi->diskId)) {
             disk->fileName[0] = 0;
             disk->fileNameInZip[0] = 0;
+#ifndef TARGET_GNW
             updateExtendedDiskName(scsi->diskId, disk->fileName, disk->fileNameInZip);
+#endif
             boardChangeDiskette(scsi->diskId, NULL, NULL);
             SCSILOG1("hdd %d eject\n", scsi->scsiId);
         }
@@ -298,7 +300,9 @@ static void scsiDeviceStartStopUnit(SCSIDEVICE* scsi)
         // Insert
         if (!diskPresent(scsi->diskId)) {
             *disk = scsi->disk;
+#ifndef TARGET_GNW
             updateExtendedDiskName(scsi->diskId, disk->fileName, disk->fileNameInZip);
+#endif
             boardChangeDiskette(scsi->diskId, disk->fileName, disk->fileNameInZip);
             SCSILOG1("hdd %d insert\n", scsi->scsiId);
         }
@@ -380,7 +384,9 @@ static int scsiDeviceInquiry(SCSIDEVICE* scsi)
         buffer += 36;
         memset(buffer, ' ', 20);
         fileName = strlen(scsi->disk.fileNameInZip) ? scsi->disk.fileNameInZip : scsi->disk.fileName;
+#ifndef TARGET_GNW
         fileName = stripPath(fileName);
+#endif
         for (i = 0; i < 20; ++i) {
             if (*fileName == 0) {
                 break;
@@ -568,9 +574,11 @@ static int scsiDeviceBlueMSX(SCSIDEVICE* scsi)
         // file info
         disk = &scsi->disk;
         fileName = (cmd < 4) ? disk->fileName : disk->fileNameInZip;
+#ifndef TARGET_GNW
         if ((cmd & 1) == 0) {
             fileName = stripPath(fileName);
         }
+#endif
         length = strlen(fileName);
         buffer[0] = (UInt8)((length >> 8) & 0xff);
         buffer[1] = (UInt8)(length & 0xff);

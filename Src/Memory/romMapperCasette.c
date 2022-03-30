@@ -46,13 +46,20 @@ typedef struct {
     int startPage;
 } RomMapperCasette;
 
+#ifdef MSX_NO_MALLOC
+static RomMapperCasette rm_global;
+TODO#endif
+
+
 static void destroy(RomMapperCasette* rm)
 {
     slotUnregister(rm->slot, rm->sslot, rm->startPage);
     deviceManagerUnregister(rm->deviceHandle);
 
+#ifndef MSX_NO_MALLOC
     free(rm->romData);
     free(rm);
+#endif
 }
 
 int romMapperCasetteCreate(const char* filename, UInt8* romData, 
@@ -67,18 +74,28 @@ int romMapperCasetteCreate(const char* filename, UInt8* romData,
         return 0;
     }
 
+#ifndef MSX_NO_MALLOC
     rm = malloc(sizeof(RomMapperCasette));
+#else
+    rm = &rm_global;
+    memset(rm,0,sizeof(RomMapperCasette));
+#endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_CASPATCH, &callbacks, rm);
     slotRegister(slot, sslot, startPage, pages, NULL, NULL, NULL, destroy, rm);
 
+#ifndef MSX_NO_MALLOC
     rm->romData = malloc(size);
     memcpy(rm->romData, romData, size);
+#else
+    rm->romData = romData;
+#endif
     
     rm->slot  = slot;
     rm->sslot = sslot;
     rm->startPage  = startPage;
 
+#ifndef TARGET_GNW
     if (boardGetType() == BOARD_SVI) {
         // Patch the SVI-328 BIOS and BASIC for cassette handling
         for (i = 0; patchAddressSVI[i]; i++) {
@@ -96,7 +113,9 @@ int romMapperCasetteCreate(const char* filename, UInt8* romData,
         rm->romData[0x20E6]=0xED;
         rm->romData[0x20E7]=0xFE;
     }
-    else {
+    else
+    {
+/* TODO GNW for casette support : can't patch rom in flash, we have to use a pre patched rom */
         // Patch the casette rom
         for (i = 0; patchAddress[i]; i++) {
             UInt8* ptr = rm->romData + patchAddress[i];
@@ -105,6 +124,7 @@ int romMapperCasetteCreate(const char* filename, UInt8* romData,
             ptr[2] = 0xc9;
         }
     }
+#endif
 
     for (i = 0; i < pages; i++) {
         slotMapPage(slot, sslot, i + startPage, rm->romData + 0x2000 * i, 1, 0);

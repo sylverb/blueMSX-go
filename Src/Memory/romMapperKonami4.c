@@ -45,6 +45,11 @@ typedef struct {
     int romMapper[4];
 } RomMapperKonami4;
 
+#ifdef MSX_NO_MALLOC
+static RomMapperKonami4 rm_global;
+#endif
+
+#ifndef MSX_NO_SAVESTATE
 static void saveState(RomMapperKonami4* rm)
 {
     SaveState* state = saveStateOpenForWrite("mapperKonami4");
@@ -76,14 +81,17 @@ static void loadState(RomMapperKonami4* rm)
         slotMapPage(rm->slot, rm->sslot, rm->startPage + i, rm->romData + rm->romMapper[i] * 0x2000, 1, 0);
     }
 }
+#endif
 
 static void destroy(RomMapperKonami4* rm)
 {
     slotUnregister(rm->slot, rm->sslot, rm->startPage);
     deviceManagerUnregister(rm->deviceHandle);
 
+#ifndef MSX_NO_MALLOC
     free(rm->romData);
     free(rm);
+#endif
 }
 
 static void write(RomMapperKonami4* rm, UInt16 address, UInt8 value) 
@@ -112,7 +120,11 @@ static void write(RomMapperKonami4* rm, UInt16 address, UInt8 value)
 int romMapperKonami4Create(const char* filename, UInt8* romData, 
                            int size, int slot, int sslot, int startPage) 
 {
+#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, NULL, saveState, loadState };
+#else
+    DeviceCallbacks callbacks = { destroy, NULL, NULL, NULL };
+#endif
     RomMapperKonami4* rm;
     int romSize;
     int i;
@@ -121,14 +133,22 @@ int romMapperKonami4Create(const char* filename, UInt8* romData,
         return 0;
     }
 
+#ifndef MSX_NO_MALLOC
     rm = malloc(sizeof(RomMapperKonami4));
+#else
+    rm = &rm_global;
+#endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_KONAMI4, &callbacks, rm);
     slotRegister(slot, sslot, startPage, 4, NULL, NULL, write, destroy, rm);
 
     romSize = size > 0x40000 ? size : 0x40000;
+#ifndef MSX_NO_MALLOC
     rm->romData = malloc(romSize);
     memcpy(rm->romData, romData, size);
+#else
+    rm->romData = romData;
+#endif
 
     if (size < 0x40000) {
         memset(rm->romData + size, 0xff, 0x40000 - size);

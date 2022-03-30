@@ -48,6 +48,10 @@ struct I8255
     UInt8 reg[4];
 };
 
+#ifdef MSX_NO_MALLOC
+static I8255 i8255_global;
+#endif
+
 static UInt8 readDummy(void* ref)
 {
     return 0xff;
@@ -63,8 +67,12 @@ I8255* i8255Create(I8255Read peekA,   I8255Read readA,   I8255Write writeA,
                    I8255Read peekCHi, I8255Read readCHi, I8255Write writeCHi,
                    void* ref)
 {
+#ifndef MSX_NO_MALLOC
     I8255* i8255 = calloc(1, sizeof(I8255));
-
+#else
+    I8255* i8255 = &i8255_global;
+    memset(i8255,0,sizeof(I8255));
+#endif
     i8255->peekA    = peekA    ? peekA    : readDummy;
     i8255->readA    = readA    ? readA    : readDummy;
     i8255->writeA   = writeA   ? writeA   : writeDummy;
@@ -93,9 +101,12 @@ void i8255Reset(I8255* i8255)
 
 void i8255Destroy(I8255* i8255) 
 {
+#ifndef MSX_NO_MALLOC
     free(i8255);
+#endif
 }
 
+#ifndef MSX_NO_SAVESTATE
 void i8255LoadState(I8255* i8255)
 {
     SaveState* state = saveStateOpenForRead("i8255");
@@ -119,6 +130,7 @@ void i8255SaveState(I8255* i8255)
 
     saveStateClose(state);
 }
+#endif
 
 UInt8 i8255Peek(I8255* i8255, UInt16 port)
 {

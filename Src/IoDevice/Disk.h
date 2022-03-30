@@ -62,6 +62,7 @@ int   diskGetSectorSize(int driveId, int side, int track, int density);
 int   diskIsCdrom(int driveId);
 int   diskGetSides(int driveId);
 int   diskChanged(int driveId);
+#ifndef TARGET_GNW
 int   _diskRead2(int driveId, UInt8* buffer, int sector, int numSectors);
 int   _diskWrite2(int driveId, UInt8* buffer, int sector, int numSectors);
 int   _diskGetTotalSectors(int driveId);
@@ -71,6 +72,7 @@ static int diskGetHdDriveId(int hdId, int driveNo) {
 static int diskGetUsbDriveId(int driveId, int driveNo) { 
     return MAX_FDC_COUNT + MAX_DRIVES_PER_HD * driveId + driveNo;
 }
+#endif
 
 #endif
 

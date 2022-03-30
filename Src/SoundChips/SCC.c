@@ -28,7 +28,9 @@
 #include "SCC.h"
 #include "Board.h"
 #include "SaveState.h"
+#ifndef TARGET_GNW
 #include "DebugDeviceManager.h"
+#endif
 #include "Language.h"
 #include <stdlib.h>
 #include <string.h>
@@ -49,7 +51,9 @@ struct SCC
 {
     Mixer* mixer;
     Int32  handle;
+#ifndef TARGET_GNW
     Int32  debugHandle;
+#endif
     
     SccMode mode;
     UInt8 deformReg;
@@ -75,6 +79,11 @@ struct SCC
     Int32  buffer[AUDIO_MONO_BUFFER_SIZE];
 };
 
+#ifdef MSX_NO_MALLOC
+static SCC scc_global;
+#endif
+
+#ifndef MSX_NO_SAVESTATE
 void sccLoadState(SCC* scc)
 {
     SaveState* state = saveStateOpenForRead("scc");
@@ -168,6 +177,7 @@ void sccSaveState(SCC* scc)
 
     saveStateClose(state);
 }
+#endif
 
 static UInt8 sccGetWave(SCC* scc, UInt8 channel, UInt8 address)
 {
@@ -361,6 +371,7 @@ void sccSetMode(SCC* scc, SccMode newMode)
     scc->mode = newMode;
 }
 
+#ifndef TARGET_GNW
 static void getDebugInfo(SCC* scc, DbgDevice* dbgDevice)
 {
     static UInt8 ram[0x100];
@@ -372,11 +383,19 @@ static void getDebugInfo(SCC* scc, DbgDevice* dbgDevice)
 
     dbgDeviceAddMemoryBlock(dbgDevice, langDbgMemScc(), 1, 0, 0x100, ram);
 }
+#endif
 
 SCC* sccCreate(Mixer* mixer)
 {
+#ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, NULL, NULL };
+#endif
+#ifndef MSX_NO_MALLOC
     SCC* scc = (SCC*)calloc(1, sizeof(SCC));
+#else
+    SCC* scc = &scc_global;
+    memset(scc,0,sizeof(SCC));
+#endif
 
     scc->mixer = mixer;
 
@@ -393,70 +412,74 @@ void sccDestroy(SCC* scc)
 {
 //    debugDeviceUnregister(scc->debugHandle);
     mixerUnregisterChannel(scc->mixer, scc->handle);
+#ifndef MSX_NO_MALLOC
     free(scc);
+#endif
 }
 
 UInt8 sccRead(SCC* scc, UInt8 address)
 {
-    switch (scc->mode) {
+    if (mixerIsChannelTypeEnable(scc->mixer,MIXER_CHANNEL_SCC)) {
+        switch (scc->mode) {
 
-    case SCC_REAL:
-        if (address < 0x80) {
-            return sccGetWave(scc, address >> 5, address);
-        } 
-        
-        if (address < 0xa0) {
-            return sccGetFreqAndVol(scc, address);
-        } 
-        
-        if (address < 0xe0) {
-            return 0xff;
-        }
+        case SCC_REAL:
+            if (address < 0x80) {
+                return sccGetWave(scc, address >> 5, address);
+            } 
+            
+            if (address < 0xa0) {
+                return sccGetFreqAndVol(scc, address);
+            } 
+            
+            if (address < 0xe0) {
+                return 0xff;
+            }
 
-        sccUpdateDeformation(scc, 0xff);
-
-        return 0xff;
-
-    case SCC_COMPATIBLE:
-        if (address < 0x80) {
-            return sccGetWave(scc, address >> 5, address);
-        } 
-        
-        if (address < 0xa0) {
-            return sccGetFreqAndVol(scc, address);
-        }
-        
-        if (address < 0xc0) {
-            return sccGetWave(scc, 4, address);
-        } 
-
-        if (address < 0xe0) {
             sccUpdateDeformation(scc, 0xff);
+
+            return 0xff;
+
+        case SCC_COMPATIBLE:
+            if (address < 0x80) {
+                return sccGetWave(scc, address >> 5, address);
+            } 
+            
+            if (address < 0xa0) {
+                return sccGetFreqAndVol(scc, address);
+            }
+            
+            if (address < 0xc0) {
+                return sccGetWave(scc, 4, address);
+            } 
+
+            if (address < 0xe0) {
+                sccUpdateDeformation(scc, 0xff);
+                return 0xff;
+            }
+    
+            return 0xff;
+
+        case SCC_PLUS:
+            if (address < 0xa0) {
+                return sccGetWave(scc, address >> 5, address);
+            } 
+            
+            if (address < 0xc0) {
+                return sccGetFreqAndVol(scc, address);
+            } 
+            
+            if (address < 0xe0) {
+                sccUpdateDeformation(scc, 0xff);
+                return 0xff;
+            }
+
             return 0xff;
         }
- 
-        return 0xff;
-
-    case SCC_PLUS:
-        if (address < 0xa0) {
-            return sccGetWave(scc, address >> 5, address);
-        } 
-        
-        if (address < 0xc0) {
-            return sccGetFreqAndVol(scc, address);
-        } 
-        
-        if (address < 0xe0) {
-            sccUpdateDeformation(scc, 0xff);
-            return 0xff;
-        }
-
-        return 0xff;
     }
-
     return 0xff;
 }
 
+#ifndef TARGET_GNW
 UInt8 sccPeek(SCC* scc, UInt8 address)
 {
     UInt8 result;
@@ -515,75 +538,80 @@ UInt8 sccPeek(SCC* scc, UInt8 address)
 
     return 0xff;
 }
+#endif
 
 void sccWrite(SCC* scc, UInt8 address, UInt8 value)
 {
-    mixerSync(scc->mixer);
+    if (mixerIsChannelTypeEnable(scc->mixer,MIXER_CHANNEL_SCC)) {
+        mixerSync(scc->mixer);
 
-    switch (scc->mode) {
-    case SCC_REAL:
-        if (address < 0x80) {
-            sccUpdateWave(scc, address >> 5, address, value);
-            return;
-        } 
-        
-        if (address < 0xa0) {
-            sccUpdateFreqAndVol(scc, address, value);
-            return;
-        } 
-        
-        if (address < 0xe0) {
-            return;
-        }
+        switch (scc->mode) {
+        case SCC_REAL:
+            if (address < 0x80) {
+                sccUpdateWave(scc, address >> 5, address, value);
+                return;
+            } 
+            
+            if (address < 0xa0) {
+                sccUpdateFreqAndVol(scc, address, value);
+                return;
+            } 
+            
+            if (address < 0xe0) {
+                return;
+            }
 
-        sccUpdateDeformation(scc, value);
-        return;
-
-    case SCC_COMPATIBLE:
-        if (address < 0x80) {
-            sccUpdateWave(scc, address >> 5, address, value);
-            return;
-        } 
-        
-        if (address < 0xa0) {
-            sccUpdateFreqAndVol(scc, address, value);
-            return;
-        } 
-        
-        if (address < 0xc0) {
-            return;
-        } 
-        
-        if (address < 0xe0) {
             sccUpdateDeformation(scc, value);
             return;
-        } 
 
-        return;
+        case SCC_COMPATIBLE:
+            if (address < 0x80) {
+                sccUpdateWave(scc, address >> 5, address, value);
+                return;
+            } 
+            
+            if (address < 0xa0) {
+                sccUpdateFreqAndVol(scc, address, value);
+                return;
+            } 
+            
+            if (address < 0xc0) {
+                return;
+            } 
+            
+            if (address < 0xe0) {
+                sccUpdateDeformation(scc, value);
+                return;
+            } 
 
-    case SCC_PLUS:
-        if (address < 0xa0) {
-            sccUpdateWave(scc, address >> 5, address, value);
             return;
-        } 
-        
-        if (address < 0xc0) {
-            sccUpdateFreqAndVol(scc, address, value);
-            return;
-        } 
-        
-        if (address < 0xe0) {
-            sccUpdateDeformation(scc, value);
+
+        case SCC_PLUS:
+            if (address < 0xa0) {
+                sccUpdateWave(scc, address >> 5, address, value);
+                return;
+            } 
+            
+            if (address < 0xc0) {
+                sccUpdateFreqAndVol(scc, address, value);
+                return;
+            } 
+            
+            if (address < 0xe0) {
+                sccUpdateDeformation(scc, value);
+                return;
+            }
+
             return;
         }
-
-        return;
     }
 }
 
+#ifndef TARGET_GNW
 void sccGetDebugInfo(SCC* scc, DbgDevice* dbgDevice)
 {
 }
+#endif
 
 static Int32 filter(SCC* scc, Int32 input) {
     scc->in[4] = scc->in[3];
@@ -680,54 +708,56 @@ static Int32* sccSync(SCC* scc, UInt32 count)
     Int32  channel;
     UInt32 index;
 
-    for (index = 0; index < count; index++) {
-        Int32 masterVolume[4] = {0, 0, 0, 0};
-        int i;
-        for (i = 0; i < 4; i++) {
-            for (channel = 0; channel < 5; channel++) {
-                Int32 refVolume;
-                Int32 phase;
-                Int32 sample;
+    if (mixerIsChannelTypeEnable(scc->mixer,MIXER_CHANNEL_SCC)) {
+        for (index = 0; index < count; index++) {
+            Int32 masterVolume[4] = {0, 0, 0, 0};
+            int i;
+            for (i = 0; i < 4; i++) {
+                for (channel = 0; channel < 5; channel++) {
+                    Int32 refVolume;
+                    Int32 phase;
+                    Int32 sample;
 
-                phase = scc->phase[channel] + scc->phaseStep[channel];
-                phase &= 0xfffffff;
-                scc->phase[channel] = phase;
+                    phase = scc->phase[channel] + scc->phaseStep[channel];
+                    phase &= 0xfffffff;
+                    scc->phase[channel] = phase;
 
-                sample = (phase >> 23) & 0x1f;
+                    sample = (phase >> 23) & 0x1f;
 
-                if (sample != scc->oldSample[channel]) {
-                    scc->volume[channel] = scc->nextVolume[channel];
+                    if (sample != scc->oldSample[channel]) {
+                        scc->volume[channel] = scc->nextVolume[channel];
 
-#if 0
-                    if ((sample == 15 || sample == 16) && scc->bus != 0xFFFF) {
-                        scc->curWave[channel] = (UInt8)scc->bus;
-                    }
-                    else {
+    #if 0
+                        if ((sample == 15 || sample == 16) && scc->bus != 0xFFFF) {
+                            scc->curWave[channel] = (UInt8)scc->bus;
+                        }
+                        else {
+                            scc->curWave[channel] = scc->wave[channel][sample];
+                        }
+    #else
                         scc->curWave[channel] = scc->wave[channel][sample];
+    #endif
+
+                        scc->oldSample[channel] = sample;   
                     }
-#else
-                    scc->curWave[channel] = scc->wave[channel][sample];
-#endif
 
-                    scc->oldSample[channel] = sample;   
-                }
+                    refVolume = 25 * ((scc->enable >> channel) & 1) * (Int32)scc->volume[channel];
+                    if (scc->daVolume[channel] < refVolume) {
+                        scc->daVolume[channel] = refVolume;
+                    }
 
-                refVolume = 25 * ((scc->enable >> channel) & 1) * (Int32)scc->volume[channel];
-                if (scc->daVolume[channel] < refVolume) {
-                    scc->daVolume[channel] = refVolume;
-                }
-
-                masterVolume[i] += scc->curWave[channel] * scc->daVolume[channel];
-                
-                if (scc->daVolume[channel] > refVolume) {
-                    scc->daVolume[channel] = scc->daVolume[channel] * 9 / 10;
+                    masterVolume[i] += scc->curWave[channel] * scc->daVolume[channel];
+                    
+                    if (scc->daVolume[channel] > refVolume) {
+                        scc->daVolume[channel] = scc->daVolume[channel] * 9 / 10;
+                    }
                 }
             }
-        }
-        buffer[index] = filter4(scc, masterVolume[0], masterVolume[1], masterVolume[2], masterVolume[3]);
-        scc->bus = 0xFFFF;
+            buffer[index] = filter4(scc, masterVolume[0], masterVolume[1], masterVolume[2], masterVolume[3]);
+            scc->bus = 0xFFFF;
 
-//        buffer[index] = (masterVolume[0] + masterVolume[1] + masterVolume[2] + masterVolume[3]);
+//            buffer[index] = (masterVolume[0] + masterVolume[1] + masterVolume[2] + masterVolume[3]);
+        }
     }
 
     return scc->buffer;

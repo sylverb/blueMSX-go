@@ -73,6 +73,7 @@ void panasonicDramUpdate(int mode)
     }
 }
 
+#ifndef TARGET_GNW
 typedef struct {
     int deviceHandle;
     int sramHandle;
@@ -149,4 +150,4 @@ int romMapperDramCreate(const char* filename, UInt8* romData,
 
     return 1;
 }
-
+#endif

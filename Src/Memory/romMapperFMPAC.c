@@ -31,7 +31,7 @@
 #include "SlotManager.h"
 #include "DeviceManager.h"
 #include "DebugDeviceManager.h"
-#include "YM2413.h"
+#include "YM2413_msx.h"
 #include "Board.h"
 #include "SaveState.h"
 #include "sramLoader.h"

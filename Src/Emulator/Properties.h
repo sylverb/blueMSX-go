@@ -36,8 +36,11 @@
 #define PROP_MAX_CARTS  2
 #define PROP_MAX_TAPES  1
 
+#ifndef TARGET_GNW
 #define PROP_MAXPATH 512
-
+#else
+#define PROP_MAXPATH 40
+#endif
 #define CARTNAME_SNATCHER    "The Snatcher Cartridge"
 #define CARTNAME_SDSNATCHER  "SD-Snatcher Cartridge"
 #define CARTNAME_SCCMIRRORED "SCC Mirrored Cartridge"
@@ -187,9 +190,11 @@ enum {
 #define MAX_HISTORY 30
 
 typedef struct {
+#ifndef MSX_NO_FILESYSTEM
     char statsDefDir[PROP_MAXPATH];
     char machineName[PROP_MAXPATH];
     char shortcutProfile[PROP_MAXPATH];
+#endif
     int  enableFdcTiming;
     int  noSpriteLimits;
     int  frontSwitch;
@@ -201,8 +206,10 @@ typedef struct {
     int  disableWinKeys;
     int  priorityBoost;
     int  vdpSyncMode;
+#ifndef TARGET_GNW
     int  reverseEnable;
     int  reverseMaxTime;
+#endif
 } EmulationProperties;
 
 typedef struct {
@@ -268,6 +275,7 @@ typedef struct {
     int  masterVolume;
     int  masterEnable;
     MixerChannel mixerChannel[MIXER_CHANNEL_TYPE_COUNT];
+#ifndef MSX_NO_FILESYSTEM
     struct {
         int  type;
         char name[256];
@@ -288,6 +296,7 @@ typedef struct {
         char fileName[PROP_MAXPATH];
         int  mt32ToGm;
     } MidiOut;
+#endif
 } SoundProperties;
 
 typedef struct {
@@ -301,14 +310,22 @@ typedef struct {
 }  JoystickProperties;
 
 typedef struct {
+#ifndef MSX_NO_FILESYSTEM
     char configFile[PROP_MAXPATH];
+#endif
+#ifndef TARGET_GNW
     int enableKeyboardQuirk;
+#endif
 } KeyboardProperties;
 
 typedef struct {
     char fileName[PROP_MAXPATH];
+#ifndef MSX_NO_ZIP
     char fileNameInZip[PROP_MAXPATH];
+#endif
+#ifndef MSX_NO_FILESYSTEM
     char directory[PROP_MAXPATH];
+#endif
     int  extensionFilter;
     int  type;
 } FileProperties;
@@ -319,6 +336,7 @@ typedef struct {
     FileProperties tapes[PROP_MAX_TAPES];
 } Media;
 
+#ifndef TARGET_GNW
 typedef struct {
     int enableDos2;
     int enablePhantomDrives;
@@ -326,6 +344,7 @@ typedef struct {
     int partitionNumber;
     int ignoreBootFlag;
 } NoWindProperties;
+#endif
 
 typedef struct {
     RomType defaultType;
@@ -353,6 +372,7 @@ typedef struct {
     int rewindAfterInsert;
 } CassetteProperties;
 
+#ifndef TARGET_GNW
 typedef struct {
     char    quicksave[PROP_MAXPATH];
     char    videocap[PROP_MAXPATH];
@@ -378,12 +398,14 @@ typedef struct {
         char macAddress[64];
     } Eth;
 } PortProperties;
+#endif
 
 #define DLG_MAX_ID 32
 
 typedef struct {
+#ifndef TARGET_GNW
     char language[64];
-
+#endif
     int portable;
     int disableScreensaver;
     int showStatePreview;
@@ -400,7 +422,9 @@ typedef struct {
 typedef struct Properties {
     EmulationProperties emulation;
     VideoProperties     video;
+#ifndef TARGET_GNW
     VideoInProperties   videoIn;
+#endif
     SoundProperties     sound;
     JoystickGeneric     joystick;
     JoystickProperties  joy1;
@@ -410,11 +434,13 @@ typedef struct Properties {
     DiskdriveProperties diskdrive;
     Media               media;
     CassetteProperties  cassette;
+#ifndef TARGET_GNW
     FileHistory         filehistory;
     PortProperties      ports;
     int                 language;
     Settings            settings;
     NoWindProperties    nowind;
+#endif
 } Properties;
 
 Properties* propCreate(int useDefault, 

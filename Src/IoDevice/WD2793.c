@@ -31,7 +31,9 @@
 #include "SaveState.h"
 #include "Disk.h"
 #include "Led.h"
+#ifndef TARGET_GNW
 #include "FdcAudio.h"
+#endif
 #include <stdlib.h>
 #include <string.h>
 
@@ -58,7 +60,9 @@ struct WD2793 {
     UInt8  diskTracks[4];
     int    diskSide;
 	int    diskDensity;
+#ifndef TARGET_GNW
     FdcAudio* fdcAudio;
+#endif
     Wd2793FdcType type;
     UInt8  sectorBuf[512];
 };
@@ -105,7 +109,9 @@ static void wd2793ReadSector(WD2793* wd)
 
     if (wd->drive >= 0) {
 		rv = diskReadSector(wd->drive, wd->sectorBuf, wd->regSector, wd->diskSide, wd->diskTrack, wd->diskDensity, &sectorSize);
+#ifndef TARGET_GNW
         fdcAudioSetReadWrite(wd->fdcAudio);
+#endif
         boardSetFdcActive();
     }
     if (rv == DSKE_NO_DATA || wd->diskTrack != wd->regTrack) {
@@ -329,7 +335,9 @@ void wd2793SetMotor(WD2793* wd, int motorOn)
         break;
     }
 
+#ifndef TARGET_GNW
     fdcAudioSetMotor(wd->fdcAudio, diskEnabled(wd->drive));
+#endif
 }
 
 int wd2793DiskChanged(WD2793* wd, int drive)
@@ -490,7 +498,9 @@ void wd2793SetDataReg(WD2793* wd, UInt8 value)
             if (wd->drive >= 0) {
                 wd->dataRequsetTime = boardSystemTime();
                 rv = diskWriteSector(wd->drive, wd->sectorBuf, wd->regSector, wd->diskSide, wd->diskTrack, wd->diskDensity);
+#ifndef TARGET_GNW
                 fdcAudioSetReadWrite(wd->fdcAudio);
+#endif
                 boardSetFdcActive();
             }
 			wd->sectorOffset  = 0;
@@ -668,14 +678,18 @@ void wd2793Reset(WD2793* wd)
     ledSetFdd1(0);
     ledSetFdd2(0);
 
+#ifndef TARGET_GNW
     fdcAudioReset(wd->fdcAudio);
+#endif
 }
 
 WD2793* wd2793Create(Wd2793FdcType type)
 {
     WD2793* wd = malloc(sizeof(WD2793));
 
+#ifndef TARGET_GNW
     wd->fdcAudio = fdcAudioCreate(FA_WESTERN_DIGITAL);
+#endif
 
     wd->type = type;
 
@@ -686,7 +700,9 @@ WD2793* wd2793Create(Wd2793FdcType type)
 
 void wd2793Destroy(WD2793* wd)
 {
+#ifndef TARGET_GNW
     fdcAudioDestroy(wd->fdcAudio);
+#endif
     free(wd);
 }
 

@@ -30,7 +30,9 @@
 #include "MediaDb.h"
 #include "SlotManager.h"
 #include "DeviceManager.h"
+#ifndef MSX_NO_SAVESTATE
 #include "SaveState.h"
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -48,6 +50,11 @@ typedef struct {
     int romMapper[4];
 } RomMapperTC8566AF;
 
+#ifdef MSX_NO_MALLOC
+RomMapperTC8566AF rm_global __attribute__((section(".itcram")));
+#endif
+
+#ifndef MSX_NO_SAVESTATE
 static void saveState(RomMapperTC8566AF* rm)
 {
     SaveState* state = saveStateOpenForWrite("mapperTC8566AF");
@@ -85,6 +92,7 @@ static void loadState(RomMapperTC8566AF* rm)
 
     tc8566afLoadState(rm->fdc);
 }
+#endif
 
 static void destroy(RomMapperTC8566AF* rm)
 {
@@ -93,8 +101,10 @@ static void destroy(RomMapperTC8566AF* rm)
 
     tc8566afDestroy(rm->fdc);
 
+#ifndef MSX_NO_MALLOC
     free(rm->romData);
     free(rm);
+#endif
 }
 
 static void reset(RomMapperTC8566AF* rm)
@@ -114,6 +124,7 @@ static void reset(RomMapperTC8566AF* rm)
 
 static UInt8 read(RomMapperTC8566AF* rm, UInt16 address) 
 {
+//    printf("TC8566AF read %x\n",address);
     address += 0x4000;
     if ((address & 0x3fff) >= 0x3ff0) {
         if (rm->romType == ROM_TC8566AF) {
@@ -141,11 +152,12 @@ static UInt8 read(RomMapperTC8566AF* rm, UInt16 address)
    
     if (address >= 0x4000 && address < 0x8000) {
         return rm->romData[0x4000 * rm->romMapper[0] + (address & 0x3fff)];
-    } 
+    }
 
     return 0xff;
 }
 
+#ifndef TARGET_GNW
 static UInt8 peek(RomMapperTC8566AF* rm, UInt16 address) 
 {
     address += 0x4000;
@@ -175,11 +187,12 @@ static UInt8 peek(RomMapperTC8566AF* rm, UInt16 address)
     } 
    
     if (address >= 0x4000 && address < 0x8000) {
-        return rm->romData[0x4000 * rm->romMapper[0] + (address & 0x3fff)];
-    } 
+        return rm->romMapper[0x4000 * rm->romMapper[0] + (address & 0x3fff)];
+    }
 
     return 0xff;
 }
+#endif
 
 static void write(RomMapperTC8566AF* rm, UInt16 address, UInt8 value) 
 {
@@ -229,18 +242,35 @@ int romMapperTC8566AFCreate(const char* filename, UInt8* romData,
                            int size, int slot, int sslot, int startPage,
                            RomType romType) 
 {
+#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
+#else
+    DeviceCallbacks callbacks = { destroy, reset, NULL, NULL };
+#endif
     RomMapperTC8566AF* rm;
 
+#ifndef MSX_NO_MALLOC
     rm = malloc(sizeof(RomMapperTC8566AF));
+#else
+    rm = &rm_global;
+#endif
 
     rm->deviceHandle = deviceManagerRegister(romType, &callbacks, rm);
+#ifndef TARGET_GNW
     slotRegister(slot, sslot, startPage, 4, read, peek, write, destroy, rm);
+#else
+    slotRegister(slot, sslot, startPage, 4, read, NULL, write, destroy, rm);
+#endif
 
     size = (size + 0x3fff) & ~0x3fff;
 
+#ifndef MSX_NO_MALLOC
     rm->romData = malloc(size);
     memcpy(rm->romData, romData, size);
+#else
+    rm->romData = romData;
+//    memcpy(rm->romData, romData, size);
+#endif
     rm->romMask = size / 0x4000 - 1;
     rm->slot  = slot;
     rm->sslot = sslot;

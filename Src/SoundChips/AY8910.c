@@ -28,7 +28,9 @@
 #include "AY8910.h"
 #include "IoPort.h"
 #include "SaveState.h"
+#ifndef TARGET_GNW
 #include "DebugDeviceManager.h"
+#endif
 #include "Language.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -51,7 +53,9 @@ static void updateRegister(AY8910* ay8910, UInt8 address, UInt8 data);
 struct AY8910 {
     Mixer* mixer;
     Int32  handle;
+#ifndef TARGET_GNW
     Int32  debugHandle;
+#endif
 
     AY8910ReadCb    ioPortReadCb;
     AY8910ReadCb    ioPortPollCb;
@@ -80,12 +84,24 @@ struct AY8910 {
     Int32  oldSampleVolume[2];
     Int32  daVolume[2];
 
+#ifndef MSX_NO_STEREO
     Int32  stereo;
+#endif
     Int32  pan[3];
 
+#ifndef MSX_NO_STEREO
     Int32  buffer[AUDIO_STEREO_BUFFER_SIZE];
+#else
+    Int32  buffer[AUDIO_MONO_BUFFER_SIZE];
+#endif
 };
 
+#ifdef MSX_NO_MALLOC
+static AY8910 ay8910_global;
+#endif
+
+
+#ifndef MSX_NO_SAVESTATE
 void ay8910LoadState(AY8910* ay8910)
 {
     SaveState* state = saveStateOpenForRead("ay8910");
@@ -171,7 +187,9 @@ void ay8910SaveState(AY8910* ay8910)
     
     saveStateClose(state);
 }
+#endif
 
+#ifndef TARGET_GNW
 static void getDebugInfo(AY8910* ay8910, DbgDevice* dbgDevice)
 {
     DbgRegisterBank* regBank;
@@ -216,11 +234,19 @@ static int dbgWriteRegister(AY8910* ay8910, char* name, int regIndex, UInt32 val
 
     return 1;
 }
+#endif
 
 AY8910* ay8910Create(Mixer* mixer, Ay8910Connector connector, PsgType type, Int32 stereo, Int32* pan)
 {
+#ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, dbgWriteRegister, NULL };
+#endif
+#ifndef MSX_NO_MALLOC
     AY8910* ay8910 = (AY8910*)calloc(1, sizeof(AY8910));
+#else
+    AY8910* ay8910 = &ay8910_global;
+    memset(ay8910,0,sizeof(AY8910));
+#endif
     int i;
 
     DoubleT v = 0x26a9;
@@ -250,7 +276,9 @@ AY8910* ay8910Create(Mixer* mixer, Ay8910Connector connector, PsgType type, Int3
     ay8910->connector = connector;
     ay8910->noiseRand = 1;
     ay8910->noiseVolume = 1;
+#ifndef MSX_NO_STEREO
     ay8910->stereo = stereo;
+#endif
     ay8910->pan[0] = pan?pan[0]:0;
     ay8910->pan[1] = pan?pan[1]:0;
     ay8910->pan[2] = pan?pan[2]:0;
@@ -283,7 +311,9 @@ AY8910* ay8910Create(Mixer* mixer, Ay8910Connector connector, PsgType type, Int3
         break;
     }
 
+#ifndef TARGET_GNW
     ay8910->debugHandle = debugDeviceRegister(DBGTYPE_AUDIO, langDbgDevAy8910(), &dbgCallbacks, ay8910);
+#endif
 
     return ay8910;
 }
@@ -302,7 +332,9 @@ void ay8910Reset(AY8910* ay8910)
 
 void ay8910Destroy(AY8910* ay8910)
 {
+#ifndef TARGET_GNW
     debugDeviceUnregister(ay8910->debugHandle);
+#endif
 
     switch (ay8910->connector) {
     case AY8910_MSX:
@@ -325,7 +357,9 @@ void ay8910Destroy(AY8910* ay8910)
     }
 
     mixerUnregisterChannel(ay8910->mixer, ay8910->handle);
+#ifndef MSX_NO_MALLOC
     free(ay8910);
+#endif
 }
 
 void ay8910SetIoPort(AY8910* ay8910, AY8910ReadCb readCb, AY8910ReadCb pollCb, AY8910WriteCb writeCb, void* arg)
@@ -512,6 +546,7 @@ static Int32* ay8910Sync(void* ref, UInt32 count)
             }
         }
 
+#ifndef MSX_NO_STEREO
         if (ay8910->stereo) {
             Int32 sampleVolumeL = 0;
             Int32 sampleVolumeR = 0;
@@ -540,7 +575,9 @@ static Int32* ay8910Sync(void* ref, UInt32 count)
             ay8910->buffer[2 * index + 0] = 9 * ay8910->daVolume[0];
             ay8910->buffer[2 * index + 1] = 9 * ay8910->daVolume[1];
         }
-        else {
+        else
+#endif
+        {
             Int32 sampleVolumes = sampleVolume[0] + sampleVolume[1] + sampleVolume[2];
 
             /* Perform DC offset filtering */

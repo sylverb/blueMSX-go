@@ -42,8 +42,9 @@
 // PacketFileSystem.h Need to be included after all other includes
 #include "PacketFileSystem.h"
 
-static char settFilename[512];
-
+#ifdef MSX_NO_MALLOC
+static Properties properties_global;
+#endif
 
 typedef struct ValueNamePair {
     int   value;
@@ -188,6 +189,7 @@ void propInitDefaults(Properties* properties, int langType, PropKeyboardLanguage
 {
     int i;
     
+#ifndef TARGET_GNW
     properties->language                      = langType;
     strcpy(properties->settings.language, langToName(properties->language, 0));
 
@@ -199,10 +201,13 @@ void propInitDefaults(Properties* properties, int langType, PropKeyboardLanguage
     strcpy(properties->settings.themeName, themeName);
 
     memset(properties->settings.windowPos, 0, sizeof(properties->settings.windowPos));
+#endif
 
+#ifndef MSX_NO_FILESYSTEM
     properties->emulation.statsDefDir[0]     = 0;
     properties->emulation.shortcutProfile[0] = 0;
     strcpy(properties->emulation.machineName, "MSX2");
+#endif
     properties->emulation.speed             = 50;
     properties->emulation.vdpSyncMode       = P_VDP_SYNCAUTO;
     properties->emulation.enableFdcTiming   = 1;
@@ -214,8 +219,10 @@ void propInitDefaults(Properties* properties, int langType, PropKeyboardLanguage
     properties->emulation.registerFileTypes = 0;
     properties->emulation.disableWinKeys    = 0;
     properties->emulation.priorityBoost     = 0;
+#ifndef TARGET_GNW
     properties->emulation.reverseEnable     = 1;
     properties->emulation.reverseMaxTime    = 15;
+#endif
 
     properties->video.monitorColor          = P_VIDEO_COLOR;
     properties->video.monitorType           = P_VIDEO_PALMON;
@@ -244,10 +251,12 @@ void propInitDefaults(Properties* properties, int langType, PropKeyboardLanguage
     properties->video.detectActiveMonitor   = 1;
     properties->video.captureFps            = 60;
     properties->video.captureSize           = 1;
-    
+
+#ifndef TARGET_GNW
     properties->videoIn.disabled            = 0;
     properties->videoIn.inputIndex          = 0;
     properties->videoIn.inputName[0]        = 0;
+#endif
 
     properties->sound.bufSize               = 100;
     properties->sound.stabilizeDSoundTiming = 1;
@@ -276,6 +285,7 @@ void propInitDefaults(Properties* properties, int langType, PropKeyboardLanguage
     properties->sound.mixerChannel[MIXER_CHANNEL_MSXMUSIC].pan = 50;
     properties->sound.mixerChannel[MIXER_CHANNEL_MSXMUSIC].volume = 95;
 
+#ifndef TARGET_GNW
     properties->sound.mixerChannel[MIXER_CHANNEL_MSXAUDIO].enable = 1;
     properties->sound.mixerChannel[MIXER_CHANNEL_MSXAUDIO].pan = 50;
     properties->sound.mixerChannel[MIXER_CHANNEL_MSXAUDIO].volume = 95;
@@ -287,6 +297,7 @@ void propInitDefaults(Properties* properties, int langType, PropKeyboardLanguage
     properties->sound.mixerChannel[MIXER_CHANNEL_YAMAHA_SFG].enable = 1;
     properties->sound.mixerChannel[MIXER_CHANNEL_YAMAHA_SFG].pan = 50;
     properties->sound.mixerChannel[MIXER_CHANNEL_YAMAHA_SFG].volume = 95;
+#endif
 
     properties->sound.mixerChannel[MIXER_CHANNEL_PCM].enable = 1;
     properties->sound.mixerChannel[MIXER_CHANNEL_PCM].pan = 50;
@@ -296,6 +307,7 @@ void propInitDefaults(Properties* properties, int langType, PropKeyboardLanguage
     properties->sound.mixerChannel[MIXER_CHANNEL_IO].pan = 50;
     properties->sound.mixerChannel[MIXER_CHANNEL_IO].volume = 50;
 
+#ifndef TARGET_GNW
     properties->sound.mixerChannel[MIXER_CHANNEL_MIDI].enable = 1;
     properties->sound.mixerChannel[MIXER_CHANNEL_MIDI].pan = 50;
     properties->sound.mixerChannel[MIXER_CHANNEL_MIDI].volume = 90;
@@ -303,7 +315,9 @@ void propInitDefaults(Properties* properties, int langType, PropKeyboardLanguage
     properties->sound.mixerChannel[MIXER_CHANNEL_KEYBOARD].enable = 1;
     properties->sound.mixerChannel[MIXER_CHANNEL_KEYBOARD].pan = 50;
     properties->sound.mixerChannel[MIXER_CHANNEL_KEYBOARD].volume = 65;
-    
+#endif
+
+#ifndef MSX_NO_FILESYSTEM
     properties->sound.YkIn.type               = P_MIDI_NONE;
     properties->sound.YkIn.name[0]            = 0;
     strcpy(properties->sound.YkIn.fileName, "midiin.dat");
@@ -318,6 +332,7 @@ void propInitDefaults(Properties* properties, int langType, PropKeyboardLanguage
     strcpy(properties->sound.MidiOut.fileName, "midiout.dat");
     properties->sound.MidiOut.desc[0]         = 0;
     properties->sound.MidiOut.mt32ToGm        = 0;
+#endif
     
     properties->joystick.POV0isAxes    = 0;
     
@@ -340,39 +355,56 @@ void propInitDefaults(Properties* properties, int langType, PropKeyboardLanguage
     properties->joy2.autofire          = 0;
 #endif
 
+#ifndef MSX_NO_FILESYSTEM
     properties->keyboard.configFile[0] = 0;
-    properties->keyboard.enableKeyboardQuirk = 1;
 
     if (kbdLang == P_KBD_JAPANESE) {
         strcpy(properties->keyboard.configFile, "blueMSX Japanese Default");
     }
+#endif
+
+#ifndef TARGET_GNW
+    properties->keyboard.enableKeyboardQuirk = 1;
 
     properties->nowind.enableDos2 = 0;
     properties->nowind.enableOtherDiskRoms = 0;
     properties->nowind.enablePhantomDrives = 1;
     properties->nowind.partitionNumber = 0xff;
     properties->nowind.ignoreBootFlag = 0;
+#endif
 
     for (i = 0; i < PROP_MAX_CARTS; i++) {
         properties->media.carts[i].fileName[0] = 0;
+#ifndef MSX_NO_ZIP
         properties->media.carts[i].fileNameInZip[0] = 0;
+#endif
+#ifndef MSX_NO_FILESYSTEM
         properties->media.carts[i].directory[0] = 0;
+#endif
         properties->media.carts[i].extensionFilter = 0;
         properties->media.carts[i].type = 0;
     }
 
     for (i = 0; i < PROP_MAX_DISKS; i++) {
         properties->media.disks[i].fileName[0] = 0;
+#ifndef MSX_NO_ZIP
         properties->media.disks[i].fileNameInZip[0] = 0;
+#endif
+#ifndef MSX_NO_FILESYSTEM
         properties->media.disks[i].directory[0] = 0;
+#endif
         properties->media.disks[i].extensionFilter = 0;
         properties->media.disks[i].type = 0;
     }
 
     for (i = 0; i < PROP_MAX_TAPES; i++) {
         properties->media.tapes[i].fileName[0] = 0;
+#ifndef MSX_NO_ZIP
         properties->media.tapes[i].fileNameInZip[0] = 0;
+#endif
+#ifndef MSX_NO_FILESYSTEM
         properties->media.tapes[i].directory[0] = 0;
+#endif
         properties->media.tapes[i].extensionFilter = 0;
         properties->media.tapes[i].type = 0;
     }
@@ -397,6 +429,7 @@ void propInitDefaults(Properties* properties, int langType, PropKeyboardLanguage
     properties->cassette.readOnly        = 1;
     properties->cassette.rewindAfterInsert = 0;
 
+#ifndef TARGET_GNW
     properties->ports.Lpt.type           = P_LPT_NONE;
     properties->ports.Lpt.emulation      = P_LPT_MSXPRN;
     properties->ports.Lpt.name[0]        = 0;
@@ -411,6 +444,7 @@ void propInitDefaults(Properties* properties, int langType, PropKeyboardLanguage
     properties->ports.Eth.ethIndex       = -1;
     properties->ports.Eth.disabled       = 0;
     strcpy(properties->ports.Eth.macAddress, "00:00:00:00:00:00");
+#endif
 }
 
 #define ROOT_ELEMENT "config"
@@ -426,7 +460,11 @@ Properties* propCreate(int useDefault, int langType, PropKeyboardLanguage kbdLan
 {
     Properties* properties;
 
+#ifndef MSX_NO_MALLOC
     properties = malloc(sizeof(Properties));
+#else
+    properties = &properties_global;
+#endif
 
     if (globalProperties == NULL)
         globalProperties = properties;
@@ -488,7 +526,9 @@ Properties* propCreate(int useDefault, int langType, PropKeyboardLanguage kbdLan
 
 void propDestroy(Properties* properties)
 {
+#ifndef MSX_NO_MALLOC
     free(properties);
+#endif
 }
 
  

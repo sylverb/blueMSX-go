@@ -31,7 +31,9 @@
 #include "DeviceManager.h"
 #include "SCC.h"
 #include "Board.h"
+#ifndef MSX_NO_SAVESTATE
 #include "SaveState.h"
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -39,7 +41,12 @@
 
 typedef struct {
     int deviceHandle;
+#ifndef TARGET_GNW
     UInt8 romData[0x22000];
+#else
+    // We have to use at least one byte for RAM to allow SCC detection code to detect the SCC cartridge
+    UInt8 romData[0x1];
+#endif
     int slot;
     int sslot;
     int startPage;
@@ -53,6 +60,11 @@ typedef struct {
     SCC* scc;
 } RomMapperSCCplus;
 
+#ifdef MSX_NO_MALLOC
+static RomMapperSCCplus rm_global;
+#endif
+
+#ifndef MSX_NO_SAVESTATE
 static void saveState(RomMapperSCCplus* rm)
 {
     SaveState* state = saveStateOpenForWrite("mapperSCCplus");
@@ -129,6 +141,7 @@ static void loadState(RomMapperSCCplus* rm)
         slotMapPage(rm->slot, rm->sslot, rm->startPage + 3, NULL, 1, 0);
     }
 }
+#endif
 
 static void destroy(RomMapperSCCplus* rm)
 {
@@ -136,7 +149,9 @@ static void destroy(RomMapperSCCplus* rm)
     deviceManagerUnregister(rm->deviceHandle);
     sccDestroy(rm->scc);
 
+#ifndef MSX_NO_MALLOC
     free(rm);
+#endif
 }
 
 static void reset(RomMapperSCCplus* rm)
@@ -157,15 +172,22 @@ static UInt8 read(RomMapperSCCplus* rm, UInt16 address)
         return sccRead(rm->scc, (UInt8)(address & 0xff));
     }
 
+#ifndef TARGET_GNW
     bank = (address - 0x4000) >> 13;
 
     if (rm->isMapped[bank]) {
+#ifndef TARGET_GNW
     	return rm->romData[0x2000 * (rm->romMapper[bank] & rm->mapperMask) + (address & 0x1fff)];
+#else
+    	return rm->romData[0];
+#endif
     }
+#endif
 
     return 0xff;
 }
 
+#ifndef TARGET_GNW
 static UInt8 peek(RomMapperSCCplus* rm, UInt16 address) 
 {
     int bank;
@@ -187,6 +209,7 @@ static UInt8 peek(RomMapperSCCplus* rm, UInt16 address)
 
     return 0xff;
 }
+#endif
 
 static void updateEnable(RomMapperSCCplus* rm)
 {
@@ -215,7 +238,7 @@ static void write(RomMapperSCCplus* rm, UInt16 address, UInt8 value)
 
     address += 0x4000;
 
-    if (address < 0x4000 && address >= 0xc000) {       
+    if (address < 0x4000 && address >= 0xc000) {
         return;
     }
 
@@ -235,7 +258,11 @@ static void write(RomMapperSCCplus* rm, UInt16 address, UInt8 value)
 
     if (rm->isRamSegment[bank]) {
         if (rm->isMapped[bank]) {
+#ifndef TARGET_GNW
         	rm->romData[0x2000 * (rm->romMapper[bank] & rm->mapperMask) + (address & 0x1fff)] = value;
+#else
+        	rm->romData[0] = value;
+#endif
         }
         return;
     }
@@ -269,14 +296,27 @@ static void write(RomMapperSCCplus* rm, UInt16 address, UInt8 value)
 int romMapperSCCplusCreate(const char* filename, UInt8* romData, 
                            int size, int slot, int sslot, int startPage, SccType sccType) 
 {
+#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
+#else
+    DeviceCallbacks callbacks = { destroy, reset, NULL, NULL };
+#endif
     RomMapperSCCplus* rm;
 
+#ifndef MSX_NO_MALLOC
     rm = malloc(sizeof(RomMapperSCCplus));
+#else
+    rm = &rm_global;
+#endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_SCCEXTENDED, &callbacks, rm);
+#ifndef TARGET_GNW
     slotRegister(slot, sslot, startPage, 4, read, peek, write, destroy, rm);
+#else
+    slotRegister(slot, sslot, startPage, 4, read, NULL, write, destroy, rm);
+#endif
 
+#ifndef TARGET_GNW
     memset(rm->romData, 0xff, 0x22000);
 
     if (romData) {
@@ -285,6 +325,9 @@ int romMapperSCCplusCreate(const char* filename, UInt8* romData,
         }
         memcpy(rm->romData, romData, size);
     }
+#else
+    rm->romData[0] = 0xff;
+#endif
 
     rm->slot            = slot;
     rm->sslot           = sslot;

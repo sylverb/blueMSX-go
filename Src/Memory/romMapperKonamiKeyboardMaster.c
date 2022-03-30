@@ -26,12 +26,14 @@
 ******************************************************************************
 */
 #include "romMapperKonamiKeyboardMaster.h"
+#ifndef TARGET_GNW
 #include "VLM5030VoiceData.h"
+#include "VLM5030.h"
+#endif
 #include "MediaDb.h"
 #include "SlotManager.h"
 #include "DeviceManager.h"
 #include "DebugDeviceManager.h"
-#include "VLM5030.h"
 #include "Board.h"
 #include "SaveState.h"
 #include "IoPort.h"
@@ -46,8 +48,10 @@ typedef struct {
     int debugHandle;
 
     UInt8* romData;
+#ifndef TARGET_GNW
     UInt8* voiceData;
 	VLM5030* vlm5030;
+#endif
     int slot;
     int sslot;
     int startPage;
@@ -58,8 +62,10 @@ static void saveState(RomMapperKonamiKeyboardMaster* rm)
     SaveState* state = saveStateOpenForWrite("mapperKonamiKbdMaster");
     
     saveStateClose(state);
-    
+
+#ifndef TARGET_GNW    
     vlm5030SaveState(rm->vlm5030);
+#endif
 }
 
 static void loadState(RomMapperKonamiKeyboardMaster* rm)
@@ -68,7 +74,9 @@ static void loadState(RomMapperKonamiKeyboardMaster* rm)
 
     saveStateClose(state);
     
+#ifndef TARGET_GNW    
     vlm5030LoadState(rm->vlm5030);
+#endif
 }
 
 static void destroy(RomMapperKonamiKeyboardMaster* rm)
@@ -79,15 +87,18 @@ static void destroy(RomMapperKonamiKeyboardMaster* rm)
     slotUnregister(rm->slot, rm->sslot, rm->startPage);
     deviceManagerUnregister(rm->deviceHandle);
     debugDeviceUnregister(rm->debugHandle);
+#ifndef TARGET_GNW    
     vlm5030Destroy(rm->vlm5030);
+    free(rm->voiceData);
+#endif
 
     free(rm->romData);
-    free(rm->voiceData);
     free(rm);
 }
 
 static UInt8 read(RomMapperKonamiKeyboardMaster* rm, UInt16 ioPort)
 {
+#ifndef TARGET_GNW    
     switch (ioPort) {
     case 0x00:
         return vlm5030Read(rm->vlm5030, 0);
@@ -95,11 +106,13 @@ static UInt8 read(RomMapperKonamiKeyboardMaster* rm, UInt16 ioPort)
         return vlm5030Read(rm->vlm5030, 1);
         break;
     }
+#endif
     return 0xff;
 }
 
 static void write(RomMapperKonamiKeyboardMaster* rm, UInt16 ioPort, UInt8 value)
 {	
+#ifndef TARGET_GNW    
     switch (ioPort) {
     case 0x00:
         vlm5030Write(rm->vlm5030, 0, value);
@@ -108,6 +121,7 @@ static void write(RomMapperKonamiKeyboardMaster* rm, UInt16 ioPort, UInt8 value)
         vlm5030Write(rm->vlm5030, 1, value);
         break;
     }
+#endif
 }
 
 static void getDebugInfo(RomMapperKonamiKeyboardMaster* rm, DbgDevice* dbgDevice)
@@ -143,6 +157,7 @@ int romMapperKonamiKeyboardMasterCreate(const char* filename, UInt8* romData,
     rm->romData = malloc(size);
     memcpy(rm->romData, romData, size);
 
+#ifndef TARGET_GNW    
     rm->voiceData = calloc(1, 0x4000);
     if (voiceRom != NULL) {
         if (voiceSize > 0x4000) {
@@ -155,6 +170,7 @@ int romMapperKonamiKeyboardMasterCreate(const char* filename, UInt8* romData,
     }
 
     rm->vlm5030 = vlm5030Create(boardGetMixer(), rm->voiceData, 0x4000);
+#endif
     rm->slot  = slot;
     rm->sslot = sslot;
     rm->startPage  = startPage;

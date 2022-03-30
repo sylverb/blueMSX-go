@@ -32,14 +32,15 @@
 #include "FileHistory.h"
 #include "Switches.h"
 #include "Led.h"
-#include "Machine.h"
 #include "InputEvent.h"
 
 #include "ArchThread.h"
 #include "ArchEvent.h"
 #include "ArchTimer.h"
 #include "ArchSound.h"
+#ifndef TARGET_GNW
 #include "ArchMidi.h"
+#endif
 
 #include "JoystickPort.h"
 #include "ArchInput.h"
@@ -93,10 +94,12 @@ EmuState emulatorGetState() {
 }
 
 void emulatorSetState(EmuState state) {
+#ifndef TARGET_GNW
     if (state == EMU_RUNNING)
         archMidiEnable(1);
     else
         archMidiEnable(0);
+#endif
     if (state == EMU_STEP) {
         state = EMU_RUNNING;
         emuSingleStep = 1;
@@ -104,72 +107,90 @@ void emulatorSetState(EmuState state) {
     if (state == EMU_STEP_BACK) {
         EmuState oldState = state;
         state = EMU_RUNNING;
+#ifndef MSX_NO_SAVESTATE
         if (!boardRewindOne()) {
             state = oldState;
         }
-        
+#endif
+
     }
     emuState = state;
 }
 
 
-static void getDeviceInfo(BoardDeviceInfo* deviceInfo)
+static void getDeviceInfo(BoardDeviceInfo* di)
 {
     int i;
 
     for (i = 0; i < PROP_MAX_CARTS; i++) {
-        strcpy(properties->media.carts[i].fileName, deviceInfo->carts[i].name);
-        strcpy(properties->media.carts[i].fileNameInZip, deviceInfo->carts[i].inZipName);
+        strcpy(properties->media.carts[i].fileName, di->carts[i].name);
+#ifndef MSX_NO_ZIP
+        strcpy(properties->media.carts[i].fileNameInZip, di->carts[i].inZipName);
         // Don't save rom type
-        // properties->media.carts[i].type = deviceInfo->carts[i].type;
+        // properties->media.carts[i].type = di->carts[i].type;
         updateExtendedRomName(i, properties->media.carts[i].fileName, properties->media.carts[i].fileNameInZip);
+#else
+        updateExtendedRomName(i, properties->media.carts[i].fileName, NULL);
+#endif
     }
 
     for (i = 0; i < PROP_MAX_DISKS; i++) {
-        strcpy(properties->media.disks[i].fileName, deviceInfo->disks[i].name);
-        strcpy(properties->media.disks[i].fileNameInZip, deviceInfo->disks[i].inZipName);
+        strcpy(properties->media.disks[i].fileName, di->disks[i].name);
+#ifndef MSX_NO_ZIP
+        strcpy(properties->media.disks[i].fileNameInZip, di->disks[i].inZipName);
         updateExtendedDiskName(i, properties->media.disks[i].fileName, properties->media.disks[i].fileNameInZip);
+#else
+        updateExtendedDiskName(i, properties->media.disks[i].fileName, NULL);
+#endif
     }
 
     for (i = 0; i < PROP_MAX_TAPES; i++) {
-        strcpy(properties->media.tapes[i].fileName, deviceInfo->tapes[i].name);
-        strcpy(properties->media.tapes[i].fileNameInZip, deviceInfo->tapes[i].inZipName);
+        strcpy(properties->media.tapes[i].fileName, di->tapes[i].name);
+#ifndef MSX_NO_ZIP
+        strcpy(properties->media.tapes[i].fileNameInZip, di->tapes[i].inZipName);
         updateExtendedCasName(i, properties->media.tapes[i].fileName, properties->media.tapes[i].fileNameInZip);
+#else
+        updateExtendedCasName(i, properties->media.tapes[i].fileName, NULL);
+#endif
     }
 
-    properties->emulation.vdpSyncMode      = deviceInfo->video.vdpSyncMode;
+    properties->emulation.vdpSyncMode      = di->video.vdpSyncMode;
 
 }
 
-static void setDeviceInfo(BoardDeviceInfo* deviceInfo)
+static void setDeviceInfo(BoardDeviceInfo* di)
 {
     int i;
 
     for (i = 0; i < PROP_MAX_CARTS; i++) {
-        deviceInfo->carts[i].inserted =  strlen(properties->media.carts[i].fileName);
-        deviceInfo->carts[i].type = properties->media.carts[i].type;
-        strcpy(deviceInfo->carts[i].name, properties->media.carts[i].fileName);
-        strcpy(deviceInfo->carts[i].inZipName, properties->media.carts[i].fileNameInZip);
+        di->carts[i].inserted =  strlen(properties->media.carts[i].fileName);
+        di->carts[i].type = properties->media.carts[i].type;
+        strcpy(di->carts[i].name, properties->media.carts[i].fileName);
+#ifndef MSX_NO_ZIP
+        strcpy(di->carts[i].inZipName, properties->media.carts[i].fileNameInZip);
+#endif
     }
 
     for (i = 0; i < PROP_MAX_DISKS; i++) {
-        deviceInfo->disks[i].inserted =  strlen(properties->media.disks[i].fileName);
-        strcpy(deviceInfo->disks[i].name, properties->media.disks[i].fileName);
-        strcpy(deviceInfo->disks[i].inZipName, properties->media.disks[i].fileNameInZip);
+        di->disks[i].inserted =  strlen(properties->media.disks[i].fileName);
+        strcpy(di->disks[i].name, properties->media.disks[i].fileName);
+#ifndef MSX_NO_ZIP
+        strcpy(di->disks[i].inZipName, properties->media.disks[i].fileNameInZip);
+#endif
     }
 
     for (i = 0; i < PROP_MAX_TAPES; i++) {
-        deviceInfo->tapes[i].inserted =  strlen(properties->media.tapes[i].fileName);
-        strcpy(deviceInfo->tapes[i].name, properties->media.tapes[i].fileName);
-        strcpy(deviceInfo->tapes[i].inZipName, properties->media.tapes[i].fileNameInZip);
+        di->tapes[i].inserted =  strlen(properties->media.tapes[i].fileName);
+        strcpy(di->tapes[i].name, properties->media.tapes[i].fileName);
+#ifndef MSX_NO_ZIP
+        strcpy(di->tapes[i].inZipName, properties->media.tapes[i].fileNameInZip);
+#endif
     }
 
-    deviceInfo->video.vdpSyncMode = properties->emulation.vdpSyncMode;
+    di->video.vdpSyncMode = properties->emulation.vdpSyncMode;
 }
 
-
-
-
+#ifndef TARGET_GNW
 void emulatorStart(const char* stateName) {
    int frequency;
    int success = 0;
@@ -196,8 +217,8 @@ void emulatorStart(const char* stateName) {
     if (machine == NULL) {
         archShowStartEmuFailDialog();
         archEmulationStopNotification();
-        emuState = EMU_STOPPED;
         archEmulationStartFailure();
+        emuState = EMU_STOPPED;
         return;
     }
 
@@ -238,25 +259,82 @@ void emulatorStart(const char* stateName) {
         archEmulationStartFailure();
     }
 }
+#else
+void emulatorStartMachine(const char* stateName, Machine *machine) {
+   int frequency;
+   int success = 0;
+
+    archEmulationStartNotification();
+    emulatorResume();
+
+    emuExitFlag = 0;
+
+//    mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MSXAUDIO, 1);
+    mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MSXMUSIC, 1);
+    mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_SCC, 1);
+
+
+    properties->emulation.pauseSwitch = 0;
+
+    if (machine == NULL) {
+        emuState = EMU_STOPPED;
+        return;
+    }
+
+    boardSetMachine(machine);
+
+    printf("emulatorStartMachine prop.carts[0].fileName = %s\n",properties->media.carts[0].fileName);
+
+    setDeviceInfo(&deviceInfo);
+
+    inputEventReset();
+
+    emuState = EMU_PAUSED;
+
+    emuState = EMU_RUNNING;
+
+    emulatorSetFrequency(50 , &frequency);
+
+    success = boardRun(machine,
+                       &deviceInfo,
+                       mixer,
+                       NULL,
+                       frequency,
+                       0,
+                       0,
+                       NULL);
+    if (!success) {
+        archEmulationStopNotification();
+        emuState = EMU_STOPPED;
+        archEmulationStartFailure();
+    }
+}
+#endif
 
 void emulatorStop() {
     if (emuState == EMU_STOPPED) {
         return;
     }
 
+#ifndef TARGET_GNW
     debuggerNotifyEmulatorStop();
+#endif
 
     emuState = EMU_STOPPED;
 
     emuExitFlag = 1;
 
+#ifndef TARGET_GNW
     archMidiEnable(0);
+#endif
     machineDestroy(machine);
 
     // Reset active indicators in mixer
+#ifndef TARGET_GNW
     mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MOONSOUND, 1);
     mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_YAMAHA_SFG, 1);
     mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MSXAUDIO, 1);
+#endif
     mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MSXMUSIC, 1);
     mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_SCC, 1);
 
@@ -279,14 +357,18 @@ void emulatorSetFrequency(int logFrequency, int* frequency) {
 void emulatorSuspend() {
     if (emuState == EMU_RUNNING) {
         emuState = EMU_SUSPENDED;
+#ifndef TARGET_GNW
         archMidiEnable(0);
+#endif
     }
 }
 
 void emulatorResume() {
     if (emuState == EMU_SUSPENDED) {
         emuSysTime = 0;
+#ifndef TARGET_GNW
         archMidiEnable(1);
+#endif
         emuState = EMU_RUNNING;
     }
 }
@@ -297,6 +379,7 @@ int emulatorGetCurrentScreenMode()
 }
 
 void emulatorRestart() {
+#ifndef TARGET_GNW
     Machine* machine = machineCreate(properties->emulation.machineName);
 
     emulatorStop();
@@ -304,6 +387,7 @@ void emulatorRestart() {
         boardSetMachine(machine);
         machineDestroy(machine);
     }
+#endif
 }
 
 void emulatorRestartSound() {
@@ -328,9 +412,11 @@ void emulatorPlayReverse(int enable)
 
 void emulatorResetMixer() {
     // Reset active indicators in mixer
+#ifndef TARGET_GNW
     mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MOONSOUND, 1);
     mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_YAMAHA_SFG, 1);
     mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MSXAUDIO, 1);
+#endif
     mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MSXMUSIC, 1);
     mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_SCC, 1);
     mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_PCM, 1);

@@ -32,7 +32,7 @@
 #include "SlotManager.h"
 #include "DeviceManager.h"
 #include "DebugDeviceManager.h"
-#include "YM2413.h"
+#include "YM2413_msx.h"
 #include "SaveState.h"
 #include "Language.h"
 #include <stdlib.h>

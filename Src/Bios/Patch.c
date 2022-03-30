@@ -83,6 +83,7 @@ static const UInt8 bootSector[] = {
 static int patchEnabled = 0;
 static int patchBoardType = 0;
 
+#ifndef TARGET_GNW
 void PatchDiskSetBusy(int driveId, int busy)
 {
     if (driveId < MAXDRIVES && patchEnabled) {
@@ -90,6 +91,7 @@ void PatchDiskSetBusy(int driveId, int busy)
         if (driveId == 1) ledSetFdd2(busy);
     }
 }
+#endif
 
 static const FormatInfo formatInfo[8] = {
     { 720,  1, 112, 9, 2, 2 },
@@ -147,6 +149,7 @@ void PatchZ80(void* ref, CpuRegs* cpu)
         case 0x00f3: stmotr(ref, cpu); break;
         }
         break;
+#ifndef TARGET_GNW
     case BOARD_SVI:
         switch (cpu->PC.W - 2) {
         /* SVI-328 BIOS */
@@ -163,6 +166,7 @@ void PatchZ80(void* ref, CpuRegs* cpu)
         case 0x21A9: tapin(ref, cpu); break;  // CASIN
         }
         break;
+#endif
     }
 
     vdpCmdFlushAll();
@@ -208,7 +212,9 @@ static void phydio(void* ref, CpuRegs* cpu) {
     slotWrite(ref, 0xffff, slotSec);
 
     while (cpu->BC.B.h) {
+#ifndef TARGET_GNW
         PatchDiskSetBusy(drive, 1);
+#endif
         if (write) {
             for (i = 0; i < 512; i++) {
                 buffer[i]=slotRead(ref, address++);
@@ -254,7 +260,9 @@ static void dskchg(void* ref, CpuRegs* cpu) {
         return;
     }
 
+#ifndef TARGET_GNW
     PatchDiskSetBusy(drive, 1);
+#endif
     if (diskRead(drive, buffer, 1) != DSKE_OK) {
         cpu->AF.W = 0x0a01;
         return;
@@ -401,7 +409,9 @@ static void dskfmt(void* ref, CpuRegs* cpu) {
     buffer[27] = 0;
 
     /* If can't write bootblock, return "Write protected": */
+#ifndef TARGET_GNW
     PatchDiskSetBusy(cpu->DE.B.h, 1);
+#endif
     if (!diskWrite(cpu->DE.B.h, buffer, 0)) {
         cpu->AF.W = 0x0001;
         return;

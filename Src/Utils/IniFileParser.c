@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#ifndef MSX_NO_ZIP
 #include "unzip.h"
+#endif
 #include "IniFileParser.h"
 
 
@@ -56,6 +58,7 @@ static int readFile(IniFile *iniFile)
             success = 1;
         }
     }
+#ifndef MSX_NO_ZIP
     else
     {
         // File is compressed
@@ -130,7 +133,8 @@ static int readFile(IniFile *iniFile)
             unzClose(zip);
         }
     }
-    
+#endif
+
     return success;
 }
 

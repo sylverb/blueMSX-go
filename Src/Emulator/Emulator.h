@@ -31,6 +31,7 @@
 #include "MsxTypes.h"
 #include "Properties.h"
 #include "AudioMixer.h"
+#include "Machine.h"
 
 typedef enum { EMU_RUNNING, EMU_PAUSED, EMU_STOPPED, EMU_SUSPENDED, EMU_STEP, EMU_STEP_BACK } EmuState;
 
@@ -45,6 +46,7 @@ void emulatorSuspend();
 void emulatorResume();
 void emulatorDoResume();
 void emulatorRestart();
+void emulatorStartMachine(const char* stateName, Machine *msxMachine);
 void emulatorStart(const char* stateName);
 void emulatorStop();
 void emulatorSetMaxSpeed(int enable);

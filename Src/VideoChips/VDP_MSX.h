@@ -1,5 +1,5 @@
 /*****************************************************************************
-** $Source: /cygdrive/d/Private/_SVNROOT/bluemsx/blueMSX/Src/VideoChips/VDP.h,v $
+** $Source: /cygdrive/d/Private/_SVNROOT/bluemsx/blueMSX/Src/VideoChips/VDP_MSX.h,v $
 **
 ** $Revision: 1.16 $
 **
@@ -49,7 +49,9 @@ void vdpSetDisplayEnable(int enable);
 int  vdpGetDisplayEnable();
 
 void vdpForceSync();
-
+#ifdef TARGET_GNW
+Pixel getyjkColor(int y, int J, int K);
+#endif
 // Video DA Interface
 
 #define VDP_VIDEODA_WIDTH  544

@@ -488,8 +488,10 @@ void r800ExecuteInstruction(R800* r800);
 void r800StopExecution(R800* r800);
 void r800SetTimeoutAt(R800* r800, SystemTime time);
 
+#ifdef ENABLE_BREAKPOINTS
 void r800SetBreakpoint(R800* r800, UInt16 address);
 void r800ClearBreakpoint(R800* r800, UInt16 address);
+#endif
 
 SystemTime r800GetTimeTrace(R800* r800, int offset);
 

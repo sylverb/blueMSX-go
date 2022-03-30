@@ -29,8 +29,10 @@
 #include "Board.h"
 #include "SaveState.h"
 #include "Disk.h"
+#ifndef TARGET_GNW
 #include "Led.h"
 #include "FdcAudio.h"
+#endif
 #include <stdlib.h>
 #include <string.h>
 
@@ -65,8 +67,14 @@ struct TC8566AF {
 
     UInt8 sectorBuf[512];
 
+#ifndef TARGET_GNW
     FdcAudio* fdcAudio;
+#endif
 };
+
+#ifdef MSX_NO_MALLOC
+TC8566AF tc_global;
+#endif
 
 #define CMD_UNKNOWN                 0
 #define CMD_READ_DATA               1
@@ -349,7 +357,9 @@ static void tc8566afCommandPhaseWrite(TC8566AF* tc, UInt8 value)
                 int sectorSize;
         		DSKE rv = diskReadSector(tc->drive, tc->sectorBuf, tc->sectorNumber, tc->side, 
                                          tc->currentTrack, 0, &sectorSize);
+#ifndef TARGET_GNW
                 fdcAudioSetReadWrite(tc->fdcAudio);
+#endif
                 boardSetFdcActive();
                 if (rv == DSKE_NO_DATA) {
                     tc->status0 |= ST0_IC0;
@@ -487,7 +497,9 @@ static void tc8566afExecutionPhaseWrite(TC8566AF* tc, UInt8 value)
                     tc->status1 |= ST1_NW;
                 }
 
+#ifndef TARGET_GNW
                 fdcAudioSetReadWrite(tc->fdcAudio);
+#endif
 
                 boardSetFdcActive();
 
@@ -528,9 +540,15 @@ static void tc8566afExecutionPhaseWrite(TC8566AF* tc, UInt8 value)
 
 TC8566AF* tc8566afCreate()
 {
+#ifndef MSX_NO_MALLOC
     TC8566AF* tc = malloc(sizeof(TC8566AF));
+#else
+    TC8566AF* tc = &tc_global;
+#endif
 
+#ifndef TARGET_GNW
     tc->fdcAudio = fdcAudioCreate(FA_PANASONIC);
+#endif
 
     tc8566afReset(tc);
 
@@ -539,22 +557,32 @@ TC8566AF* tc8566afCreate()
 
 void tc8566afDestroy(TC8566AF* tc)
 {
+#ifndef TARGET_GNW
     fdcAudioDestroy(tc->fdcAudio);
+#endif
+#ifndef MSX_NO_MALLOC
     free(tc);
+#endif
 }
 
 void tc8566afReset(TC8566AF* tc)
 {
+#ifndef TARGET_GNW
     FdcAudio* fdcAudio = tc->fdcAudio;
+#endif
     memset(tc, 0, sizeof(TC8566AF));
+#ifndef TARGET_GNW
     tc->fdcAudio = fdcAudio;
+#endif
 
     tc->mainStatus = STM_NDM | STM_RQM;
 
+#ifndef TARGET_GNW
     ledSetFdd1(0); /* 10:10 2004/10/09 FDD LED PATCH */ 
     ledSetFdd2(0); /* 10:10 2004/10/09 FDD LED PATCH */ 
 
     fdcAudioReset(tc->fdcAudio);
+#endif
 }
 
 UInt8 tc8566afReadRegister(TC8566AF* tc, UInt8 reg)
@@ -606,10 +634,12 @@ void tc8566afWriteRegister(TC8566AF* tc, UInt8 reg, UInt8 value)
 {
     switch (reg) {
 	case 2:
+#ifndef TARGET_GNW
         fdcAudioSetMotor(tc->fdcAudio, ((value & 0x10) && diskEnabled(0)) || ((value & 0x20) && diskEnabled(1)));
 
         ledSetFdd1((value & 0x10) && diskEnabled(0)); /* 10:10 2004/10/09 FDD LED PATCH */ 
         ledSetFdd2((value & 0x20) && diskEnabled(1)); /* 10:10 2004/10/09 FDD LED PATCH */ 
+#endif
 
         tc->drive = value & 0x03;
         break;

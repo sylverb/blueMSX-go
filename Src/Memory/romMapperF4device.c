@@ -28,7 +28,9 @@
 #include "romMapperF4device.h"
 #include "MediaDb.h"
 #include "DeviceManager.h"
+#ifndef MSX_NO_SAVESTATE
 #include "DebugDeviceManager.h"
+#endif
 #include "SaveState.h"
 #include "IoPort.h"
 #include "Language.h"
@@ -38,11 +40,18 @@
 
 typedef struct {
     int deviceHandle;
+#ifndef MSX_NO_SAVESTATE
     int debugHandle;
+#endif
     int inverted;
     int status;
 } RomMapperF4device;
 
+#ifdef MSX_NO_MALLOC
+static RomMapperF4device rm_global;
+#endif
+
+#ifndef MSX_NO_SAVESTATE
 static void saveState(RomMapperF4device* rm)
 {
     SaveState* state = saveStateOpenForWrite("mapperF4device");
@@ -60,15 +69,20 @@ static void loadState(RomMapperF4device* rm)
 
     saveStateClose(state);
 }
+#endif
 
 static void destroy(RomMapperF4device* rm)
 {
     deviceManagerUnregister(rm->deviceHandle);
+#ifndef TARGET_GNW
     debugDeviceUnregister(rm->debugHandle);
+#endif
 
     ioPortUnregister(0xf4);
 
+#ifndef MSX_NO_MALLOC
     free(rm);
+#endif
 }
 
 static UInt8 read(RomMapperF4device* rm, UInt16 ioPort)
@@ -91,6 +105,7 @@ static void reset(RomMapperF4device* rm)
     rm->status = rm->inverted ? 0xff : 0;
 }
 
+#ifndef TARGET_GNW
 static void getDebugInfo(RomMapperF4device* rm, DbgDevice* dbgDevice)
 {
     DbgIoPorts* ioPorts;
@@ -98,16 +113,30 @@ static void getDebugInfo(RomMapperF4device* rm, DbgDevice* dbgDevice)
     ioPorts = dbgDeviceAddIoPorts(dbgDevice, langDbgDevF4Device(), 1);
     dbgIoPortsAddPort(ioPorts, 0, 0xf4, DBG_IO_READWRITE, read(rm, 0xe4));
 }
+#endif
 
 int romMapperF4deviceCreate(int inverted) 
 {
+#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
+#else
+    DeviceCallbacks callbacks = { destroy, reset, NULL, NULL };
+#endif
+#ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, NULL, NULL };
+#endif
+
+#ifndef MSX_NO_MALLOC
     RomMapperF4device* rm = malloc(sizeof(RomMapperF4device));
+#else
+    RomMapperF4device* rm = &rm_global;
+#endif
 
     rm->inverted   = inverted;
     rm->deviceHandle = deviceManagerRegister(inverted ? ROM_F4INVERTED : ROM_F4DEVICE, &callbacks, rm);
+#ifndef TARGET_GNW
     rm->debugHandle = debugDeviceRegister(DBGTYPE_BIOS, langDbgDevF4Device(), &dbgCallbacks, rm);
+#endif
 
     ioPortRegister(0xf4, read, write, rm);
 

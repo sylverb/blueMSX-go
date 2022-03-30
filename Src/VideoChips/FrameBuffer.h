@@ -32,10 +32,14 @@
 
 #ifdef WII
 #define FB_MAX_LINE_WIDTH 544
+#define FB_MAX_LINES      480
+#elif TARGET_GNW
+#define FB_MAX_LINE_WIDTH 320
+#define FB_MAX_LINES      240
 #else
 #define FB_MAX_LINE_WIDTH 640
-#endif
 #define FB_MAX_LINES      480
+#endif
 
 typedef enum { INTERLACE_NONE, INTERLACE_ODD, INTERLACE_EVEN } InterlaceMode;
 

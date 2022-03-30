@@ -41,7 +41,9 @@
 #include "MediaDb.h"
 #include "TokenExtract.h"
 #include "Disk.h"
+#ifndef MSX_NO_ZIP
 #include "unzip.h"
+#endif
 
 #include "AppConfig.h"
 
@@ -126,9 +128,11 @@
 #include "romMapperSf7000Ipl.h"
 #include "romMapperPlayBall.h"
 #include "romMapperObsonet.h"
+#ifndef TARGET_GNW
 #include "romMapperSg1000Castle.h"
 #include "romMapperSg1000.h"
 #include "romMapperSg1000RamExpander.h"
+#endif
 #include "romMapperSegaBasic.h"
 #include "romMapperDumas.h"
 #include "sramMapperMegaSCSI.h"
@@ -162,7 +166,7 @@
 
 UInt8* g_mainRam=NULL;
 UInt32 g_mainRamSize=0;
-static char machinesDir[PROP_MAXPATH]  = "";
+static char machinesDir[PROP_MAXPATH]  = ".";
 
 int toint(char* buffer) 
 {
@@ -226,6 +230,7 @@ char *strcasestr(const char *h, const char *n)
 }
 #endif
 
+#ifndef TARGET_GNW
 static int readMachine(Machine* machine, const char* machineName, const char* file)
 {
     static char buffer[10000];
@@ -373,7 +378,7 @@ static int readMachine(Machine* machine, const char* machineName, const char* fi
     for (i = 0; i < sizeof(machine->slotInfo) / sizeof(SlotInfo) && *slotBuf; i++) {
         char* arg, *ch;
         char slotInfoName[512];
-	char *slotFilename;
+        char *slotFilename;
         (void)ch;
 
         machine->slotInfo[i].slot = toint(extractToken(slotBuf, 0));    
@@ -575,7 +580,7 @@ Machine* machineCreate(const char* machineName)
     Machine* machine;
     int success;
     FILE *file;
-    
+
     machine = (Machine *)malloc(sizeof(Machine));
     if (machine == NULL)
         return NULL;
@@ -585,7 +590,7 @@ Machine* machineCreate(const char* machineName)
     
     sprintf(configIni, "%s/%s/config.ini", machinesDir, machineName);
     file = fopen(configIni, "rb");
-    
+
     if (file != NULL)
     {
         fclose(file);
@@ -615,7 +620,7 @@ Machine* machineCreate(const char* machineName)
     success = readMachine(machine, machineName, configIni);
     if (!success)
     {
-		machineDestroy(machine);
+        machineDestroy(machine);
         return NULL;
     }
     
@@ -623,6 +628,7 @@ Machine* machineCreate(const char* machineName)
     
     return machine;
 }
+#endif
 
 void machineDestroy(Machine* machine)
 {
@@ -633,6 +639,7 @@ void machineDestroy(Machine* machine)
 }
 
 
+#ifndef TARGET_GNW
 int machineIsValid(const char* machineName, int checkRoms)
 {
     Machine* machine = machineCreate(machineName);
@@ -659,7 +666,6 @@ int machineIsValid(const char* machineName, int checkRoms)
                 if (!zippedMachine)
                     success = 0;
             }
-            
             if (success)
             {
                 for (i = 0; i < machine->slotInfoCount; i++) {
@@ -1044,6 +1050,7 @@ void machineSaveState(Machine* machine)
 
     saveStateClose(state);
 }
+#endif
 
 int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UInt32* mainRamStart)
 {
@@ -1074,12 +1081,17 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
             continue;
         }
 
+#ifndef TARGET_GNW
         romName   = strlen(machine->slotInfo[i].inZipName) ? machine->slotInfo[i].inZipName : machine->slotInfo[i].name;
+#else
+        romName   = machine->slotInfo[i].name;
+#endif
         slot      = machine->slotInfo[i].slot;
         subslot   = machine->slotInfo[i].subslot;
         startPage = machine->slotInfo[i].startPage;
         size      = 0x2000 * machine->slotInfo[i].pageCount;
 
+#ifndef TARGET_GNW
         if (machine->slotInfo[i].romType == RAM_1KB_MIRRORED) {
             success &= ramMirroredCreate(size, slot, subslot, startPage, 0x400, &ram, &ramSize);
             ramStart = startPage * 0x2000;
@@ -1091,6 +1103,7 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
             ramStart = startPage * 0x2000;
             continue;
         }
+#endif
     }
 
     /* Initialize RAM and 'imlicit' rom types */
@@ -1105,12 +1118,17 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
             continue;
         }
 
+#ifndef TARGET_GNW
         romName   = strlen(machine->slotInfo[i].inZipName) ? machine->slotInfo[i].inZipName : machine->slotInfo[i].name;
+#else
+        romName   = machine->slotInfo[i].name;
+#endif
         slot      = machine->slotInfo[i].slot;
         subslot   = machine->slotInfo[i].subslot;
         startPage = machine->slotInfo[i].startPage;
         size      = 0x2000 * machine->slotInfo[i].pageCount;
 
+#ifndef TARGET_GNW
         if (machine->slotInfo[i].romType == RAM_NORMAL) {
             if (ram == NULL && startPage == 0) {
                 success &= ramNormalCreate(size, slot, subslot, startPage, &ram, &ramSize);
@@ -1122,17 +1140,22 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
             }
             continue;
         }
+#endif
 
         if (machine->slotInfo[i].romType == RAM_MAPPER) {
             if (ram == NULL && startPage == 0) {
                 success &= ramMapperCreate(size, slot, subslot, startPage, &ram, &ramSize);
+                                            printf("RAM_MAPPER 1 success %d\n",success);
+
             }
             else {
                 success &= ramMapperCreate(size, slot, subslot, startPage, NULL, NULL);
+                                            printf("RAM_MAPPER 2 success %d\n",success);
             }
             continue;
         }
 
+#ifndef TARGET_GNW
         if (machine->slotInfo[i].romType == ROM_JISYO) {
             if (jisyoRom == NULL) {
                 jisyoRom = romLoad(machine->slotInfo[i].name, machine->slotInfo[i].inZipName, &jisyoRomSize);
@@ -1144,6 +1167,7 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
             }
             continue;
         }
+#endif
     }
 
     if (ram == NULL) {
@@ -1161,13 +1185,17 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
         int subslot;
         int startPage;
         char* romName;
-        
+//        printf("romType %d %d\n",i,machine->slotInfo[i].romType);
         // Don't map slots with error
         if (machine->slotInfo[i].error) {
             continue;
         }
 
+#ifndef TARGET_GNW
         romName   = strlen(machine->slotInfo[i].inZipName) ? machine->slotInfo[i].inZipName : machine->slotInfo[i].name;
+#else
+        romName   = machine->slotInfo[i].name;
+#endif
         slot      = machine->slotInfo[i].slot;
         subslot   = machine->slotInfo[i].subslot;
         startPage = machine->slotInfo[i].startPage;
@@ -1193,6 +1221,7 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
             continue;
         }
 
+#ifndef TARGET_GNW
         if (machine->slotInfo[i].romType == ROM_SNATCHER) {
             success &= romMapperSCCplusCreate(NULL, NULL, 0, slot, subslot, startPage, SCC_SNATCHER);
             continue;
@@ -1202,12 +1231,14 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
             success &= romMapperSCCplusCreate(NULL, NULL, 0, slot, subslot, startPage, SCC_SDSNATCHER);
             continue;
         }
+#endif
 
         if (machine->slotInfo[i].romType == ROM_SCCMIRRORED) {
             success &= romMapperSCCplusCreate(NULL, NULL, 0, slot, subslot, startPage, SCC_MIRRORED);
             continue;
         }
 
+#ifndef TARGET_GNW
         if (machine->slotInfo[i].romType == ROM_SCCEXTENDED) {
             success &= romMapperSCCplusCreate(NULL, NULL, 0, slot, subslot, startPage, SCC_EXTENDED);
             continue;
@@ -1272,12 +1303,14 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
             success &= MSXMidiCreate(1);
             continue;
         }
+#endif
 
         if (machine->slotInfo[i].romType == ROM_F4INVERTED) {
             success &= romMapperF4deviceCreate(1);
             continue;
         }
 
+#ifndef TARGET_GNW
         if (machine->slotInfo[i].romType == ROM_NMS8280DIGI) {
             success &= romMapperNms8280VideoDaCreate();
             continue;
@@ -1391,10 +1424,16 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
             }
             continue;
         }
+#endif
         // -------------------------------
 
+#ifndef TARGET_GNW
         buf = romLoad(machine->slotInfo[i].name, machine->slotInfo[i].inZipName, &size);
+#else
+        buf = romLoad(machine->slotInfo[i].name, NULL, &size);
+#endif
 
+#ifndef TARGET_GNW
         if (buf == NULL) {
 
             switch (machine->slotInfo[i].romType) {
@@ -1407,8 +1446,10 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
             }
             continue;
         }
+#endif
 
         switch (machine->slotInfo[i].romType) {
+#ifndef TARGET_GNW
         case ROM_0x4000:
             success &= romMapperNormalCreate(romName, buf, size, slot, subslot, startPage);
             break;
@@ -1684,14 +1725,18 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
             success &= romMapperFMPACCreate(romName, buf, size, slot, subslot, startPage);
             break;
             
+#endif
         case ROM_MSXMUSIC:
             success &= romMapperMsxMusicCreate(romName, buf, size, slot, subslot, startPage);
             break;
 
         case ROM_NORMAL:
             success &= romMapperNormalCreate(romName, buf, size, slot, subslot, startPage);
+                            printf("ROM_NORMAL success %d\n",success);
+
             break;
 
+#ifndef TARGET_GNW
         case ROM_DRAM:
             success &= romMapperDramCreate(romName, buf, size, slot, subslot, startPage);
             break;
@@ -1716,18 +1761,27 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
         case ROM_SEGABASIC:
             success &= romMapperSegaBasicCreate(romName, buf, size, slot, subslot, startPage);
             break;
+#endif
 
         case ROM_CASPATCH:
             success &= romMapperCasetteCreate(romName, buf, size, slot, subslot, startPage);
+                printf("ROM_CASPATCH success %d\n",success);
+
             break;
 
+#ifndef TARGET_GNW
         case ROM_DISKPATCH:
             success &= romMapperDiskCreate(romName, buf, size, slot, subslot, startPage);
            break;
+#endif
 
         case ROM_TC8566AF:
+            printf("ROM_TC8566AF\n");
             success &= romMapperTC8566AFCreate(romName, buf, size, slot, subslot, startPage, ROM_TC8566AF);
+            printf("ROM_TC8566AF %d\n",success);
             break;
+
+#ifndef TARGET_GNW
         case ROM_TC8566AF_TR:
             success &= romMapperTC8566AFCreate(romName, buf, size, slot, subslot, startPage, ROM_TC8566AF_TR);
             break;
@@ -1820,10 +1874,13 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
         case ROM_SVI727COL80:
             success &= romMapperSvi727Col80Create(romName, buf, size, slot, subslot, startPage);
             break;
+#endif
         }
+#ifndef MSX_NO_MALLOC
         if( buf != NULL ) {
             free(buf);
         }
+#endif
     }
 
     if (jisyoRom != NULL) {
@@ -1846,7 +1903,7 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
         g_mainRamSize = ramSize;
         g_mainRam = ram;
     }
-
+    printf("machineInitialize success %d\n",success);
     return success;
 }
 

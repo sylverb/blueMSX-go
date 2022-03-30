@@ -31,7 +31,7 @@
 #include "MsxTypes.h"
 #include "MediaDb.h"
 #include "ArrayList.h"
-#include "VDP.h"
+#include "VDP_MSX.h"
 #include "AY8910.h"
 #include <stdio.h>
 
@@ -43,20 +43,26 @@ typedef enum {
     BOARD_MSX_S1985     = 0x0100 + 0x02,
     BOARD_MSX_T9769B    = 0x0100 + 0x03,
     BOARD_MSX_T9769C    = 0x0100 + 0x04,
+#ifndef TARGET_GNW
     BOARD_SVI           = 0x0200 + 0x00,
     BOARD_COLECO        = 0x0300 + 0x00,
     BOARD_COLECOADAM    = 0x0300 + 0x01,
     BOARD_SG1000        = 0x0400 + 0x00,
     BOARD_SF7000        = 0x0400 + 0x01,
     BOARD_SC3000        = 0x0400 + 0x02,
+#endif
     BOARD_MSX_FORTE_II  = 0x0500 + 0x00,
     BOARD_MASK          = 0xff00
 } BoardType;
 
 typedef struct {
     RomType romType;
+#ifndef TARGET_GNW
     char name[512];
     char inZipName[128];
+#else
+    char name[80];
+#endif
     int slot;
     int subslot;
     int startPage;
@@ -98,18 +104,26 @@ typedef struct {
         int count;
     } fdc;
     int slotInfoCount;
+#ifndef TARGET_GNW
     SlotInfo slotInfo[32];
+#else
+    SlotInfo slotInfo[10];
+#endif
     int isZipped;
     char *zipFile;
 } Machine;
 
 
+#ifndef TARGET_GNW
 Machine* machineCreate(const char* machineName);
+#endif
 void machineDestroy(Machine* machine);
 
 void machineFillAvailable(ArrayList *list, int checkRoms);
 
+#ifndef TARGET_GNW
 int machineIsValid(const char* machineName, int checkRoms);
+#endif
 
 void machineUpdate(Machine* machine);
 

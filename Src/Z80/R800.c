@@ -42,6 +42,9 @@ static UInt8  ZSPXYTable[256];
 static UInt8  ZSPHTable[256];
 static UInt16 DAATable[0x800];
 
+#ifdef MSX_NO_MALLOC
+static R800 r800_global;
+#endif
 
 static void cb(R800* r800);
 static void dd(R800* r800);
@@ -5826,7 +5829,11 @@ R800* r800Create(UInt32 cpuFlags,
                  R800WriteCb watchpointIoCb,
                  void* ref)
 {
+#ifndef MSX_NO_MALLOC
     R800* r800 = calloc(1, sizeof(R800));
+#else
+    R800* r800 = &r800_global;
+#endif
     
     r800->cpuFlags    = cpuFlags;
 
@@ -5862,7 +5869,9 @@ R800* r800Create(UInt32 cpuFlags,
 }
 
 void r800Destroy(R800* r800) {
+#ifndef MSX_NO_MALLOC
     free(r800);
+#endif
 }
 
 UInt32 r800GetSystemTime(R800* r800) {
@@ -5998,25 +6007,25 @@ void r800SetTimeoutAt(R800* r800, SystemTime time)
     r800->timeout = time;
 }
 
+#ifdef ENABLE_BREAKPOINTS
 void r800SetBreakpoint(R800* r800, UInt16 address)
 {
-#ifdef ENABLE_BREAKPOINTS
     if (r800->breakpoints[address] == 0) {
         r800->breakpoints[address] = 1;
         r800->breakpointCount++;
     }
-#endif
 }
+#endif
 
+#ifdef ENABLE_BREAKPOINTS
 void r800ClearBreakpoint(R800* r800, UInt16 address)
 {
-#ifdef ENABLE_BREAKPOINTS
     if (r800->breakpoints[address] != 0) {
         r800->breakpointCount--;
         r800->breakpoints[address] = 0;
     }
-#endif
 }
+#endif
 
 SystemTime r800GetTimeTrace(R800* r800, int offset) {
 #if TIME_TRACE_SIZE > 0

@@ -48,6 +48,11 @@ typedef struct {
     SCC* scc;
 } RomMapperKonami5;
 
+#ifdef MSX_NO_MALLOC
+static RomMapperKonami5 rm_global;
+#endif
+
+#ifndef MSX_NO_SAVESTATE
 static void saveState(RomMapperKonami5* rm)
 {
     SaveState* state = saveStateOpenForWrite("mapperKonami5");
@@ -94,6 +99,7 @@ static void loadState(RomMapperKonami5* rm)
         slotMapPage(rm->slot, rm->sslot, rm->startPage + 2, rm->romData + rm->romMapper[2] * 0x2000, 1, 0);
     }
 }
+#endif
 
 static void destroy(RomMapperKonami5* rm)
 {
@@ -101,8 +107,10 @@ static void destroy(RomMapperKonami5* rm)
     deviceManagerUnregister(rm->deviceHandle);
     sccDestroy(rm->scc);
 
+#ifndef MSX_NO_MALLOC
     free(rm->romData);
     free(rm);
+#endif
 }
 
 static void reset(RomMapperKonami5* rm)
@@ -121,6 +129,7 @@ static UInt8 read(RomMapperKonami5* rm, UInt16 address)
     return rm->romData[rm->romMapper[2] * 0x2000 + (address & 0x1fff)];
 }
 
+#ifndef TARGET_GNW
 static UInt8 peek(RomMapperKonami5* rm, UInt16 address) 
 {
     address += 0x4000;
@@ -131,6 +140,7 @@ static UInt8 peek(RomMapperKonami5* rm, UInt16 address)
 
     return rm->romData[rm->romMapper[2] * 0x2000 + (address & 0x1fff)];
 }
+#endif
 
 static void write(RomMapperKonami5* rm, UInt16 address, UInt8 value) 
 {
@@ -176,25 +186,41 @@ static void write(RomMapperKonami5* rm, UInt16 address, UInt8 value)
 int romMapperKonami5Create(const char* filename, UInt8* romData, 
                            int size, int slot, int sslot, int startPage) 
 {
+#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
+#else
+    DeviceCallbacks callbacks = { destroy, reset, NULL, NULL };
+#endif
     RomMapperKonami5* rm;
     int i;
 
     int origSize = size;
     
+    printf("romMapperKonami5Create %s %x %d %d %d %d\n",filename,romData,size,slot,sslot,startPage);
     size = 0x8000;
     while (size < origSize) {
         size *= 2;
     }
 
 
+#ifndef MSX_NO_MALLOC
     rm = malloc(sizeof(RomMapperKonami5));
+#else
+    rm = &rm_global;
+#endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_KONAMI5, &callbacks, rm);
+#ifndef TARGET_GNW
     slotRegister(slot, sslot, startPage, 4, read, peek, write, destroy, rm);
-
+#else
+    slotRegister(slot, sslot, startPage, 4, read, NULL, write, destroy, rm);
+#endif
+#ifndef MSX_NO_MALLOC
     rm->romData = calloc(1, size);
     memcpy(rm->romData, romData, origSize);
+#else
+    rm->romData = romData;
+#endif
     rm->romMask = size / 0x2000 - 1;
     rm->slot  = slot;
     rm->sslot = sslot;

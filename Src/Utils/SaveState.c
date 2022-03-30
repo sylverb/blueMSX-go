@@ -26,7 +26,9 @@
 ******************************************************************************
 */
 #include "SaveState.h"
+#ifndef MSX_NO_ZIP
 #include "ziphelper.h"
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -105,9 +107,11 @@ static char* getIndexedFilename(const char* fileName)
 
 void saveStateCreateForRead(const char* fileName)
 {
+#ifndef MSX_NO_ZIP
     tableCount = 0;
     strcpy(stateFile, fileName);
     zipCacheReadOnlyZip(fileName);
+#endif
 }
 
 void saveStateCreateForWrite(const char* fileName)
@@ -118,11 +122,14 @@ void saveStateCreateForWrite(const char* fileName)
 
 void saveStateDestroy(void)
 {
+#ifndef MSX_NO_ZIP
     zipCacheReadOnlyZip(NULL);
+#endif
 }
 
 SaveState* saveStateOpenForRead(const char* fileName) {
     SaveState* state = (SaveState*)malloc(sizeof(SaveState));
+#ifndef MSX_NO_ZIP
     Int32 size = 0;
     void* buffer = zipLoadFile(stateFile, getIndexedFilename(fileName), &size);
 
@@ -131,6 +138,7 @@ SaveState* saveStateOpenForRead(const char* fileName) {
     state->size = size / sizeof(UInt32);
     state->offset = 0;
     state->fileName[0] = 0;
+#endif
 
     return state;
 }
@@ -149,9 +157,11 @@ SaveState* saveStateOpenForWrite(const char* fileName) {
 }
 
 void saveStateClose(SaveState* state) {
+#ifndef MSX_NO_ZIP
     if (state->fileName[0]) {
         zipSaveFile(stateFile, state->fileName, 1, state->buffer, state->offset * sizeof(UInt32));
     }
+#endif
     if (state->buffer != NULL) {
         free(state->buffer);
     }

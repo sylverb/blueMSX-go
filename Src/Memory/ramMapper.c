@@ -31,7 +31,9 @@
 #include "MediaDb.h"
 #include "SlotManager.h"
 #include "DeviceManager.h"
+#ifndef TARGET_GNW
 #include "DebugDeviceManager.h"
+#endif
 #include "SaveState.h"
 #include "IoPort.h"
 #include "Language.h"
@@ -44,7 +46,9 @@ typedef struct {
     int deviceHandle;
     UInt8* ramData;
     int handle;
+#ifndef TARGET_GNW
     int debugHandle;
+#endif
     int dramHandle;
     int dramMode;
     UInt8 port[4];
@@ -54,8 +58,14 @@ typedef struct {
     int size;
 } RamMapper;
 
+#ifdef MSX_NO_MALLOC
+static RamMapper rm_global;
+static char ram_global[0x4000*8]; // 128kB of RAM maximum
+#endif
+
 static void writeIo(RamMapper* rm, UInt16 page, UInt8 value);
 
+#ifndef MSX_NO_SAVESTATE
 static void saveState(RamMapper* rm)
 {
     SaveState* state = saveStateOpenForWrite("mapperRam");
@@ -98,6 +108,7 @@ static void loadState(RamMapper* rm)
     }
 #endif
 }
+#endif
 
 static void writeIo(RamMapper* rm, UInt16 page, UInt8 value)
 {
@@ -131,16 +142,21 @@ static void reset(RamMapper* rm)
 
 static void destroy(RamMapper* rm)
 {
+#ifndef TARGET_GNW
     debugDeviceUnregister(rm->debugHandle);
+#endif
     ramMapperIoRemove(rm->handle);
     slotUnregister(rm->slot, rm->sslot, 0);
     deviceManagerUnregister(rm->deviceHandle);
     panasonicDramUnregister(rm->dramHandle);
+#ifndef MSX_NO_MALLOC
     free(rm->ramData);
 
     free(rm);
+#endif
 }
 
+#ifndef TARGET_GNW
 static void getDebugInfo(RamMapper* rm, DbgDevice* dbgDevice)
 {
     dbgDeviceAddMemoryBlock(dbgDevice, langDbgMemRamMapped(), 0, 0, rm->size, rm->ramData);
@@ -156,11 +172,18 @@ static int dbgWriteMemory(RamMapper* rm, char* name, void* data, int start, int 
 
     return 1;
 }
+#endif
 
 int ramMapperCreate(int size, int slot, int sslot, int startPage, UInt8** ramPtr, UInt32* ramSize) 
 {
+#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, NULL, saveState, loadState };
+#else
+    DeviceCallbacks callbacks = { destroy, NULL, NULL, NULL };
+#endif
+#ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, dbgWriteMemory, NULL, NULL };
+#endif
     RamMapper* rm;
     int pages = size / 0x4000;
     int i;
@@ -179,9 +202,19 @@ int ramMapperCreate(int size, int slot, int sslot, int startPage, UInt8** ramPtr
         return 0;
     }
 
+#ifndef MSX_NO_MALLOC
     rm = malloc(sizeof(RamMapper));
-
     rm->ramData  = malloc(size);
+#else
+    rm = &rm_global;
+    memset(rm,0,sizeof(RamMapper));
+    if (pages > 8) {
+        printf("Tried to allocate more than 8 pages of RAM : %d",pages);
+        return 0; // No more than 128kB of ram supported
+    }
+    rm->ramData  = ram_global;
+#endif
+
     rm->size     = size;
     rm->slot     = slot;
     rm->sslot    = sslot;
@@ -192,7 +225,9 @@ int ramMapperCreate(int size, int slot, int sslot, int startPage, UInt8** ramPtr
 
     rm->handle  = ramMapperIoAdd(pages * 0x4000, writeIo, rm);
     
+#ifndef TARGET_GNW
     rm->debugHandle = debugDeviceRegister(DBGTYPE_RAM, langDbgDevRam(), &dbgCallbacks, rm);
+#endif
 
     rm->deviceHandle = deviceManagerRegister(RAM_MAPPER, &callbacks, rm);
     slotRegister(slot, sslot, 0, 8, NULL, NULL, NULL, destroy, rm);

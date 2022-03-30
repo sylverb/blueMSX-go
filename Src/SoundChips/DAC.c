@@ -34,7 +34,9 @@
 #define OFFSETOF(s, a) ((int)(&((s*)0)->a))
 
 static Int32* dacSyncMono(DAC* dac, UInt32 count);
+#ifndef MSX_NO_STEREO
 static Int32* dacSyncStereo(DAC* dac, UInt32 count);
+#endif
 static void dacSyncChannel(DAC* dac, UInt32 count, int ch, UInt32 index, UInt32 delta);
 
 struct DAC
@@ -51,9 +53,18 @@ struct DAC
     Int32   ctrlVolume[2];
     Int32   daVolume[2];
 
+#ifndef MSX_NO_STEREO
     Int32   defaultBuffer[AUDIO_STEREO_BUFFER_SIZE];
     Int32   buffer[AUDIO_STEREO_BUFFER_SIZE];
+#else
+    Int32   defaultBuffer[AUDIO_MONO_BUFFER_SIZE];
+    Int32   buffer[AUDIO_MONO_BUFFER_SIZE];
+#endif
 };
+
+#ifdef MSX_NO_MALLOC
+static DAC dac_global;
+#endif
 
 void dacReset(DAC* dac) {
     dac->oldSampleVolume[DAC_CH_LEFT]  = 0;
@@ -68,26 +79,38 @@ void dacReset(DAC* dac) {
 
 DAC* dacCreate(Mixer* mixer, DacMode mode)
 {
+#ifndef MSX_NO_MALLOC
     DAC* dac = (DAC*)calloc(1, sizeof(DAC));
+#else
+    DAC* dac = &dac_global;
+    memset(dac,0,sizeof(DAC));
+#endif
 
     dac->mixer = mixer;
     dac->mode  = mode;
 
     dacReset(dac);
 
+#ifndef MSX_NO_STEREO
     if (mode == DAC_MONO) {
         dac->handle = mixerRegisterChannel(mixer, MIXER_CHANNEL_PCM, 0, dacSyncMono, NULL, dac);
     }
     else {
         dac->handle = mixerRegisterChannel(mixer, MIXER_CHANNEL_PCM, 1, dacSyncStereo, NULL, dac);
     }
+#else
+        dac->handle = mixerRegisterChannel(mixer, MIXER_CHANNEL_PCM, 0, dacSyncMono, NULL, dac);
+#endif
+
     return dac;
 }
 
 void dacDestroy(DAC* dac)
 {
     mixerUnregisterChannel(dac->mixer, dac->handle);
+#ifdef MSX_NO_MALLOC
     free(dac);
+#endif
 }
 
 void dacWrite(DAC* dac, DacChannel channel, UInt8 value)
@@ -115,6 +138,7 @@ static Int32* dacSyncMono(DAC* dac, UInt32 count)
     return dac->buffer;
 }
 
+#ifndef MSX_NO_STEREO
 static Int32* dacSyncStereo(DAC* dac, UInt32 count)
 {
     if (!dac->enabled || count == 0) {
@@ -129,6 +153,7 @@ static Int32* dacSyncStereo(DAC* dac, UInt32 count)
 
     return dac->buffer;
 }
+#endif
 
 static void dacSyncChannel(DAC* dac, UInt32 count, int ch, UInt32 index, UInt32 delta)
 {

@@ -28,10 +28,13 @@
 #include "AudioMixer.h"
 #include "Board.h"
 #include "ArchTimer.h"
+#ifndef TARGET_GNW
 #include "ArchMidi.h"
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 
 #define BITSPERSAMPLE     16
 
@@ -95,7 +98,9 @@ typedef struct {
     Int32 volume;
     Int32 pan;
     Int32 enable;
+#ifndef MSX_NO_STEREO
     Int32 stereo;
+#endif
     // Internal config
     Int32 volumeLeft;
     Int32 volumeRight;
@@ -116,14 +121,22 @@ struct Mixer
     UInt32 refFrag;
     UInt32 index;
     UInt32 volIndex;
+#ifndef MSX_NO_STEREO
     Int16   buffer[AUDIO_STEREO_BUFFER_SIZE];
+#else
+    Int16   buffer[AUDIO_MONO_BUFFER_SIZE];
+#endif
     AudioTypeInfo audioTypeInfo[MIXER_CHANNEL_TYPE_COUNT];
     MixerChannel channels[MAX_CHANNELS];
+#ifndef TARGET_GNW
     MixerChannel midi; // This channel is only used for meter output
+#endif
     Int32   channelCount;
     Int32   handleCount;
     UInt32  oldTick;
+#ifndef MSX_NO_STEREO
     Int32   stereo;
+#endif
     UInt32  rate;
     DoubleT  masterVolume;
     Int32   masterEnable;
@@ -134,6 +147,10 @@ struct Mixer
     FILE*   file;
     int     enable;
 };
+
+#ifdef MSX_NO_MALLOC
+static Mixer mixer_global;// __attribute__((section(".dtcram")));
+#endif
 
 
 static void recalculateChannelVolume(Mixer* mixer, MixerChannel* channel);
@@ -146,6 +163,7 @@ static void mixerRecalculateType(Mixer* mixer, int audioType)
     AudioTypeInfo* type    = mixer->audioTypeInfo + audioType;
     int i;
 
+#ifndef TARGET_GNW
     if (audioType == MIXER_CHANNEL_MIDI) {
         MixerChannel* channel = mixer->channels + MIXER_CHANNEL_MIDI;
         channel->enable         = type->enable;
@@ -154,6 +172,7 @@ static void mixerRecalculateType(Mixer* mixer, int audioType)
         recalculateChannelVolume(mixer, channel);
         archMidiUpdateVolume(channel->volumeLeft, channel->volumeRight);
     }
+#endif
 
     for (i = 0; i < mixer->channelCount; i++) {
         MixerChannel* channel = mixer->channels + i;
@@ -177,7 +196,9 @@ void mixerSetStereo(Mixer* mixer, Int32 stereo)
 {
     int i;
 
+#ifndef MSX_NO_STEREO
     mixer->stereo = stereo;
+#endif
     mixer->index = 0;
 
     for (i = 0; i < MIXER_CHANNEL_TYPE_COUNT; i++) {
@@ -225,6 +246,22 @@ void mixerEnableChannelType(Mixer* mixer, Int32 type, Int32 enable)
     mixerRecalculateType(mixer, type);
 }
 
+Int32 mixerIsChannelTypeEnable(Mixer* mixer, Int32 type)
+{
+    int i;
+    Int32 enable = 0;
+
+    for (i = 0; i < mixer->channelCount; i++) {
+        if (mixer->channels[i].type == type) {
+            if (mixer->channels[i].enable) {
+                enable = 1;
+            }
+        }
+    }
+
+    return enable;
+}
+
 Int32 mixerIsChannelTypeActive(Mixer* mixer, Int32 type, Int32 reset)
 {
     int i;
@@ -257,7 +294,11 @@ static void recalculateChannelVolume(Mixer* mixer, MixerChannel* channel)
     channel->volumeLeft  = channel->enable * mixer->masterEnable * (Int32)(1024 * mixer->masterVolume * volume * panLeft);
     channel->volumeRight = channel->enable * mixer->masterEnable * (Int32)(1024 * mixer->masterVolume * volume * panRight);
 
-    if (!mixer->stereo) {
+#ifndef MSX_NO_STEREO
+    if (!mixer->stereo)
+#endif
+    {
+
         Int32 tmp = (channel->volumeLeft + channel->volumeRight) / 2;
         channel->volumeLeft  = tmp;
         channel->volumeRight = tmp;
@@ -288,6 +329,7 @@ static void updateVolumes(Mixer* mixer)
             mixer->channels[i].volIntRight = newVol;
         }
         
+#ifndef TARGET_GNW
         if (archMidiGetNoteOn()) {
             mixer->midi.volIntLeft  = MIN(100, mixer->channels[MIXER_CHANNEL_MIDI].volumeLeft / 7);
             mixer->midi.volIntRight = MIN(100, mixer->channels[MIXER_CHANNEL_MIDI].volumeRight/ 7);
@@ -301,6 +343,7 @@ static void updateVolumes(Mixer* mixer)
             if (newVol < 0) newVol = 0;
             mixer->midi.volIntRight = newVol;
         }
+#endif
 
         mixer->oldTick += diff;
     }
@@ -315,7 +358,12 @@ Mixer* mixerGetGlobalMixer(void)
 
 Mixer* mixerCreate(void)
 {
+#ifndef MSX_NO_MALLOC
     Mixer* mixer        = (Mixer*)calloc(1, sizeof(Mixer));
+#else
+    Mixer* mixer        = &mixer_global;
+    memset(mixer,0,sizeof(Mixer));
+#endif
 
     mixer->fragmentSize = 512;
     mixer->enable       = 1;
@@ -329,7 +377,9 @@ Mixer* mixerCreate(void)
 void mixerDestroy(Mixer* mixer)
 {
     globalMixer = NULL;
+#ifndef MSX_NO_MALLOC
     free(mixer);
+#endif
 }
 
 UInt32 mixerGetSampleRate(Mixer* mixer)
@@ -374,7 +424,9 @@ Int32 mixerRegisterChannel(Mixer* mixer, Int32 audioType, Int32 stereo, MixerUpd
     channel->rateCallback   = rateCallback;
     channel->ref            = ref;
     channel->type           = audioType;
+#ifndef MSX_NO_STEREO
     channel->stereo         = stereo;
+#endif
     channel->enable         = type->enable;
     channel->volume         = type->volume;
     channel->pan            = type->pan;
@@ -435,11 +487,14 @@ void mixerSync(Mixer* mixer)
 
     if (!mixer->enable) {
         while (count--) {
+#ifndef MSX_NO_STEREO
             if (mixer->stereo) {
                 buffer[mixer->index++] = 0;
                 buffer[mixer->index++] = 0;
             }
-            else {
+            else
+#endif
+            {
                 buffer[mixer->index++] = 0;
             }
 
@@ -461,6 +516,7 @@ void mixerSync(Mixer* mixer)
         }
     }
 
+#ifndef MSX_NO_STEREO
     if (mixer->stereo) {
         while (count--) {
             Int32 left = 0;
@@ -514,7 +570,9 @@ void mixerSync(Mixer* mixer)
             mixer->volIndex++;
         }
     }
-    else {
+    else
+#endif
+    {
         while (count--) {
             Int32 left = 0;
 
@@ -525,11 +583,14 @@ void mixerSync(Mixer* mixer)
                     continue;
                 }
 
+#ifndef MSX_NO_STEREO
                 if (mixer->channels[i].stereo) {
                     Int32 tmp = *chBuff[i]++;
                     chanLeft = mixer->channels[i].volumeLeft * (tmp + *chBuff[i]++) / 2;
                 }
-                else {
+                else
+#endif
+                {
                     chanLeft = mixer->channels[i].volumeLeft * *chBuff[i]++;
                 }
             

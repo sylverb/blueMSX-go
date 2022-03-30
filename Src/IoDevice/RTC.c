@@ -29,7 +29,9 @@
 #include "IoPort.h"
 #include "Board.h"
 #include "SaveState.h"
+#ifndef TARGET_GNW
 #include "DebugDeviceManager.h"
+#endif
 #include "Language.h"
 #include <time.h>
 #include <stdlib.h>
@@ -67,7 +69,9 @@ static const int daysInMonth[4][12] = {
 #define OFFSETOF(s, a) ((int)(&((s*)0)->a))
 
 struct RTC {
+#ifndef TARGET_GNW
     int debugHandle;
+#endif
 
     char cmosName[512];
     UInt8 modeReg;
@@ -88,6 +92,10 @@ struct RTC {
     
     UInt8 latch;
 };
+
+#ifdef MSX_NO_MALLOC
+static RTC rtc_global;
+#endif
 
 void rtcLoadState(RTC* rtc)
 {
@@ -299,6 +307,7 @@ static void rtcWriteLatch(RTC* rtc, UInt16 ioPort, UInt8 value)
     rtc->latch = value & 0x0f;
 }
 
+#ifndef TARGET_GNW
 static void getDebugInfo(RTC* rtc, DbgDevice* dbgDevice)
 {
     DbgIoPorts* ioPorts;
@@ -307,11 +316,19 @@ static void getDebugInfo(RTC* rtc, DbgDevice* dbgDevice)
     dbgIoPortsAddPort(ioPorts, 0, 0xb4, DBG_IO_WRITE, 0);
     dbgIoPortsAddPort(ioPorts, 1, 0xb5, DBG_IO_READWRITE, rtcPeekData(rtc, 0xb5));
 }
+#endif
 
 RTC* rtcCreate(int enable, char* cmosName)
 {
+#ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, NULL, NULL };
+#endif
+#ifndef MSX_NO_MALLOC
     RTC* rtc = (RTC*)calloc(1, sizeof(RTC));
+#else
+    RTC* rtc = &rtc_global;
+    memset(rtc,0,sizeof(RTC));
+#endif
 
     rtc->modeReg = MODE_TIMERENABLE;
 
@@ -344,7 +361,9 @@ RTC* rtcCreate(int enable, char* cmosName)
     }
 
     if (enable) {
+#ifndef TARGET_GNW
         rtc->debugHandle = debugDeviceRegister(DBGTYPE_BIOS, langDbgDevRtc(), &dbgCallbacks, rtc);
+#endif
         
         ioPortRegister(0xb4, NULL,        rtcWriteLatch, rtc);
         ioPortRegister(0xb5, rtcReadData, rtcWriteData,  rtc);
@@ -357,11 +376,14 @@ RTC* rtcCreate(int enable, char* cmosName)
 
 void rtcDestroy(RTC* rtc)
 {
+#ifndef TARGET_GNW
     debugDeviceUnregister(rtc->debugHandle);
+#endif
 
     ioPortUnregister(0xb4);
     ioPortUnregister(0xb5);
 
+#ifndef MSX_NO_FILESYSTEM
     if (rtc->cmosName[0]) {
         FILE* file = fopen(rtc->cmosName, "w");
 
@@ -370,6 +392,9 @@ void rtcDestroy(RTC* rtc)
             fclose(file);
         }
     }
+#endif
 
+#ifndef MSX_NO_MALLOC
     free(rtc);
+#endif
 }

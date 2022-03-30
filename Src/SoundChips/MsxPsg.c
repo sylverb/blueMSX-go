@@ -36,11 +36,13 @@
 #include "Casette.h"
 #include "DAC.h"
 
+#ifndef TARGET_GNW
 #include "MsxJoystickDevice.h"
 #include "MsxJoystick.h"
 #include "MsxGunstick.h"
 #include "MsxAsciiLaser.h"
 #include "MsxMouse.h"
+#endif
 #include "Board.h"
 #include "MsxTetrisDongle.h"
 #include "MagicKeyDongle.h"
@@ -57,10 +59,17 @@ struct MsxPsg {
     void*      casRef;
     UInt8 registers[2];
     UInt8 readValue[2];
+#ifndef TARGET_GNW
     MsxJoystickDevice* devFun[2];
+#endif
     DAC*   dac;
 };
 
+#ifdef MSX_NO_MALLOC
+static MsxPsg msxPsg_global;
+#endif
+
+#ifndef TARGET_GNW
 static void joystickPortHandler(MsxPsg* msxPsg, int port, JoystickPortType type)
 {
     if (port >= msxPsg->maxPorts) {
@@ -113,6 +122,7 @@ static void joystickPortHandler(MsxPsg* msxPsg, int port, JoystickPortType type)
 #endif
     }
 }
+#endif
 
 static UInt8 peek(MsxPsg* msxPsg, UInt16 address)
 {
@@ -136,8 +146,9 @@ static UInt8 read(MsxPsg* msxPsg, UInt16 address)
     else {
         /* r14 */
         /* joystick pins */
-        int renshaSpeed = switchGetRensha();
 	    UInt8 state = 0x3f;
+#ifndef TARGET_GNW
+        int renshaSpeed = switchGetRensha();
         if (msxPsg->devFun[msxPsg->currentPort] != NULL &&
             msxPsg->devFun[msxPsg->currentPort]->read != NULL) {
             state = msxPsg->devFun[msxPsg->currentPort]->read(msxPsg->devFun[msxPsg->currentPort]);
@@ -146,6 +157,7 @@ static UInt8 read(MsxPsg* msxPsg, UInt16 address)
         if (renshaSpeed) {
             state &= ~((((UInt64)renshaSpeed * boardSystemTime() / boardFrequency()) & 1) << 4);
         }
+#endif
         /* pins 6/7 input ANDed with pins 6/7 output */
         state&=((msxPsg->registers[1]>>(msxPsg->currentPort<<1&2)&3)<<4|0xf);
         
@@ -174,6 +186,7 @@ static void write(MsxPsg* msxPsg, UInt16 address, UInt8 value)
 {
     if (address & 1) {
         /* r15 */
+#ifndef TARGET_GNW
         if (msxPsg->devFun[0] != NULL && msxPsg->devFun[0]->write != NULL) {
 	        UInt8 val = ((value >> 0) & 0x03) | ((value >> 2) & 0x04);
 	        msxPsg->devFun[0]->write(msxPsg->devFun[0], val);
@@ -182,14 +195,18 @@ static void write(MsxPsg* msxPsg, UInt16 address, UInt8 value)
 	        UInt8 val = ((value >> 2) & 0x03) | ((value >> 3) & 0x04);
 	        msxPsg->devFun[1]->write(msxPsg->devFun[1], val);
         }
+#endif
 
 	    msxPsg->currentPort = (value >> 6) & 0x01;
 
+#ifndef TARGET_GNW
         ledSetKana(0 == (value & 0x80));
+#endif
     }
     msxPsg->registers[address & 1] = value;
 }
 
+#ifndef MSX_NO_SAVESTATE
 static void saveState(MsxPsg* msxPsg)
 {
     // dink: fix for certain games where buttons are stuck after reload of state
@@ -199,12 +216,14 @@ static void saveState(MsxPsg* msxPsg)
     saveStateSet(state, "registers1", msxPsg->registers[1]);
     saveStateClose(state);
 
+#ifndef TARGET_GNW
     if (msxPsg->devFun[0] != NULL && msxPsg->devFun[0]->saveState != NULL) {
 	    msxPsg->devFun[0]->saveState(msxPsg->devFun[0]);
     }
     if (msxPsg->devFun[1] != NULL && msxPsg->devFun[1]->saveState != NULL) {
 	    msxPsg->devFun[1]->saveState(msxPsg->devFun[1]);
     }
+#endif
 
     ay8910SaveState(msxPsg->ay8910);
 }
@@ -218,15 +237,18 @@ static void loadState(MsxPsg* msxPsg)
     msxPsg->registers[1] = (UInt8) saveStateGet(state, "registers1", 0);
     saveStateClose(state);
 
+#ifndef TARGET_GNW
     if (msxPsg->devFun[0] != NULL && msxPsg->devFun[0]->loadState != NULL) {
 	    msxPsg->devFun[0]->loadState(msxPsg->devFun[0]);
     }
     if (msxPsg->devFun[1] != NULL && msxPsg->devFun[1]->loadState != NULL) {
 	    msxPsg->devFun[1]->loadState(msxPsg->devFun[1]);
     }
+#endif
 
     ay8910LoadState(msxPsg->ay8910);
 }
+#endif
 
 static void reset(MsxPsg* msxPsg)
 {
@@ -236,12 +258,14 @@ static void reset(MsxPsg* msxPsg)
     msxPsg->readValue[0] = 0;
     msxPsg->readValue[1] = 0;
 
+#ifndef TARGET_GNW
     if (msxPsg->devFun[0] != NULL && msxPsg->devFun[0]->reset != NULL) {
 	    msxPsg->devFun[0]->reset(msxPsg->devFun[0]);
     }
     if (msxPsg->devFun[1] != NULL && msxPsg->devFun[1]->reset != NULL) {
 	    msxPsg->devFun[1]->reset(msxPsg->devFun[1]);
     }
+#endif
 
     ay8910Reset(msxPsg->ay8910);
 }
@@ -250,16 +274,23 @@ static void destroy(MsxPsg* msxPsg)
 {
     ay8910SetIoPort(msxPsg->ay8910, NULL, NULL, NULL, NULL);
     ay8910Destroy(msxPsg->ay8910);
+
+#ifndef TARGET_GNW
     joystickPortUpdateHandlerUnregister();
+#endif
     deviceManagerUnregister(msxPsg->deviceHandle);
     dacDestroy(msxPsg->dac);
+#ifndef TARGET_GNW
     if (msxPsg->devFun[0] != NULL && msxPsg->devFun[0]->destroy != NULL) {
 	    msxPsg->devFun[0]->destroy(msxPsg->devFun[0]);
     }
     if (msxPsg->devFun[1] != NULL && msxPsg->devFun[1]->destroy != NULL) {
 	    msxPsg->devFun[1]->destroy(msxPsg->devFun[1]);
     }
+#endif
+#ifndef MSX_NO_MALLOC
     free(msxPsg);
+#endif
 }
 
 void msxPsgRegisterCassetteRead(MsxPsg* msxPsg, CassetteCb cb, void* ref)
@@ -270,8 +301,17 @@ void msxPsgRegisterCassetteRead(MsxPsg* msxPsg, CassetteCb cb, void* ref)
 
 MsxPsg* msxPsgCreate(PsgType type, int stereo, int* pan, int maxPorts)
 {
+#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
+#else
+    DeviceCallbacks callbacks = { destroy, reset, NULL, NULL };
+#endif
+#ifndef MSX_NO_MALLOC
     MsxPsg* msxPsg = (MsxPsg*)calloc(1, sizeof(MsxPsg));
+#else
+    MsxPsg* msxPsg = &msxPsg_global;
+    memset(msxPsg,0,sizeof(MsxPsg));
+#endif
 
     msxPsg->ay8910 = ay8910Create(boardGetMixer(), AY8910_MSX, type, stereo, pan);
     msxPsg->maxPorts = maxPorts;
@@ -280,7 +320,9 @@ MsxPsg* msxPsgCreate(PsgType type, int stereo, int* pan, int maxPorts)
 
     ay8910SetIoPort(msxPsg->ay8910, read, peek, write, msxPsg);
 
+#ifndef TARGET_GNW
     joystickPortUpdateHandlerRegister(joystickPortHandler, msxPsg);
+#endif
 
     msxPsg->deviceHandle = deviceManagerRegister(ROM_UNKNOWN, &callbacks, msxPsg);
 

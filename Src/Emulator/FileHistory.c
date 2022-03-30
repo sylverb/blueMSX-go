@@ -28,7 +28,9 @@
 #define USE_ARCH_GLOB
 #include "FileHistory.h"
 #include "Properties.h"
+#ifndef MSX_NO_ZIP
 #include "ziphelper.h"
+#endif
 #include "RomLoader.h"
 #include "MsxTypes.h"
 #include "ArchNotifications.h"
@@ -75,6 +77,10 @@ static int fileExist(char* fileName, char* zipFile) {
     if (fileName == NULL || *fileName == 0)
         return 0;
 
+#ifdef MSX_NO_ZIP
+    return archFileExists(fileName);
+    return 0;
+#else
     if (zipFile == NULL || *zipFile == 0) {
         return archFileExists(fileName);
         return 0;
@@ -89,6 +95,7 @@ static int fileExist(char* fileName, char* zipFile) {
     }
 
     return 0;
+#endif
 }
 
 char* fileGetNext(char* filename, char* zipFile) {

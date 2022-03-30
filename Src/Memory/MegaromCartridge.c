@@ -84,7 +84,9 @@
 #include "romMapperSunriseIDE.h"
 #include "romMapperBeerIDE.h"
 #include "romMapperGIDE.h"
+#ifndef TARGET_GNW
 #include "romMapperSg1000Castle.h"
+#endif
 #include "romMapperMicrosolVmx80.h"
 #include "romMapperSvi727.h"
 #include "romMapperSonyHBIV1.h"
@@ -93,7 +95,9 @@
 #include "romMapperSf7000Ipl.h"
 #include "romMapperPlayBall.h"
 #include "romMapperObsonet.h"
+#ifndef TARGET_GNW
 #include "romMapperSg1000.h"
+#endif
 #include "romMapperSegaBasic.h"
 #include "romMapperCvMegaCart.h"
 #include "romMapperActivisionPcb.h"
@@ -110,7 +114,9 @@
 #include "romMapperJoyrexPsg.h"
 #include "romMapperArc.h"
 #include "romMapperDooly.h"
+#ifndef TARGET_GNW
 #include "romMapperSg1000RamExpander.h"
+#endif
 #include "romMapperMuPack.h"
 
 #include <stdlib.h>
@@ -147,6 +153,7 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
     int slot  = cartridgeInfo.cart[cartNo].slot;
     int sslot = cartridgeInfo.cart[cartNo].sslot;
 
+    printf("cartridgeInsert type %d cart %s\n",romType,cart);
     // Delete old cartridge
     slotRemove(slot, sslot);
 
@@ -155,6 +162,7 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
     }
     
     switch (romType) {
+#ifndef TARGET_GNW
     case ROM_EXTRAM16KB:
         success &= ramNormalCreate(0x4000, slot, sslot, 4, NULL, NULL);
         break;
@@ -303,9 +311,11 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
             }
             break;
         }
+#endif
         // Fall through.. 
     default:
         // Load roms for Special Carts
+#ifndef TARGET_GNW
         if (strcmp(cart, "Sunrise IDE") == 0) {
             buf = romLoad("Machines/Shared Roms/SUNRISEIDE.rom", cartZip, &size);
             if (buf == 0) {
@@ -337,7 +347,9 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
         else if (strcmp(cart, "Nowind MSXDOS2") == 0) {
             buf = romLoad("Machines/Shared Roms/nowindDos2.rom", cartZip, &size);
         }
-        else {
+        else
+#endif
+        {
             buf = romLoad(cart, cartZip, &size);
         }
         if (buf == NULL) {
@@ -366,6 +378,7 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
                 success &= romMapperSCCplusCreate(romName, NULL, 0, slot, sslot, 2, SCCP_EXTENDED);
                 break;
 
+#ifndef TARGET_GNW
             case ROM_SONYHBI55:
                 success &= romMapperSonyHBI55Create();
                 break;
@@ -377,16 +390,21 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
             case ROM_MEGAFLSHSCCPLUS:
                 success &= romMapperMegaFlashRomSccCreate("MegaFlashRomScc.rom", NULL, 0, slot, sslot, 2, 0, 0x100000, 1);
                 break;
+#endif
             }
+            
             break;
         }
         
+#ifndef TARGET_GNW
         if (romType == ROM_UNKNOWN) {
             MediaType* mediaType = mediaDbGuessRom(buf, size);
             romType =  mediaDbGetRomType(mediaType);
         }
+#endif
 
         switch (romType) {
+#ifndef TARGET_GNW
         case ROM_0x4000:
             success &= romMapperNormalCreate(romName, buf, size, slot, sslot, 2);
             break;
@@ -431,10 +449,6 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
             success &= romMapperMsxDos2Create(romName, buf, size, slot, sslot, 2);
             break;
             
-        case ROM_KONAMI5:
-            success &= romMapperKonami5Create(romName, buf, size, slot, sslot, 2);
-            break;
-
         case ROM_MUPACK:
             success &= romMapperMuPackCreate(romName, buf, size, slot, sslot, 2);
             break;
@@ -518,11 +532,16 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
             success &= romMapperMoonsoundCreate(romName, buf, size, 640);
             buf = NULL; // Buffer ownership is transferred to YMF278
             break;
-            
+#endif
+        case ROM_KONAMI5:
+            success &= romMapperKonami5Create(romName, buf, size, slot, sslot, 2);
+            break;
+
         case ROM_KONAMI4:
             success &= romMapperKonami4Create(romName, buf, size, slot, sslot, 2);
             break;
 
+#ifndef TARGET_GNW
         case ROM_MAJUTSUSHI:
             success &= romMapperMajutsushiCreate(romName, buf, size, slot, sslot, 2);
             break;
@@ -668,7 +687,7 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
             success &= romMapperNationalFdcCreate(romName, buf, size, slot, sslot, 2);
             break;
 
-        case ROM_PHILIPSFDC:
+        case ROM_PHILIPSFDC: // Needed
             success &= romMapperPhilipsFdcCreate(romName, buf, size, slot, sslot, 2);
             break;
 
@@ -796,15 +815,19 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
                 }
             }
             break;
+#endif
 
         default:
             success = 0;
             break;
         }
 
+#ifndef MSX_NO_MALLOC
         free(buf);
+#endif
     }
 
+    printf("cartridgeInsert success %d\n",success);
     return success;
 }
 

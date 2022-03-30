@@ -27,7 +27,9 @@
 */
 #include "LaunchFile.h"
 #include "IsFileExtension.h"
+#ifndef MSX_NO_ZIP
 #include "ziphelper.h"
+#endif
 #include "RomLoader.h"
 #include "FileHistory.h"
 #include "Emulator.h"
@@ -50,16 +52,21 @@
 void archUpdateMenu(int show);
 
 int insertCartridge(Properties* properties, int drive, const char* fname, const char* inZipFile, RomType romType, int forceAutostart) {
+#ifndef TARGET_GNW
     int autostart = forceAutostart == 1 || properties->cartridge.autoReset;
     int noautostart = forceAutostart == -1;
     char romName[512] = "";
     char filename[512] = "";
     int isZip = isFileExtension(fname, ".zip");
+#else
+    char filename[80] = "";
+#endif
 
     if (fname) strcpy(filename, fname);
     
     emulatorResetMixer();
 
+#ifndef MSX_NO_ZIP
     if (isZip) {
         if (inZipFile != NULL) {
             strcpy(romName, inZipFile);
@@ -159,30 +166,39 @@ int insertCartridge(Properties* properties, int drive, const char* fname, const 
             free(fileList);
         }
     }
+#endif
     {
         int size;
+#ifndef MSX_NO_ZIP
         char* buf = romLoad(filename, isZip ? romName : NULL, &size);
         char prettyRomName[256];
+#else
+        char* buf = romLoad(filename, NULL, &size);
+#endif
 
         if (buf != NULL) {
+#ifndef TARGET_GNW
             MediaType* mediaType  = mediaDbGuessRom(buf, size);
             RomType    chkRomType = mediaDbGetRomType(mediaType);
             strcpy(prettyRomName, mediaDbGetPrettyString(mediaType));
             free(buf);
-            
+#endif
+
+#ifndef TARGET_GNW
             if (prettyRomName[0] != 0) {
                 setExtendedRomName(drive, prettyRomName);
             }
             else {
                 setExtendedRomName(drive, stripPathExt(isZip ? romName : filename));
             }
-
             if (romType == ROM_UNKNOWN) {
                 romType = chkRomType;
             }
+#endif
         }
     }
 
+#ifndef TARGET_GNW
     romType = 0 == strcmp(CARTNAME_SNATCHER,    filename) ? ROM_SNATCHER :
               0 == strcmp(CARTNAME_SDSNATCHER,  filename) ? ROM_SDSNATCHER :
               0 == strcmp(CARTNAME_SCCMIRRORED, filename) ? ROM_SCCMIRRORED :
@@ -236,45 +252,66 @@ int insertCartridge(Properties* properties, int drive, const char* fname, const 
               0 == strcmp(CARTNAME_ESESCC256,   filename) ? SRAM_ESESCC256 :
               0 == strcmp(CARTNAME_ESESCC512,   filename) ? SRAM_ESESCC512 :
               romType;
+#endif
 
     if (drive == 0) {
         strcpy(properties->media.carts[0].fileName, filename);
+#ifndef MSX_NO_ZIP
         strcpy(properties->media.carts[0].fileNameInZip, romName);
+#endif
         properties->media.carts[0].type = romType;
     }
     else {
         strcpy(properties->media.carts[1].fileName, filename);
+#ifndef MSX_NO_ZIP
         strcpy(properties->media.carts[1].fileNameInZip, romName);
+#endif
         properties->media.carts[1].type = romType;
     }
 
+#ifndef TARGET_GNW
     if (autostart && !noautostart) {
         emulatorStop();
         emulatorStart(NULL);
     }
-    else if (emulatorGetState() != EMU_STOPPED) {
+    else
+#endif
+    if (emulatorGetState() != EMU_STOPPED) {
         emulatorSuspend();
+#ifndef MSX_NO_ZIP
         boardChangeCartridge(drive, romType, filename, isZip ? romName : NULL);
+#else
+        boardChangeCartridge(drive, romType, filename, NULL);
+#endif
         emulatorResume();
     }
-    else {
+    else
+    {
+#ifndef MSX_NO_ZIP
         boardChangeCartridge(drive, romType, filename, isZip ? romName : NULL);
+#else
+        boardChangeCartridge(drive, romType, filename, NULL);
+#endif
     }
-
     return 1;
 }
 
 int insertDiskette(Properties* properties, int drive, const char* fname, const char* inZipFile, int forceAutostart) {
+#ifndef TARGET_GNW
     char diskName[512] = "";
     char filename[512] = "";
     int autostart = forceAutostart == 1 || (drive == 0 ? properties->diskdrive.autostartA : 0);
     int noautostart = forceAutostart == -1;
     int isZip = isFileExtension(fname, ".zip");
+#else
+    char filename[80] = "";
+#endif
 
     if (fname) strcpy(filename, fname);
 
     emulatorResetMixer();
 
+#ifndef MSX_NO_ZIP
     if (isZip) {
         if (inZipFile != NULL) {
             strcpy(diskName, inZipFile);
@@ -291,12 +328,21 @@ int insertDiskette(Properties* properties, int drive, const char* fname, const c
             int count360;
             int count720;
             int countSf7;
+#ifndef MSX_NO_ZIP
             char* fileListDsk = zipGetFileList(filename, ".dsk", &countDsk);
             char* fileListDi1 = zipGetFileList(filename, ".di1", &countDi1);
             char* fileListDi2 = zipGetFileList(filename, ".di2", &countDi2);
             char* fileList360 = zipGetFileList(filename, ".360", &count360);
             char* fileList720 = zipGetFileList(filename, ".720", &count720);
             char* fileListSf7 = zipGetFileList(filename, ".Sf7", &countSf7);
+#else
+            char* fileListDsk = NULL;
+            char* fileListDi1 = NULL;
+            char* fileListDi2 = NULL;
+            char* fileList360 = NULL;
+            char* fileList720 = NULL;
+            char* fileListSf7 = NULL;
+#endif
             int count = countDsk + countDi1 + countDi2 + count360 + count720 + countSf7;
             int sizeDsk = 0;
             int sizeDi1 = 0;
@@ -332,14 +378,17 @@ int insertDiskette(Properties* properties, int drive, const char* fname, const c
             memcpy(fileList + sizeDsk + sizeDi1 + sizeDi2 + size360, fileList720, size720);
             memcpy(fileList + sizeDsk + sizeDi1 + sizeDi2 + size360 + size720, fileListSf7, sizeSf7);
 
+#ifndef TARGET_GNW
             if (count == 0) {
                 archShowNoDiskInZipDialog();
                 return 0;
             }
+#endif
 
             if (count == 1) {
                 strcpy(diskName, fileList);
             }
+#ifndef TARGET_GNW
             else {
                 char* filename = archFilenameGetOpenDiskZip(properties, drive, fname, fileList, count, &autostart);
                 if (filename == NULL) {
@@ -348,6 +397,7 @@ int insertDiskette(Properties* properties, int drive, const char* fname, const c
                 }
                 strcpy(diskName, filename);
             }
+#endif
 
             if(fileListDsk) free(fileListDsk);
             if(fileListDi1) free(fileListDi1);
@@ -358,18 +408,29 @@ int insertDiskette(Properties* properties, int drive, const char* fname, const c
             free(fileList);
         }
     }
+#endif
 
     strcpy(properties->media.disks[drive].fileName, filename);
+#ifndef MSX_NO_ZIP
     strcpy(properties->media.disks[drive].fileNameInZip, diskName);
+#endif
+#ifndef TARGET_GNW
     updateExtendedDiskName(drive, properties->media.disks[drive].fileName, properties->media.disks[drive].fileNameInZip);
-
+#endif
+#ifndef TARGET_GNW
     if (autostart && !noautostart) {
         emulatorStop();
         emulatorStart(NULL);
     }
-    else if (emulatorGetState() != EMU_STOPPED) {
+    else
+#endif
+    if (emulatorGetState() != EMU_STOPPED) {
         emulatorSuspend();
+#ifndef MSX_NO_ZIP
         boardChangeDiskette(drive, filename, isZip ? diskName : NULL);
+#else
+        boardChangeDiskette(drive, filename, NULL);
+#endif
         emulatorResume();
     }
 
@@ -377,6 +438,7 @@ int insertDiskette(Properties* properties, int drive, const char* fname, const c
 }
 
 int insertCassette(Properties* properties, int drive, const char* fname, const char* inZipFile, int forceAutostart) {
+#ifndef TARGET_GNW
     int autostart = forceAutostart == 1;
     int noautostart = forceAutostart == -1;
     char tapeName[512] = "";
@@ -391,8 +453,11 @@ int insertCassette(Properties* properties, int drive, const char* fname, const c
         }
         else {
             int count;
+#ifndef MSX_NO_ZIP
             char* fileList = zipGetFileList(filename, ".cas", &count);
-
+#else
+            char* fileList = NULL;
+#endif
             if (fileList == NULL) {
                 archShowNoCasInZipDialog();
                 return 0;
@@ -414,18 +479,25 @@ int insertCassette(Properties* properties, int drive, const char* fname, const c
     }
 
     strcpy(properties->media.tapes[0].fileName, filename);
+#ifndef MSX_NO_ZIP
     strcpy(properties->media.tapes[0].fileNameInZip, tapeName);
     updateExtendedCasName(0, properties->media.tapes[0].fileName, properties->media.tapes[0].fileNameInZip);
+#else
+    updateExtendedCasName(0, properties->media.tapes[0].fileName, NULL);
+#endif
 
+#ifndef TARGET_GNW
     if (autostart && !noautostart) {
         emulatorStart(NULL);
     }
-    else if (emulatorGetState() != EMU_STOPPED) {
+    else
+#endif
+    if (emulatorGetState() != EMU_STOPPED) {
         emulatorSuspend();
         boardChangeCassette(0, filename, isZip ? tapeName : NULL);
         emulatorResume();
     }
-
+#endif
     return 1;
 }
 
@@ -448,6 +520,7 @@ static int insertDisketteOrCartridge(Properties* properties, int drive, const ch
     int countCas;
     char* fileListDsk = NULL;
     char* fileListRom = NULL;
+#ifndef MSX_NO_ZIP
     char* fileListDsx = zipGetFileList(fname, ".dsk", &countDsx);
     char* fileListDi1 = zipGetFileList(fname, ".di1", &countDi1);
     char* fileListDi2 = zipGetFileList(fname, ".di2", &countDi2);
@@ -463,6 +536,23 @@ static int insertDisketteOrCartridge(Properties* properties, int drive, const ch
     char* fileListSg  = zipGetFileList(fname, ".sg",  &countSg);
     char* fileListSc  = zipGetFileList(fname, ".sc",  &countSc);
     char* fileListCas = zipGetFileList(fname, ".cas", &countCas);
+#else
+    char* fileListDsx = NULL;
+    char* fileListDi1 = NULL;
+    char* fileListDi2 = NULL;
+    char* fileList360 = NULL;
+    char* fileList720 = NULL;
+    char* fileListSf7 = NULL;
+    char* fileListRox = NULL;
+    char* fileListRi  = NULL;
+    char* fileListMx1 = NULL;
+    char* fileListMx2 = NULL;
+    char* fileListSms = NULL;
+    char* fileListCol = NULL;
+    char* fileListSg  = NULL;
+    char* fileListSc  = NULL;
+    char* fileListCas = NULL;
+#endif
     int countRom = countRox + countRi + countMx1 + countMx2 + countSms + countCol + countSg + countSc;
     int countDsk = countDsx + countDi1 + countDi2 + count360 + count720 + countSf7;
     char* fileList;

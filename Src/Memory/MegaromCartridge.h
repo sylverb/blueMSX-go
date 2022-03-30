@@ -30,7 +30,7 @@
 
 #include "MsxTypes.h"
 #include "MediaDb.h"
-#include "YM2413.h"
+#include "YM2413_msx.h"
 
 void cartridgeSetSlotInfo(int cartNo, int slot, int sslot);
 

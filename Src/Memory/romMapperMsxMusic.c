@@ -28,25 +28,35 @@
 #include "romMapperMsxMusic.h"
 #include "MediaDb.h"
 #include "DeviceManager.h"
+#ifndef TARGET_GNW
 #include "DebugDeviceManager.h"
+#endif
 #include "SlotManager.h"
 #include "IoPort.h"
-#include "YM2413.h"
+#include "YM2413_msx.h"
 #include "Board.h"
+#ifndef MSX_NO_SAVESTATE
 #include "SaveState.h"
+#endif
 #include "Language.h"
 #include <stdlib.h>
 #include <string.h>
 
 typedef struct {
     int      deviceHandle;
+#ifndef TARGET_GNW
     int      debugHandle;
+#endif
     YM_2413* ym2413;
     UInt8* romData;
     int slot;
     int sslot;
     int startPage;
 } MsxMusic;
+
+#ifdef MSX_NO_MALLOC
+static MsxMusic rm_global;
+#endif
 
 static void destroy(MsxMusic* rm)
 {
@@ -59,10 +69,14 @@ static void destroy(MsxMusic* rm)
 
     slotUnregister(rm->slot, rm->sslot, rm->startPage);
     deviceManagerUnregister(rm->deviceHandle);
+#ifndef TARGET_GNW
     debugDeviceUnregister(rm->debugHandle);
+#endif
 
+#ifdef MSX_NO_MALLOC
     free(rm->romData);
     free(rm);
+#endif
 }
 
 static void reset(MsxMusic* rm) 
@@ -72,6 +86,7 @@ static void reset(MsxMusic* rm)
     }
 }
 
+#ifndef MSX_NO_SAVESTATE
 static void loadState(MsxMusic* rm)
 {
     if (rm->ym2413 != NULL) {
@@ -85,6 +100,7 @@ static void saveState(MsxMusic* rm)
         ym2413SaveState(rm->ym2413);
     }
 }
+#endif
 
 static void write(MsxMusic* rm, UInt16 ioPort, UInt8 data)
 {
@@ -98,6 +114,7 @@ static void write(MsxMusic* rm, UInt16 ioPort, UInt8 data)
     }
 }
 
+#ifndef TARGET_GNW
 static void getDebugInfo(MsxMusic* rm, DbgDevice* dbgDevice)
 {
     DbgIoPorts* ioPorts;
@@ -112,18 +129,31 @@ static void getDebugInfo(MsxMusic* rm, DbgDevice* dbgDevice)
     
     ym2413GetDebugInfo(rm->ym2413, dbgDevice);
 }
+#endif
 
 int romMapperMsxMusicCreate(const char* filename, UInt8* romData, 
                             int size, int slot, int sslot, int startPage) 
 {
+#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
+#else
+    DeviceCallbacks callbacks = { destroy, reset, NULL, NULL };
+#endif
+#ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, NULL, NULL };
+#endif
+#ifdef MSX_NO_MALLOC
     MsxMusic* rm = malloc(sizeof(MsxMusic));
+#else
+    MsxMusic* rm = &rm_global;
+#endif
     int pages = size / 0x2000 + ((size & 0x1fff) ? 1 : 0);
     int i;
 
     if (pages == 0 || (startPage + pages) > 8) {
+#ifdef MSX_NO_MALLOC
         free(rm);
+#endif
         return 0;
     }
 
@@ -132,13 +162,19 @@ int romMapperMsxMusicCreate(const char* filename, UInt8* romData,
     rm->ym2413 = NULL;
     if (boardGetYm2413Enable()) {
         rm->ym2413 = ym2413Create(boardGetMixer());
+#ifndef TARGET_GNW
         rm->debugHandle = debugDeviceRegister(DBGTYPE_AUDIO, langDbgDevMsxMusic(), &dbgCallbacks, rm);
+#endif
         ioPortRegister(0x7c, NULL, write, rm);
         ioPortRegister(0x7d, NULL, write, rm);
     }
 
+#ifdef MSX_NO_MALLOC
     rm->romData = malloc(pages * 0x2000);
     memcpy(rm->romData, romData, size);
+#else
+    rm->romData = romData;
+#endif
 
     rm->slot  = slot;
     rm->sslot = sslot;

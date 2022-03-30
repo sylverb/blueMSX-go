@@ -33,8 +33,9 @@
 #include <fcntl.h>
 #include "Properties.h"
 #include "SaveState.h"
+#ifndef MSX_NO_ZIP
 #include "ziphelper.h"
-
+#endif
 
 // PacketFileSystem.h Need to be included after all other includes
 #include "PacketFileSystem.h"
@@ -107,7 +108,9 @@ UInt8 tapeRead(UInt8* value)
     if (ramImageBuffer != NULL) {
         if (ramImagePos < ramImageSize) {
             *value = ramImageBuffer[ramImagePos++];
+#ifndef TARGET_GNW
             ledSetCas(1);
+#endif
             return 1;
         }
         return 0;
@@ -130,7 +133,9 @@ UInt8 tapeWrite(UInt8 value)
 
         if (ramImagePos < ramImageSize) {
             ramImageBuffer[ramImagePos++] = value;
+#ifndef TARGET_GNW
             ledSetCas(1);
+#endif
             return 1;
         }
         return 0;
@@ -220,9 +225,11 @@ int tapeInsert(char *name, const char *fileInZipFile)
     if (fileInZipFile == NULL) {
         strcpy(tapeName, name);
     }
+#ifndef MSX_NO_ZIP
     else {
         strcat(tapePosName, stripPath((char*)fileInZipFile));
     }
+#endif
     strcat(tapePosName, ".pos");
 
     ramImagePos = 0;
@@ -236,13 +243,16 @@ int tapeInsert(char *name, const char *fileInZipFile)
         fclose(file);
     }
 
+#ifndef MSX_NO_ZIP
     if (fileInZipFile != NULL) {
         ramImageBuffer = zipLoadFile(name, fileInZipFile, &ramImageSize);
         if (ramImagePos > ramImageSize) {
             ramImagePos = ramImageSize;
         }
     }
-    else {
+    else
+#endif
+    {
         file = fopen(name,"rb");
         if (file != NULL) {
             // Load file into RAM buffer

@@ -49,7 +49,7 @@
 #include "ArchInput.h"
 #include "FrameBuffer.h"
 #include "Board.h"
-#include "VDP.h"
+#include "VDP_MSX.h"
 #include <stdlib.h>
 
 

@@ -14,7 +14,7 @@
 #include "V9938.h"
 #include <string.h>
 #include <stdlib.h>
-#include "VDP.h"
+#include "VDP_MSX.h"
 #include "Board.h"
 #include "SaveState.h"
 
@@ -170,6 +170,10 @@ struct VdpCmdState {
     int    newScrMode;
     int    timingMode;
 };
+
+#ifdef MSX_NO_MALLOC
+static VdpCmdState vdpCmdState_global;
+#endif
 
 // Pointer to initialized command engine. This should be a list
 // but since there are only one instance at the time its not
@@ -941,7 +945,11 @@ static void HmmcEngine(VdpCmdState* vdpCmd)
 */
 VdpCmdState* vdpCmdCreate(int vramSize, UInt8* vramPtr, UInt32 systemTime)
 {
+#ifndef MSX_NO_MALLOC
     VdpCmdState* vdpCmd = calloc(1, sizeof(VdpCmdState));
+#else
+    VdpCmdState* vdpCmd = &vdpCmdState_global;
+#endif
     vdpCmd->systemTime = systemTime;
     vdpCmd->vramBase = vramPtr;
 
@@ -970,7 +978,9 @@ VdpCmdState* vdpCmdCreate(int vramSize, UInt8* vramPtr, UInt32 systemTime)
 */
 void vdpCmdDestroy(VdpCmdState* vdpCmd)
 {
+#ifndef MSX_NO_MALLOC
     free(vdpCmd);
+#endif
     vdpCmdGlobal = 0l;
 }
 

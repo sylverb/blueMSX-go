@@ -28,7 +28,9 @@
 #include "ramMapperIo.h"
 #include "MediaDb.h"
 #include "DeviceManager.h"
+#ifndef TARGET_GNW
 #include "DebugDeviceManager.h"
+#endif
 #include "SaveState.h"
 #include "Language.h"
 #include "IoPort.h"
@@ -46,7 +48,9 @@ typedef struct {
 
 typedef struct {
     int deviceHandle;
+#ifndef TARGET_GNW
     int debugHandle;
+#endif
     int handleCount;
     RamMapperCb mapperCb[32];
     int count;
@@ -54,6 +58,9 @@ typedef struct {
     int port[4];
 } RamMapperIo;
 
+#ifdef MSX_NO_MALLOC
+static RamMapperIo rm_global;
+#endif
 RamMapperIo* mapperIo = NULL;
 
 
@@ -71,6 +78,7 @@ static int ramMapperIoGetMask(RamMapperIo* rm)
     return (size / 0x4000) - 1;
 }
 
+#ifndef MSX_NO_SAVESTATE
 static void saveState(RamMapperIo* rm)
 {
     SaveState* state = saveStateOpenForWrite("mapperRamIo");
@@ -94,6 +102,7 @@ static void loadState(RamMapperIo* rm)
 
     saveStateClose(state);
 }
+#endif
 
 static void destroy(RamMapperIo* rm) 
 {
@@ -103,9 +112,13 @@ static void destroy(RamMapperIo* rm)
     ioPortUnregister(0xff);
 
     deviceManagerUnregister(rm->deviceHandle);
+#ifndef TARGET_GNW
     debugDeviceUnregister(rm->debugHandle);
+#endif
 
+#ifndef MSX_NO_MALLOC
     free(mapperIo);
+#endif
     mapperIo = NULL;
 }
 
@@ -131,6 +144,7 @@ static void write(RamMapperIo* rm, UInt16 ioPort, UInt8 value)
     }
 }
 
+#ifndef TARGET_GNW
 static void getDebugInfo(RamMapperIo* rm, DbgDevice* dbgDevice)
 {
     DbgIoPorts* ioPorts;
@@ -141,14 +155,26 @@ static void getDebugInfo(RamMapperIo* rm, DbgDevice* dbgDevice)
         dbgIoPortsAddPort(ioPorts, i, 0xfc + i, DBG_IO_READWRITE, read(rm, 0xfc + i));
     }
 }
+#endif
 
 int ramMapperIoCreate() 
 {
     RamMapperIo* rm;
+#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, NULL, saveState, loadState };
+#else
+    DeviceCallbacks callbacks = { destroy, NULL, NULL, NULL };
+#endif
+#ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, NULL, NULL };
+#endif
 
+#ifndef MSX_NO_MALLOC
     rm = malloc(sizeof(RamMapperIo));
+#else
+    rm = &rm_global;
+    memset(rm,0,sizeof(RamMapperIo));
+#endif
     rm->count = 0;
     rm->mask  = 0;
     rm->handleCount = 0;
@@ -159,7 +185,9 @@ int ramMapperIoCreate()
     rm->port[3] = 0;
 
     rm->deviceHandle = deviceManagerRegister(RAM_MAPPER, &callbacks, rm);
+#ifndef TARGET_GNW
     rm->debugHandle = debugDeviceRegister(DBGTYPE_BIOS, langDbgDevRamMapper(), &dbgCallbacks, rm);
+#endif
 
     ioPortRegister(0xfc, read, write, rm);
     ioPortRegister(0xfd, read, write, rm);

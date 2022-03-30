@@ -33,15 +33,19 @@
 
 #include "R800.h"
 #include "R800Dasm.h"
+#ifndef MSX_NO_SAVESTATE
 #include "R800SaveState.h"
+#endif
+#ifndef TARGET_GNW
 #include "R800Debug.h"
+#endif
 
 #include "SaveState.h"
 #include "MsxPPI.h"
 #include "Board.h"
 #include "RTC.h"
 #include "MsxPsg.h"
-#include "VDP.h"
+#include "VDP_MSX.h"
 #include "Casette.h"
 #include "Disk.h"
 #include "MegaromCartridge.h"
@@ -104,7 +108,9 @@ static void destroy() {
 
     slotManagerDestroy();
 
+#ifndef TARGET_GNW
     r800DebugDestroy();
+#endif
     
 	ioPortUnregister(0x2e);
 
@@ -142,7 +148,8 @@ static UInt8* getRamPage(int page) {
 
 	return msxRam + start;
 }
-    
+
+#ifndef MSX_NO_SAVESTATE
 static void saveState()
 {   
     SaveState* state = saveStateOpenForWrite("msx");
@@ -172,6 +179,7 @@ static void loadState()
     slotLoadState();
     rtcLoadState(rtc);
 }
+#endif
 
 static UInt8 testPort(void* dummy, UInt16 ioPort)
 {
@@ -182,7 +190,9 @@ int msxCreate(Machine* machine,
               VdpSyncMode vdpSyncMode,
               BoardInfo* boardInfo)
 {
+#ifndef MSX_NO_FILESYSTEM
     char cmosName[512];
+#endif
     int success;
     int i;
 
@@ -203,8 +213,10 @@ int msxCreate(Machine* machine,
 
     boardInfo->destroy          = destroy;
     boardInfo->softReset        = reset;
+#ifndef MSX_NO_SAVESTATE
     boardInfo->loadState        = loadState;
     boardInfo->saveState        = saveState;
+#endif
     boardInfo->getRefreshRate   = getRefreshRate;
     boardInfo->getRamPage       = getRamPage;
 
@@ -213,8 +225,10 @@ int msxCreate(Machine* machine,
     boardInfo->setInt           = r800SetInt;
     boardInfo->clearInt         = r800ClearInt;
     boardInfo->setCpuTimeout    = r800SetTimeoutAt;
+#ifdef ENABLE_BREAKPOINTS
     boardInfo->setBreakpoint    = r800SetBreakpoint;
     boardInfo->clearBreakpoint  = r800ClearBreakpoint;
+#endif
     boardInfo->setDataBus       = r800SetDataBus;
     
     boardInfo->getTimeTrace     = getTimeTrace;
@@ -231,12 +245,18 @@ int msxCreate(Machine* machine,
     msxPPICreate(machine->board.type == BOARD_MSX_FORTE_II);
     slotManagerCreate();
 
+#ifndef TARGET_GNW
     r800DebugCreate(r800);
+#endif
     
 	ioPortRegister(0x2e, testPort, NULL, NULL);
 
+#ifndef MSX_NO_FILESYSTEM
     sprintf(cmosName, "%s" DIR_SEPARATOR "%s.cmos", boardGetBaseDirectory(), machine->name);
     rtc = rtcCreate(machine->cmos.enable, machine->cmos.batteryBacked ? cmosName : 0);
+#else
+    rtc = rtcCreate(machine->cmos.enable, 0);
+#endif
 
     msxRam = NULL;
 
@@ -259,15 +279,17 @@ int msxCreate(Machine* machine,
                           machine->audio.psgpan,
                           machine->board.type == BOARD_MSX_FORTE_II ? 1 : 2);
 
+#ifndef TARGET_GNW
     if (machine->board.type == BOARD_MSX_FORTE_II) {
         CoinDevice* coinDevice = coinDeviceCreate();
         msxPsgRegisterCassetteRead(msxPsg, coinDeviceRead, coinDevice);
     }
-
+#endif
     for (i = 0; i < 8; i++) {
         slotMapRamPage(0, 0, i);
     }
 
+    printf("successsuccess = %d\n",success);
     if (success) {
         success = boardInsertExternalDevices();
     }

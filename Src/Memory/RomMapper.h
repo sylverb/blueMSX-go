@@ -32,7 +32,7 @@
 #include "MediaDb.h"
 
 
-#ifndef WII
+#if !defined(WII) && !defined(TARGET_GNW)
 const char* romTypeToString(RomType romType) {
     switch (romType) {    
     case ROM_STANDARD:    return "Standard";

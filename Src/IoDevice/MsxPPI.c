@@ -28,13 +28,17 @@
 #include "MsxPPI.h"
 #include "MediaDb.h"
 #include "DeviceManager.h"
+#ifndef TARGET_GNW
 #include "DebugDeviceManager.h"
+#endif
 #include "SlotManager.h"
 #include "IoPort.h"
 #include "I8255.h"
 #include "Board.h"
 #include "SaveState.h"
+#ifndef TARGET_GNW
 #include "KeyClick.h"
+#endif
 #include "ArchInput.h"
 #include "Switches.h"
 #include "Led.h"
@@ -50,16 +54,24 @@ static UInt8 getKeyState(int row);
 
 typedef struct {
     int    deviceHandle;
+#ifndef TARGET_GNW
     int    debugHandle;
+#endif
     I8255* i8255;
 
+#ifndef TARGET_GNW
     AudioKeyClick* keyClick;
+#endif
     DAC*   dac;
 
     UInt8 row;
     Int32 regA;
     Int32 regCHi;
 } MsxPPI;
+
+#ifdef MSX_NO_MALLOC
+static MsxPPI ppi_global;
+#endif
 
 static void destroy(MsxPPI* ppi)
 {
@@ -68,15 +80,21 @@ static void destroy(MsxPPI* ppi)
     ioPortUnregister(0xaa);
     ioPortUnregister(0xab);
 
+#ifndef TARGET_GNW
     audioKeyClickDestroy(ppi->keyClick);
+#endif
     deviceManagerUnregister(ppi->deviceHandle);
+#ifndef TARGET_GNW
     debugDeviceUnregister(ppi->debugHandle);
+#endif
 
     dacDestroy(ppi->dac);
 
     i8255Destroy(ppi->i8255);
 
+#ifndef MSX_NO_MALLOC
     free(ppi);
+#endif
 }
 
 static void reset(MsxPPI* ppi) 
@@ -88,6 +106,7 @@ static void reset(MsxPPI* ppi)
     i8255Reset(ppi->i8255);
 }
 
+#ifndef MSX_NO_SAVESTATE
 static void loadState(MsxPPI* ppi)
 {
     SaveState* state = saveStateOpenForRead("MsxPPI");
@@ -113,6 +132,7 @@ static void saveState(MsxPPI* ppi)
 
     i8255SaveState(ppi->i8255);
 }
+#endif
 
 static void writeA(MsxPPI* ppi, UInt8 value)
 {
@@ -138,14 +158,19 @@ static void writeCHi(MsxPPI* ppi, UInt8 value)
     if (value != ppi->regCHi) {
         ppi->regCHi = value;
 
+#ifndef TARGET_GNW
         audioKeyClick(ppi->keyClick, value & 0x08);
+#endif
         dacWrite(ppi->dac, DAC_CH_MONO, (value & 0x02) ? 0 : 255);
+#ifndef TARGET_GNW
         ledSetCapslock(!(value & 0x04));
+#endif
     }
 }
 
 static UInt8 peekB(MsxPPI* ppi)
 {
+#ifndef TARGET_GNW
     UInt8 value = getKeyState(ppi->row);
 
     if (ppi->row == 8) {
@@ -157,10 +182,14 @@ static UInt8 peekB(MsxPPI* ppi)
     }
 
     return value;
+#else
+    return getKeyState(ppi->row);
+#endif
 }
 
 static UInt8 readB(MsxPPI* ppi)
 {
+#ifndef TARGET_GNW
     UInt8 value = boardCaptureUInt8(ppi->row, getKeyState(ppi->row));
 
     if (ppi->row == 8) {
@@ -176,8 +205,12 @@ static UInt8 readB(MsxPPI* ppi)
     }
 
     return value;
+#else
+    return getKeyState(ppi->row);
+#endif
 }
 
+#ifndef TARGET_GNW
 static void getDebugInfo(MsxPPI* ppi, DbgDevice* dbgDevice)
 {
     DbgIoPorts* ioPorts;
@@ -188,15 +221,28 @@ static void getDebugInfo(MsxPPI* ppi, DbgDevice* dbgDevice)
     dbgIoPortsAddPort(ioPorts, 2, 0xaa, DBG_IO_READWRITE, i8255Peek(ppi->i8255, 0xaa));
     dbgIoPortsAddPort(ioPorts, 3, 0xab, DBG_IO_READWRITE, i8255Peek(ppi->i8255, 0xab));
 }
+#endif
 
 void msxPPICreate(int ignoreKeyboard)
 {
+#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
+#else
+    DeviceCallbacks callbacks = { destroy, reset, NULL, NULL };
+#endif
+#ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, NULL, NULL };
+#endif
+#ifndef MSX_NO_MALLOC
     MsxPPI* ppi = malloc(sizeof(MsxPPI));
+#else
+    MsxPPI* ppi = &ppi_global;
+#endif
 
     ppi->deviceHandle = deviceManagerRegister(RAM_MAPPER, &callbacks, ppi);
+#ifndef TARGET_GNW
     ppi->debugHandle = debugDeviceRegister(DBGTYPE_BIOS, langDbgDevPpi(), &dbgCallbacks, ppi);
+#endif
 
     if (ignoreKeyboard) {
         ppi->i8255 = i8255Create(NULL,  NULL,  writeA,
@@ -212,7 +258,9 @@ void msxPPICreate(int ignoreKeyboard)
                                  NULL,  NULL,  writeCHi,
                                  ppi);
     }
+#ifndef TARGET_GNW
     ppi->keyClick = audioKeyClickCreate(boardGetMixer());
+#endif
 
     ppi->dac = dacCreate(boardGetMixer(), DAC_MONO);
 
@@ -243,7 +291,10 @@ static UInt8 getKeyState(int row)
 	#define ROW11 ~((inputEventGetState(EC_TORIKE)<<3)|(inputEventGetState(EC_JIKKOU)<<1))
 
     Properties* pProperties = propGetGlobalProperties();
-    if (!pProperties->keyboard.enableKeyboardQuirk) {
+#ifndef TARGET_GNW
+    if (!pProperties->keyboard.enableKeyboardQuirk)
+    {
+#endif
 	    switch (row) {
 		    case 0:  return ROW0;
 		    case 1:  return ROW1;
@@ -260,6 +311,7 @@ static UInt8 getKeyState(int row)
 		    default: break;
 	    }
 	    return 0xff;
+#ifndef TARGET_GNW
     }
     else {
         /*
@@ -297,4 +349,5 @@ static UInt8 getKeyState(int row)
 	
 	    return keyrow[row];
     }
+#endif
 }

@@ -1,7 +1,7 @@
 /*****************************************************************************
-** $Source: /cygdrive/d/Private/_SVNROOT/bluemsx/blueMSX/Src/SoundChips/DAC.h,v $
+** $Source: /cygdrive/d/Private/_SVNROOT/bluemsx/blueMSX/Src/SoundChips/YM2413.h,v $
 **
-** $Revision: 1.7 $
+** $Revision: 1.8 $
 **
 ** $Date: 2008-03-30 18:38:45 $
 **
@@ -25,36 +25,25 @@
 **
 ******************************************************************************
 */
-#ifndef DAC_H
-#define DAC_H
-
-#include <stdio.h>
+#ifndef YM2413_H
+#define YM2413_H
 
 #include "MsxTypes.h"
 #include "AudioMixer.h"
+#include "DebugDeviceManager.h"
 
 /* Type definitions */
-typedef struct DAC DAC;
-
-typedef enum {
-    DAC_MONO,
-#ifndef MSX_NO_STEREO
-    DAC_STEREO
-#endif
-} DacMode;
-typedef enum {
-    DAC_CH_MONO = 0,
-    DAC_CH_LEFT = 0,
-    DAC_CH_RIGHT = 1
-} DacChannel;
+typedef struct YM_2413 YM_2413;
 
 /* Constructor and destructor */
-DAC* dacCreate(Mixer* mixer, DacMode mode);
-void dacDestroy(DAC* dac);
-void dacReset(DAC* dac);
-
-/* Register read/write methods */
-void dacWrite(DAC* dac, DacChannel channel, UInt8 value);
+YM_2413* ym2413Create(Mixer* mixer);
+void ym2413Destroy(YM_2413* ym2413);
+void ym2413WriteAddress(YM_2413* ym2413, UInt8 address);
+void ym2413WriteData(YM_2413* ym2413, UInt8 data);
+void ym2413Reset(YM_2413* ref);
+void ym2413SaveState(YM_2413* ref);
+void ym2413LoadState(YM_2413* ref);
+void ym2413GetDebugInfo(YM_2413* ym2413, DbgDevice* dbgDevice);
 
 #endif
 

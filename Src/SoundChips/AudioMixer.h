@@ -33,22 +33,29 @@
 /* Type definitions */
 typedef struct Mixer Mixer;
 
+#ifndef TARGET_GNW
 #define AUDIO_MONO_BUFFER_SIZE    10000
+#else
+#define AUDIO_MONO_BUFFER_SIZE    882// TODO : Check how much is really needed
+#endif
 #define AUDIO_STEREO_BUFFER_SIZE  (2 * AUDIO_MONO_BUFFER_SIZE)
-
 #define AUDIO_SAMPLERATE       44100
 
 typedef enum { 
     MIXER_CHANNEL_PSG = 0,
     MIXER_CHANNEL_SCC,
     MIXER_CHANNEL_MSXMUSIC,
+#ifndef TARGET_GNW
     MIXER_CHANNEL_MSXAUDIO,
     MIXER_CHANNEL_MOONSOUND,
     MIXER_CHANNEL_YAMAHA_SFG,
     MIXER_CHANNEL_KEYBOARD,
+#endif
     MIXER_CHANNEL_PCM,
     MIXER_CHANNEL_IO,
+#ifndef TARGET_GNW
     MIXER_CHANNEL_MIDI,
+#endif
     MIXER_CHANNEL_TYPE_COUNT
 } MixerAudioType;
 
@@ -78,6 +85,7 @@ void mixerSetSampleRate(Mixer* mixer, UInt32 rate);
 void mixerSetChannelTypeVolume(Mixer* mixer, Int32 channelType, Int32 volume);
 void mixerSetChannelTypePan(Mixer* mixer, Int32 channelType, Int32 pan);
 void mixerEnableChannelType(Mixer* mixer, Int32 channelType, Int32 enable);
+Int32 mixerIsChannelTypeEnable(Mixer* mixer, Int32 type);
 Int32 mixerIsChannelTypeActive(Mixer* mixer, Int32 channelType, Int32 reset);
 
 /* Write callback registration for audio drivers */

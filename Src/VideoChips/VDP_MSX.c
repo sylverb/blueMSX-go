@@ -25,7 +25,7 @@
 **
 ******************************************************************************
 */
-#include "VDP.h"
+#include "VDP_MSX.h"
 #include "V9938.h"
 #include "Board.h"
 #include "Board.h"
@@ -135,7 +135,11 @@ void vdpUnregisterDaConverter(int vdpDaHandle)
 #define INT_IE0     0x01
 #define INT_IE1     0x02
 
+#ifndef TARGET_GNW
 #define VRAM_SIZE (192 * 1024)
+#else
+#define VRAM_SIZE (128 * 1024)
+#endif
 
 static int vramAddr;
 #define MAP_VRAM(vdp, addr) ((vdp)->vramPtr + ((vramAddr = addr, (vdp)->screenMode >= 7 && (vdp)->screenMode <= 12 ? (vramAddr >> 1 | ((vramAddr & 1) << 16)) : vramAddr) & (vdp)->vramAccMask))
@@ -381,8 +385,9 @@ struct VDP {
     Pixel paletteSprite8[16];
     Pixel  palette0;
     Pixel palette[16];
+#ifndef TARGET_GNW
     Pixel yjkColor[32][64][64];
-
+#endif
     UInt8* vramPtr;
     int    vramAccMask;
     int vramOffsets[2];
@@ -390,7 +395,9 @@ struct VDP {
     UInt8  vram[VRAM_SIZE];
     
     int deviceHandle;
+#ifndef TARGET_GNW
     int debugHandle;
+#endif
     int videoHandle;
     int videoEnabled;
 
@@ -398,8 +405,11 @@ struct VDP {
 };
 
 #include "SpriteLine.h"
-#include "Common.h"
+#include "CommonVideoChips.h"
 
+#ifdef MSX_NO_MALLOC
+static VDP vdp_global;
+#endif
 
 static void digitize(VDP* vdp);
 static void updateOutputMode(VDP* vdp);
@@ -415,6 +425,7 @@ static void updateOutputMode(VDP* vdp);
 // 1       2us       2us      7.95us
 // 2       2us       2us      7.95us   (R0&0x02)
 // 3       2us       2us      3.5us    (R1&0x08)
+#ifndef TARGET_GNW
 static void checkVramAccessTimeTms(VDP* vdp)
 {
     static UInt32 oldTime = 0xffff0000;
@@ -449,6 +460,7 @@ static void checkVramAccessTimeTms(VDP* vdp)
         oldTime = boardSystemTime();
     }
 }
+#endif
 
 
 static void vdpBlink(VDP* vdp)
@@ -1028,9 +1040,11 @@ static UInt8 readNoTimingCheck(VDP* vdp, UInt16 ioPort)
 
 static UInt8 read(VDP* vdp, UInt16 ioPort) 
 {
+#ifndef TARGET_GNW
     if (vdp->vdpVersion == VDP_TMS9929A || vdp->vdpVersion == VDP_TMS99x8A) {
         checkVramAccessTimeTms(vdp);
     }
+#endif
 
     return readNoTimingCheck(vdp, ioPort);
 }
@@ -1163,16 +1177,20 @@ static void write(VDP* vdp, UInt16 ioPort, UInt8 value)
 {
     sync(vdp, boardSystemTime());
 
+#ifndef TARGET_GNW
     if (vdp->vdpVersion == VDP_TMS9929A || vdp->vdpVersion == VDP_TMS99x8A) {
         checkVramAccessTimeTms(vdp);
     }
+#endif
 
     if (vdp->vramEnable) {
         int index = MAP_VRAMINDEX(vdp, (vdp->vdpRegs[14] << 14) | vdp->vramAddress);
         if (!(index & ~vdp->vramAccMask)) {
             vdp->vram[index] = value;
 
+#ifndef TARGET_GNW
             tryWatchpoint(DBGTYPE_VIDEO, index, value, vdp, peekVram);
+#endif
 //        printf("W(0x%.4x): %.2x\n", (vdp->vdpRegs[14] << 14) | vdp->vramAddress, value);
 //            *MAP_VRAM(vdp, (vdp->vdpRegs[14] << 14) | vdp->vramAddress) = value;
         }
@@ -1230,6 +1248,20 @@ static void writeLatch(VDP* vdp, UInt16 ioPort, UInt8 value)
 	}
 }
 
+#ifdef TARGET_GNW
+Pixel getyjkColor(int y, int J, int K) {
+    int j = (J & 0x1f) - (J & 0x20);
+    int k = (K & 0x1f) - (K & 0x20);
+    int r = 255 * (y + j) / 31;
+    int g = 255 * (y + k) / 31;
+    int b = 255 * ((5 * y - 2 * j - k) / 4) / 31;
+    r = MIN(255, MAX(0, r));
+    g = MIN(255, MAX(0, g));
+    b = MIN(255, MAX(0, b));
+    return videoGetColor(r, g, b);
+}
+#endif
+
 static void initPalette(VDP* vdp)
 {
     int i;
@@ -1237,14 +1269,15 @@ static void initPalette(VDP* vdp)
     int J;
     int K;
 
+#ifndef TARGET_GNW
     for (y = 0; y < 32; y++) {
         for (J = 0; J < 64; J++) {
             for (K = 0; K < 64; K++) {
-		        int j = (J & 0x1f) - (J & 0x20);
-		        int k = (K & 0x1f) - (K & 0x20);
-			    int r = 255 * (y + j) / 31;
-			    int g = 255 * (y + k) / 31;
-			    int b = 255 * ((5 * y - 2 * j - k) / 4) / 31;
+                int j = (J & 0x1f) - (J & 0x20);
+                int k = (K & 0x1f) - (K & 0x20);
+                int r = 255 * (y + j) / 31;
+                int g = 255 * (y + k) / 31;
+                int b = 255 * ((5 * y - 2 * j - k) / 4) / 31;
 
                 r = MIN(255, MAX(0, r));
                 g = MIN(255, MAX(0, g));
@@ -1253,6 +1286,7 @@ static void initPalette(VDP* vdp)
             }
         }
     }
+#endif
 
     for (i = 0; i < 256; i++) {
         vdp->paletteFixed[i] = videoGetColor(255 * ((i >> 2) & 7) / 7, 
@@ -1640,7 +1674,7 @@ static void loadState(VDP* vdp)
 
 #else
 
-
+#ifndef MSX_NO_SAVESTATE
 static void saveState(VDP* vdp)
 {
     SaveState* state = saveStateOpenForWrite("vdp");
@@ -1854,9 +1888,10 @@ static void loadState(VDP* vdp)
     }
 
 }
-
+#endif
 #endif
 
+#ifndef TARGET_GNW
 static void getDebugInfo(VDP* vdp, DbgDevice* dbgDevice)
 {
     DbgRegisterBank* regBank;
@@ -2064,6 +2099,7 @@ static int dbgWriteRegister(VDP* vdp, char* name, int regIndex, UInt32 value)
 
     return 0;
 }
+#endif
 
 static void reset(VDP* vdp)
 {
@@ -2154,7 +2190,9 @@ static void destroy(VDP* vdp)
 
     theVdp = NULL;
 
+#ifndef TARGET_GNW
     debugDeviceUnregister(vdp->debugHandle);
+#endif
     deviceManagerUnregister(vdp->deviceHandle);
     videoManagerUnregister(vdp->videoHandle);
 
@@ -2199,7 +2237,9 @@ static void destroy(VDP* vdp)
 
     frameBufferDataDestroy(vdp->frameBuffer);
 
+#ifndef MSX_NO_MALLOC
     free(vdp);
+#endif
 }
 
 static void videoEnable(VDP* vdp)
@@ -2214,14 +2254,27 @@ static void videoDisable(VDP* vdp)
 
 void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int vramPages)
 {
+#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
+#else
+    DeviceCallbacks callbacks = { destroy, reset, NULL, NULL };
+#endif
+#ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, dbgWriteMemory, dbgWriteRegister, NULL };
+#endif
     VideoCallbacks videoCallbacks = { videoEnable, videoDisable };
+#ifndef TARGET_GNW
     char* vdpVersionString;
+#endif
     int vramSize;
     int i;
 
+#ifndef MSX_NO_MALLOC
     VDP* vdp = (VDP*)calloc(1, sizeof(VDP));
+#else
+    VDP* vdp = &vdp_global;
+    memset(vdp,0,sizeof(VDP));
+#endif
 
     theVdp = vdp;
 
@@ -2295,31 +2348,41 @@ void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int
     case VDP_TMS9929A:
         vdp->registerValueMask = registerValueMaskMSX1;
         vdp->registerMask      = 0x07;
+#ifndef TARGET_GNW
         vdpVersionString       = langDbgDevTms9929A();
+#endif
         vdp->hAdjustSc0        = -2; // 6
         break;
     case VDP_TMS99x8A:
         vdp->registerValueMask = registerValueMaskMSX1;
         vdp->registerMask      = 0x07;
         vdp->vdpRegs[9]          &= ~0x02;
+#ifndef TARGET_GNW
         vdpVersionString       = langDbgDevTms99x8A();
+#endif
         vdp->hAdjustSc0        = -2; // 6
         break;
     case VDP_V9938:
         vdp->registerValueMask = registerValueMaskMSX2;
         vdp->registerMask      = 0x3f;
+#ifndef TARGET_GNW
         vdpVersionString       = langDbgDevV9938();
+#endif
         vdp->hAdjustSc0        = 1; // 9
         break;
     case VDP_V9958:
         vdp->registerValueMask = registerValueMaskMSX2p;
         vdp->registerMask      = 0x3f;
+#ifndef TARGET_GNW
         vdpVersionString       = langDbgDevV9958();
+#endif
         vdp->hAdjustSc0        = 1; // 9
         break;
     }
     
+#ifndef TARGET_GNW
     vdp->debugHandle = debugDeviceRegister(DBGTYPE_VIDEO, vdpVersionString, &dbgCallbacks, vdp);
+#endif
 
     switch (vdp->vdpConnector) {
     case VDP_MSX:

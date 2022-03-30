@@ -29,7 +29,7 @@
 #include "InputEvent.h"
 #include "ArchInput.h"
 #include "FrameBuffer.h"
-#include "VDP.h"
+#include "VDP_MSX.h"
 
 #include <stdlib.h>
 

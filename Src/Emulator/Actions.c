@@ -38,7 +38,7 @@
 #include "Emulator.h"
 #include "InputEvent.h"
 #include "VideoManager.h"
-#include "VDP.h"
+#include "VDP_MSX.h"
 
 #include "ArchMenu.h"
 #include "ArchDialog.h"
@@ -117,7 +117,9 @@ void actionDiskInsertDir(int diskNo)
     emulatorSuspend();
     filename = archDirnameGetOpenDisk(state.properties, diskNo);
     if (filename != NULL) {        
+#ifndef MSX_NO_FILESYSTEM
         strcpy(state.properties->media.disks[diskNo].directory, filename);
+#endif
         insertDiskette(state.properties, diskNo, filename, NULL, 0);
     }
     emulatorResume();
@@ -126,8 +128,12 @@ void actionDiskInsertDir(int diskNo)
 
 void actionDiskRemove(int i) {
     state.properties->media.disks[i].fileName[0] = 0;
+#ifndef MSX_NO_ZIP
     state.properties->media.disks[i].fileNameInZip[0] = 0;
     updateExtendedDiskName(i, state.properties->media.disks[i].fileName, state.properties->media.disks[i].fileNameInZip);
+#else
+    updateExtendedDiskName(i, state.properties->media.disks[i].fileName, NULL);
+#endif
     if (emulatorGetState() != EMU_STOPPED) {
         emulatorSuspend();
         boardChangeDiskette(i, NULL, NULL);
@@ -215,6 +221,7 @@ void actionStopPlayReverse()
 
 void actionDiskQuickChange() {
     if (*state.properties->media.disks[0].fileName) {
+#ifndef MSX_NO_ZIP
         if (*state.properties->media.disks[0].fileNameInZip) {
             strcpy(state.properties->media.disks[0].fileNameInZip, fileGetNext(state.properties->media.disks[0].fileNameInZip, state.properties->media.disks[0].fileName));
 #ifdef WII
@@ -223,13 +230,19 @@ void actionDiskQuickChange() {
             boardChangeDiskette(0, state.properties->media.disks[0].fileName, state.properties->media.disks[0].fileNameInZip);
             updateExtendedDiskName(0, state.properties->media.disks[0].fileName, state.properties->media.disks[0].fileNameInZip);
         }
-        else {
+        else
+#endif
+        {
             strcpy(state.properties->media.disks[0].fileName, fileGetNext(state.properties->media.disks[0].fileName, NULL));
 #ifdef WII
             archDiskQuickChangeNotify(0, state.properties->media.disks[0].fileName, state.properties->media.disks[0].fileNameInZip);
 #endif
             boardChangeDiskette(0, state.properties->media.disks[0].fileName, NULL);
+#ifndef MSX_NO_ZIP
             updateExtendedDiskName(0, state.properties->media.disks[0].fileName, state.properties->media.disks[0].fileNameInZip);
+#else
+            updateExtendedDiskName(0, state.properties->media.disks[0].fileName, NULL);
+#endif
         }
 #ifndef WII
         archDiskQuickChangeNotify();
@@ -265,22 +278,34 @@ void actionEmuResetClean() {
     emulatorStop();
 
     for (i = 0; i < PROP_MAX_CARTS; i++) {
-        state.properties->media.carts[i].fileName[0] = 0;
-        state.properties->media.carts[i].fileNameInZip[0] = 0;
         state.properties->media.carts[i].type = ROM_UNKNOWN;
+        state.properties->media.carts[i].fileName[0] = 0;
+#ifndef MSX_NO_ZIP
+        state.properties->media.carts[i].fileNameInZip[0] = 0;
         updateExtendedRomName(i, state.properties->media.carts[i].fileName, state.properties->media.carts[i].fileNameInZip);
+#else
+        updateExtendedRomName(i, state.properties->media.carts[i].fileName, NULL);
+#endif
     }
     
     for (i = 0; i < PROP_MAX_DISKS; i++) {
         state.properties->media.disks[i].fileName[0] = 0;
+#ifndef MSX_NO_ZIP
         state.properties->media.disks[i].fileNameInZip[0] = 0;
         updateExtendedDiskName(i, state.properties->media.disks[i].fileName, state.properties->media.disks[i].fileNameInZip);
+#else
+        updateExtendedDiskName(i, state.properties->media.disks[i].fileName, NULL);
+#endif
     }
 
     for (i = 0; i < PROP_MAX_TAPES; i++) {
         state.properties->media.tapes[i].fileName[0] = 0;
+#ifndef MSX_NO_ZIP
         state.properties->media.tapes[i].fileNameInZip[0] = 0;
         updateExtendedCasName(i, state.properties->media.tapes[i].fileName, state.properties->media.tapes[i].fileNameInZip);
+#else
+        updateExtendedCasName(i, state.properties->media.tapes[i].fileName, NULL);
+#endif
     }
 
     emulatorStart(NULL);
@@ -289,21 +314,33 @@ void actionEmuResetClean() {
 
 void actionTapeRemove(int i) {
     state.properties->media.tapes[i].fileName[0] = 0;
+#ifndef MSX_NO_ZIP
     state.properties->media.tapes[i].fileNameInZip[0] = 0;
+#endif
     if (emulatorGetState() != EMU_STOPPED) {
         emulatorSuspend();
         boardChangeCassette(i, NULL, NULL);
         emulatorResume();
     }
+#ifndef MSX_NO_ZIP
     updateExtendedCasName(0, state.properties->media.tapes[0].fileName, state.properties->media.tapes[0].fileNameInZip);
+#else
+    updateExtendedCasName(0, state.properties->media.tapes[0].fileName, NULL);
+#endif
     archUpdateMenu(0);
 }
 
 void actionCartRemove(int i) {
     state.properties->media.carts[i].fileName[0] = 0;
+#ifndef MSX_NO_ZIP
     state.properties->media.carts[i].fileNameInZip[0] = 0;
+#endif
     state.properties->media.carts[i].type = ROM_UNKNOWN;
+#ifndef MSX_NO_ZIP
     updateExtendedRomName(i, state.properties->media.carts[i].fileName, state.properties->media.carts[i].fileNameInZip);
+#else
+    updateExtendedRomName(i, state.properties->media.carts[i].fileName, NULL);
+#endif
     if (emulatorGetState() != EMU_STOPPED) {
         if (state.properties->cartridge.autoReset) {
             emulatorStop();

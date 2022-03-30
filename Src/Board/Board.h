@@ -31,7 +31,7 @@
 #include "MsxTypes.h"
 #include "MediaDb.h"
 #include "Machine.h"
-#include "VDP.h"
+#include "VDP_MSX.h"
 #include "AudioMixer.h"
 #include <stdio.h>
 
@@ -39,18 +39,36 @@ typedef struct {
     struct {
         int     inserted;
         RomType type;
+#ifndef TARGET_GNW
         char    name[512];
+#else
+        char    name[80];
+#endif
+#ifndef MSX_NO_ZIP
         char    inZipName[512];
+#endif
     } carts[2];
     struct {
         int  inserted;
+#ifndef TARGET_GNW
         char name[512];
+#else
+        char name[80];
+#endif
+#ifndef MSX_NO_ZIP
         char inZipName[512];
+#endif
     } disks[64];
     struct {
         int  inserted;
+#ifndef TARGET_GNW
         char name[512];
+#else
+        char name[1];
+#endif
+#ifndef MSX_NO_ZIP
         char inZipName[512];
+#endif
     } tapes[1];
     struct {
         VdpSyncMode vdpSyncMode;
@@ -66,8 +84,10 @@ typedef struct {
 
     void   (*destroy)();
     void   (*softReset)();
+#ifdef MSX_NO_SAVESTATE
     void   (*loadState)();
     void   (*saveState)();
+#endif
     int    (*getRefreshRate)();
     UInt8* (*getRamPage)(int);
     void   (*setDataBus)(void*, UInt8, UInt8, int);
@@ -77,8 +97,10 @@ typedef struct {
     void   (*setInt)(void*);
     void   (*clearInt)(void*);
     void   (*setCpuTimeout)(void*, UInt32);
+#ifdef ENABLE_BREAKPOINTS
     void   (*setBreakpoint)(void*, UInt16);
     void   (*clearBreakpoint)(void*, UInt16);
+#endif
 
     void   (*changeCartridge)(void*, int, int);
 
@@ -123,8 +145,10 @@ void boardSaveState(const char* stateFile, int screenshot);
 void boardSetFrequency(int frequency);
 int  boardGetRefreshRate();
 
+#ifdef ENABLE_BREAKPOINTS
 void boardSetBreakpoint(UInt16 address);
 void boardClearBreakpoint(UInt16 address);
+#endif
 
 void   boardSetInt(UInt32 irq);
 void   boardClearInt(UInt32 irq);

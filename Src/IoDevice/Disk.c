@@ -27,10 +27,15 @@
 */
 #include "Disk.h"
 #include "DirAsDisk.h"
+#ifndef MSX_NO_ZIP
 #include "ziphelper.h"
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#ifdef TARGET_GNW
+#include "rom_manager.h"
+#endif
 #include <sys/stat.h>
 
 // PacketFileSystem.h Need to be included after all other includes
@@ -44,7 +49,11 @@
 
 static int   drivesEnabled[MAXDRIVES] = { 1, 1 };
 static int   drivesIsCdrom[MAXDRIVES];
+#ifndef TARGET_GNW
 static FILE* drives[MAXDRIVES];
+#else
+static char* drives[MAXDRIVES];
+#endif
 static int   RdOnly[MAXDRIVES];
 static char* ramImageBuffer[MAXDRIVES];
 static int   ramImageSize[MAXDRIVES];
@@ -189,10 +198,14 @@ DSKE diskRead(int driveId, UInt8* buffer, int sector)
     }
     else {
         if ((drives[driveId] != NULL)) {
+#ifndef TARGET_GNW
             if (0 == fseek(drives[driveId], sector * sectorSize[driveId], SEEK_SET)) {
                 UInt8 success = fread(buffer, 1, sectorSize[driveId], drives[driveId]) == sectorSize[driveId];
                 return success? diskReadError(driveId, sector) : DSKE_NO_DATA;
             }
+#else
+            memcpy(buffer,drives[driveId] + (sector * sectorSize[driveId]),sectorSize[driveId]);
+#endif
         }
     }
     return DSKE_NO_DATA;
@@ -230,11 +243,17 @@ DSKE diskReadSector(int driveId, UInt8* buffer, int sector, int side, int track,
     }
     else {
         if ((drives[driveId] != NULL)) {
+#ifndef TARGET_GNW
             if (0 == fseek(drives[driveId], offset, SEEK_SET)) {
                 UInt8 success = fread(buffer, 1, secSize, drives[driveId]) == secSize;
                 int sectornum = sector - 1 + diskGetSectorsPerTrack(driveId) * (track * diskGetSides(driveId) + side);
                 return success? diskReadError(driveId, sectornum) : DSKE_NO_DATA;
             }
+#else
+            memcpy(buffer,drives[driveId] + offset,secSize);
+            int sectornum = sector - 1 + diskGetSectorsPerTrack(driveId) * (track * diskGetSides(driveId) + side);
+            return diskReadError(driveId, sectornum);
+#endif
         }
     }
 
@@ -556,18 +575,24 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
 
     /* Close previous disk image */
     if(drives[driveId] != NULL) { 
+#ifndef MSX_NO_FILESYSTEM
         fclose(drives[driveId]);
+#endif
         drives[driveId] = NULL; 
     }
 
     if (ramImageBuffer[driveId] != NULL) {
         // Flush to file??
+#ifndef MSX_NO_MALLOC
         free(ramImageBuffer[driveId]);
+#endif
         ramImageBuffer[driveId] = NULL;
     }
 
     if (drivesErrors[driveId] != NULL) {
+#ifndef MSX_NO_MALLOC
         free(drivesErrors[driveId]);
+#endif
         drivesErrors[driveId] = NULL;
     }
 
@@ -580,6 +605,7 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
         return 1;
     }
 
+#ifndef MSX_NO_FILESYSTEM
     rv = stat(fileName, &s);
     if (rv == 0) {
         if (s.st_mode & S_IFDIR) {
@@ -589,7 +615,8 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
             return ramImageBuffer[driveId] != NULL;
         }
     }
-
+#endif
+#ifndef MSX_NO_ZIP
     if (fileInZipFile != NULL) {
         ramImageBuffer[driveId] = zipLoadFile(fileName, fileInZipFile, &ramImageSize[driveId]);
         fileSize[driveId] = ramImageSize[driveId];
@@ -610,7 +637,23 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
         diskUpdateInfo(driveId);
         return ramImageBuffer[driveId] != NULL;
     }
+#endif
 
+#ifdef TARGET_GNW
+    retro_emulator_file_t *rom_file;
+    printf("Looking for disk %s\n",fileName);
+
+    rom_system_t *rom_system = (rom_system_t *)rom_manager_system(&rom_mgr, "MSX");
+    rom_file = (retro_emulator_file_t *)rom_manager_get_file((const rom_system_t *)rom_system,fileName);
+    if (rom_file != NULL) {
+    printf("Found disk %s at 0x%x\n",fileName,rom_file->address);
+    } else {
+        return 0;
+    }
+    drives[driveId] = (UInt8*)rom_file->address;
+    RdOnly[driveId] = 1;
+    fileSize[driveId] = rom_file->size;
+#else
     drives[driveId] = fopen(fileName, "r+b");
     RdOnly[driveId] = 0;
 
@@ -645,6 +688,7 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
 
     fseek(drives[driveId],0,SEEK_END);
     fileSize[driveId] = ftell(drives[driveId]);
+#endif
 
     diskUpdateInfo(driveId);
 
@@ -722,6 +766,7 @@ static void diskHdUpdateInfo(int driveId)
 
 /* SCSI device */
 
+#ifndef TARGET_GNW
 /*
     for ScsiDevice.c
     corresponds to harddisk and floppy disk
@@ -775,3 +820,4 @@ int _diskWrite2(int driveId, UInt8* buffer, int sector, int numSectors)
     memcpy(ramImageBuffer[driveId] + sector * 512, buffer, length);
     return 1;
 }
+#endif

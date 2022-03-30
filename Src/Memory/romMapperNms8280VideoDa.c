@@ -30,7 +30,7 @@
 #include "DeviceManager.h"
 #include "VideoManager.h"
 #include "ArchVideoIn.h"
-#include "VDP.h"
+#include "VDP_MSX.h"
 
 #include <stdlib.h>
 
