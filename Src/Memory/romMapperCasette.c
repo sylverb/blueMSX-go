@@ -48,7 +48,7 @@ typedef struct {
 
 #ifdef MSX_NO_MALLOC
 static RomMapperCasette rm_global;
-TODO#endif
+#endif
 
 
 static void destroy(RomMapperCasette* rm)
