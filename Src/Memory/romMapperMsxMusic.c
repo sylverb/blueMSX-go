@@ -104,6 +104,12 @@ static void saveState(MsxMusic* rm)
 
 static void write(MsxMusic* rm, UInt16 ioPort, UInt8 data)
 {
+    // System wants to play MSX-Music sound, If MSX-Music
+    // was not enabled, disable SCC and enable MSX-MUSIC
+    if (!mixerIsChannelTypeEnable(boardGetMixer(),MIXER_CHANNEL_MSXMUSIC)) {
+        mixerEnableChannelType(boardGetMixer(), MIXER_CHANNEL_SCC, 0);
+        mixerEnableChannelType(boardGetMixer(), MIXER_CHANNEL_MSXMUSIC, 1);
+    }
     switch (ioPort & 1) {
     case 0:
         ym2413WriteAddress(rm->ym2413, data);
