@@ -110,9 +110,9 @@ static void destroy() {
 
 #ifndef TARGET_GNW
     r800DebugDestroy();
+
+    ioPortUnregister(0x2e);
 #endif
-    
-	ioPortUnregister(0x2e);
 
     deviceManagerDestroy();
 
@@ -181,10 +181,12 @@ static void loadState()
 }
 #endif
 
+#ifndef TARGET_GNW
 static UInt8 testPort(void* dummy, UInt16 ioPort)
 {
     return 0x27;
 }
+#endif
 
 int msxCreate(Machine* machine, 
               VdpSyncMode vdpSyncMode,
@@ -247,9 +249,9 @@ int msxCreate(Machine* machine,
 
 #ifndef TARGET_GNW
     r800DebugCreate(r800);
+
+    ioPortRegister(0x2e, testPort, NULL, NULL);
 #endif
-    
-	ioPortRegister(0x2e, testPort, NULL, NULL);
 
 #ifndef MSX_NO_FILESYSTEM
     sprintf(cmosName, "%s" DIR_SEPARATOR "%s.cmos", boardGetBaseDirectory(), machine->name);
