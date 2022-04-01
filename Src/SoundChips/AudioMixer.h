@@ -39,7 +39,11 @@ typedef struct Mixer Mixer;
 #define AUDIO_MONO_BUFFER_SIZE    882// TODO : Check how much is really needed
 #endif
 #define AUDIO_STEREO_BUFFER_SIZE  (2 * AUDIO_MONO_BUFFER_SIZE)
+#ifndef TARGET_GNW
 #define AUDIO_SAMPLERATE       44100
+#else
+#define AUDIO_SAMPLERATE       22050
+#endif
 
 typedef enum { 
     MIXER_CHANNEL_PSG = 0,
