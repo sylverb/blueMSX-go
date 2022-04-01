@@ -34,9 +34,9 @@
 #include "Led.h"
 #include "Switches.h"
 #include "Casette.h"
-#include "DAC.h"
 
 #ifndef TARGET_GNW
+#include "DAC.h"
 #include "MsxJoystickDevice.h"
 #include "MsxJoystick.h"
 #include "MsxGunstick.h"
@@ -61,8 +61,8 @@ struct MsxPsg {
     UInt8 readValue[2];
 #ifndef TARGET_GNW
     MsxJoystickDevice* devFun[2];
-#endif
     DAC*   dac;
+#endif
 };
 
 #ifdef MSX_NO_MALLOC
@@ -279,8 +279,8 @@ static void destroy(MsxPsg* msxPsg)
     joystickPortUpdateHandlerUnregister();
 #endif
     deviceManagerUnregister(msxPsg->deviceHandle);
-    dacDestroy(msxPsg->dac);
 #ifndef TARGET_GNW
+    dacDestroy(msxPsg->dac);
     if (msxPsg->devFun[0] != NULL && msxPsg->devFun[0]->destroy != NULL) {
 	    msxPsg->devFun[0]->destroy(msxPsg->devFun[0]);
     }
@@ -316,7 +316,9 @@ MsxPsg* msxPsgCreate(PsgType type, int stereo, int* pan, int maxPorts)
     msxPsg->ay8910 = ay8910Create(boardGetMixer(), AY8910_MSX, type, stereo, pan);
     msxPsg->maxPorts = maxPorts;
 
+#ifndef TARGET_GNW
     msxPsg->dac = dacCreate(boardGetMixer(), DAC_MONO);
+#endif
 
     ay8910SetIoPort(msxPsg->ay8910, read, peek, write, msxPsg);
 

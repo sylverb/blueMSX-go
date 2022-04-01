@@ -297,7 +297,6 @@ void propInitDefaults(Properties* properties, int langType, PropKeyboardLanguage
     properties->sound.mixerChannel[MIXER_CHANNEL_YAMAHA_SFG].enable = 1;
     properties->sound.mixerChannel[MIXER_CHANNEL_YAMAHA_SFG].pan = 50;
     properties->sound.mixerChannel[MIXER_CHANNEL_YAMAHA_SFG].volume = 95;
-#endif
 
     properties->sound.mixerChannel[MIXER_CHANNEL_PCM].enable = 1;
     properties->sound.mixerChannel[MIXER_CHANNEL_PCM].pan = 50;
@@ -307,7 +306,6 @@ void propInitDefaults(Properties* properties, int langType, PropKeyboardLanguage
     properties->sound.mixerChannel[MIXER_CHANNEL_IO].pan = 50;
     properties->sound.mixerChannel[MIXER_CHANNEL_IO].volume = 50;
 
-#ifndef TARGET_GNW
     properties->sound.mixerChannel[MIXER_CHANNEL_MIDI].enable = 1;
     properties->sound.mixerChannel[MIXER_CHANNEL_MIDI].pan = 50;
     properties->sound.mixerChannel[MIXER_CHANNEL_MIDI].volume = 90;

@@ -45,7 +45,9 @@
 #include "InputEvent.h"
 #include "Language.h"
 #include "Properties.h"
+#ifndef TARGET_GNW
 #include "DAC.h"
+#endif
 #include <stdlib.h>
 
 
@@ -61,8 +63,8 @@ typedef struct {
 
 #ifndef TARGET_GNW
     AudioKeyClick* keyClick;
-#endif
     DAC*   dac;
+#endif
 
     UInt8 row;
     Int32 regA;
@@ -86,9 +88,9 @@ static void destroy(MsxPPI* ppi)
     deviceManagerUnregister(ppi->deviceHandle);
 #ifndef TARGET_GNW
     debugDeviceUnregister(ppi->debugHandle);
-#endif
 
     dacDestroy(ppi->dac);
+#endif
 
     i8255Destroy(ppi->i8255);
 
@@ -160,9 +162,7 @@ static void writeCHi(MsxPPI* ppi, UInt8 value)
 
 #ifndef TARGET_GNW
         audioKeyClick(ppi->keyClick, value & 0x08);
-#endif
         dacWrite(ppi->dac, DAC_CH_MONO, (value & 0x02) ? 0 : 255);
-#ifndef TARGET_GNW
         ledSetCapslock(!(value & 0x04));
 #endif
     }
@@ -260,9 +260,9 @@ void msxPPICreate(int ignoreKeyboard)
     }
 #ifndef TARGET_GNW
     ppi->keyClick = audioKeyClickCreate(boardGetMixer());
-#endif
 
     ppi->dac = dacCreate(boardGetMixer(), DAC_MONO);
+#endif
 
     ioPortRegister(0xa8, i8255Read, i8255Write, ppi->i8255);
     ioPortRegister(0xa9, i8255Read, i8255Write, ppi->i8255);

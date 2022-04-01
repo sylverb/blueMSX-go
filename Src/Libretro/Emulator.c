@@ -416,11 +416,11 @@ void emulatorResetMixer() {
     mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MOONSOUND, 1);
     mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_YAMAHA_SFG, 1);
     mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MSXAUDIO, 1);
+    mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_PCM, 1);
+    mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_IO, 1);
 #endif
     mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MSXMUSIC, 1);
     mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_SCC, 1);
-    mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_PCM, 1);
-    mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_IO, 1);
 }
 
 
