@@ -29,6 +29,9 @@
 #include "IoPort.h"
 #include "Board.h"
 #include "SaveState.h"
+#ifdef TARGET_GNW
+extern time_t GW_GetUnixTime(void);
+#endif
 #ifndef TARGET_GNW
 #include "DebugDeviceManager.h"
 #endif
@@ -240,6 +243,7 @@ static UInt8 rtcReadData(RTC* rtc, UInt16 ioPort)
     return (rtc->registers[block][rtc->latch] & mask[block][rtc->latch]) | 0xf0;
 }
 
+#ifndef TARGET_GNW
 static UInt8 rtcPeekData(RTC* rtc, UInt16 ioPort)
 {
     int block;
@@ -257,6 +261,7 @@ static UInt8 rtcPeekData(RTC* rtc, UInt16 ioPort)
 
     return (rtc->registers[block][rtc->latch] & mask[block][rtc->latch]) | 0xf0;
 }
+#endif
 
 static void rtcWriteData(RTC* rtc, UInt16 ioPort, UInt8 value)
 {
@@ -332,6 +337,7 @@ RTC* rtcCreate(int enable, char* cmosName)
 
     rtc->modeReg = MODE_TIMERENABLE;
 
+#ifndef TARGET_GNW
     if (cmosName != NULL) {
         struct tm* tm;
         time_t t;
@@ -359,6 +365,23 @@ RTC* rtcCreate(int enable, char* cmosName)
         rtc->years    = tm->tm_year - 80;
         rtc->leapYear = tm->tm_year % 4;
     }
+#else
+    struct tm* tm;
+    time_t t;
+
+    t = GW_GetUnixTime();
+    tm = localtime(&t);
+
+    rtc->fraction = 0;
+    rtc->seconds  = tm->tm_sec;
+    rtc->minutes  = tm->tm_min;
+    rtc->hours    = tm->tm_hour;
+    rtc->dayWeek  = tm->tm_wday;
+    rtc->days     = tm->tm_mday - 1;
+    rtc->months   = tm->tm_mon;
+    rtc->years    = tm->tm_year - 80;
+    rtc->leapYear = tm->tm_year % 4;
+#endif
 
     if (enable) {
 #ifndef TARGET_GNW
