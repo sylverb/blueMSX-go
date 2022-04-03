@@ -29,8 +29,12 @@
 #include "MediaDb.h"
 #include "SlotManager.h"
 #include "DeviceManager.h"
+#ifndef TARGET_GNW
 #include "DebugDeviceManager.h"
+#endif
+#ifndef MSX_NO_SAVESTATE
 #include "SaveState.h"
+#endif
 #include "Language.h"
 #include <stdlib.h>
 #include <string.h>
@@ -39,14 +43,21 @@
 
 typedef struct {
     int deviceHandle;
+#ifndef TARGET_GNW
     int debugHandle;
+#endif
     int slot;
     int sslot;
     int startPage;
     int pages;
-    UInt8 ramData[0x10000];
+    UInt8 *ramData;
 } RamNormal;
 
+#ifdef MSX_NO_MALLOC
+static RamNormal rm_global;
+extern char msxRam_global[0x4000*8];
+#endif
+#ifndef MSX_NO_SAVESTATE
 static void saveState(RamNormal* rm)
 {
     SaveState* state = saveStateOpenForWrite("mapperNormalRam");
@@ -72,17 +83,24 @@ static void loadState(RamNormal* rm)
 //        slotMapPage(rm->slot, rm->sslot, i + rm->startPage, rm->ramData + 0x2000 * i, 1, 1);
     }
 }
+#endif
 
 static void destroy(RamNormal* rm)
 {
+#ifndef TARGET_GNW
     debugDeviceUnregister(rm->debugHandle);
+#endif
 
     slotUnregister(rm->slot, rm->sslot, 0);
     deviceManagerUnregister(rm->deviceHandle);
 
+#ifndef MSX_NO_MALLOC
+    free(rm->ramData);
     free(rm);
+#endif
 }
 
+#ifndef TARGET_GNW
 static void getDebugInfo(RamNormal* rm, DbgDevice* dbgDevice)
 {
     dbgDeviceAddMemoryBlock(dbgDevice, langDbgMemRamNormal(), 0, 0, rm->pages * 0x2000, rm->ramData);
@@ -98,11 +116,18 @@ static int dbgWriteMemory(RamNormal* rm, char* name, void* data, int start, int 
 
     return 1;
 }
+#endif
 
 int ramNormalCreate(int size, int slot, int sslot, int startPage, UInt8** ramPtr, UInt32* ramSize) 
 {
+#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, NULL, saveState, loadState };
+#else
+    DeviceCallbacks callbacks = { destroy, NULL, NULL, NULL };
+#endif
+#ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, dbgWriteMemory, NULL, NULL };
+#endif
     RamNormal* rm;
     int pages = size / 0x2000;
     int i;
@@ -116,16 +141,29 @@ int ramNormalCreate(int size, int slot, int sslot, int startPage, UInt8** ramPtr
         return 0;
     }
 
+#ifndef MSX_NO_MALLOC
     rm = malloc(sizeof(RamNormal));
+#else
+    rm = &rm_global;
+#endif
 
     rm->slot      = slot;
     rm->sslot     = sslot;
     rm->startPage = startPage;
     rm->pages     = pages;
 
-    memset(rm->ramData, 0xff, sizeof(rm->ramData));
+    size = pages * 0x4000;
+#ifndef MSX_NO_MALLOC
+    rm->ramData = malloc(size);
+#else
+    rm->ramData = msxRam_global;
+#endif
 
+    memset(rm->ramData, 0xff, size);
+
+#ifndef TARGET_GNW
     rm->debugHandle = debugDeviceRegister(DBGTYPE_RAM, langDbgDevRam(), &dbgCallbacks, rm);
+#endif
 
     for (i = 0; i < pages; i++) {
         slotMapPage(slot, sslot, i + startPage, rm->ramData + 0x2000 * i, 1, 1);

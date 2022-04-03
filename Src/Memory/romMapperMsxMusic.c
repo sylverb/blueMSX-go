@@ -175,7 +175,7 @@ int romMapperMsxMusicCreate(const char* filename, UInt8* romData,
         ioPortRegister(0x7d, NULL, write, rm);
     }
 
-#ifdef MSX_NO_MALLOC
+#ifndef MSX_NO_MALLOC
     rm->romData = malloc(pages * 0x2000);
     memcpy(rm->romData, romData, size);
 #else

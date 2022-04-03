@@ -74,15 +74,22 @@ typedef struct __OPLL_RateConv {
   int ch;
   double timer;
   double f_ratio;
+#ifndef MSX_NO_MALLOC
   int16_t *sinc_table;
   int16_t **buf;
+#else
+  int16_t sinc_table[256*8];
+  int16_t buf[2][16];
+#endif
 } OPLL_RateConv;
 
 OPLL_RateConv *OPLL_RateConv_new(double f_inp, double f_out, int ch);
 void OPLL_RateConv_reset(OPLL_RateConv *conv);
 void OPLL_RateConv_putData(OPLL_RateConv *conv, int ch, int16_t data);
 int16_t OPLL_RateConv_getData(OPLL_RateConv *conv, int ch);
+#ifndef MSX_NO_MALLOC
 void OPLL_RateConv_delete(OPLL_RateConv *conv);
+#endif
 
 typedef struct __OPLL {
   uint32_t clk;

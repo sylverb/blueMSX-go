@@ -1128,7 +1128,6 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
         startPage = machine->slotInfo[i].startPage;
         size      = 0x2000 * machine->slotInfo[i].pageCount;
 
-#ifndef TARGET_GNW
         if (machine->slotInfo[i].romType == RAM_NORMAL) {
             if (ram == NULL && startPage == 0) {
                 success &= ramNormalCreate(size, slot, subslot, startPage, &ram, &ramSize);
@@ -1140,7 +1139,6 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
             }
             continue;
         }
-#endif
 
         if (machine->slotInfo[i].romType == RAM_MAPPER) {
             if (ram == NULL && startPage == 0) {

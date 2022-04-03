@@ -236,6 +236,11 @@ static INLINE int max(int i, int j) {
 }
 #endif
 
+#ifdef MSX_NO_MALLOC
+static OPLL opll_global;
+static OPLL_RateConv conv_global;
+#endif
+
 /***************************************************
 
            Internal Sample Rate Converter
@@ -263,11 +268,16 @@ static double windowed_sinc(double x) { return blackman(0.5 + 0.5 * x / (LW / 2)
 
 /* f_inp: input frequency. f_out: output frequencey, ch: number of channels */
 OPLL_RateConv *OPLL_RateConv_new(double f_inp, double f_out, int ch) {
+#ifndef MSX_NO_MALLOC
   OPLL_RateConv *conv = malloc(sizeof(OPLL_RateConv));
+#else
+  OPLL_RateConv *conv = &conv_global;
+#endif
   int i;
 
   conv->ch = ch;
   conv->f_ratio = f_inp / f_out;
+#ifndef MSX_NO_MALLOC
   conv->buf = malloc(sizeof(void *) * ch);
   for (i = 0; i < ch; i++) {
     conv->buf[i] = malloc(sizeof(conv->buf[0][0]) * LW);
@@ -275,6 +285,7 @@ OPLL_RateConv *OPLL_RateConv_new(double f_inp, double f_out, int ch) {
 
   /* create sinc_table for positive 0 <= x < LW/2 */
   conv->sinc_table = malloc(sizeof(conv->sinc_table[0]) * SINC_RESO * LW / 2);
+#endif
   for (i = 0; i < SINC_RESO * LW / 2; i++) {
     const double x = (double)i / SINC_RESO;
     if (f_out < f_inp) {
@@ -332,6 +343,7 @@ int16_t OPLL_RateConv_getData(OPLL_RateConv *conv, int ch) {
   return sum >> SINC_AMP_BITS;
 }
 
+#ifndef MSX_NO_MALLOC
 void OPLL_RateConv_delete(OPLL_RateConv *conv) {
   int i;
   for (i = 0; i < conv->ch; i++) {
@@ -341,6 +353,7 @@ void OPLL_RateConv_delete(OPLL_RateConv *conv) {
   free(conv->sinc_table);
   free(conv);
 }
+#endif
 
 /***************************************************
 
@@ -1088,10 +1101,13 @@ OPLL *OPLL_new(uint32_t clk, uint32_t rate) {
     initializeTables();
   }
 
+#ifndef MSX_NO_MALLOC
   opll = (OPLL *)calloc(sizeof(OPLL), 1);
   if (opll == NULL)
     return NULL;
-
+#else
+  opll = &opll_global;
+#endif
   for (i = 0; i < 19 * 2; i++)
     memcpy(&opll->patch[i], &null_patch, sizeof(OPLL_PATCH));
 
@@ -1109,11 +1125,13 @@ OPLL *OPLL_new(uint32_t clk, uint32_t rate) {
 }
 
 void OPLL_delete(OPLL *opll) {
+#ifndef MSX_NO_MALLOC
   if (opll->conv) {
     OPLL_RateConv_delete(opll->conv);
     opll->conv = NULL;
   }
   free(opll);
+#endif
 }
 
 static void reset_rate_conversion_params(OPLL *opll) {
@@ -1124,10 +1142,12 @@ static void reset_rate_conversion_params(OPLL *opll) {
   opll->out_step = f_inp;
   opll->inp_step = f_out;
 
+#ifndef MSX_NO_MALLOC
   if (opll->conv) {
     OPLL_RateConv_delete(opll->conv);
     opll->conv = NULL;
   }
+#endif
 
   if (floor(f_inp) != f_out && floor(f_inp + 0.5) != f_out) {
     opll->conv = OPLL_RateConv_new(f_inp, f_out, 2);

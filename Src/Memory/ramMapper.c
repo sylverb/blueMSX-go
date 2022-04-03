@@ -60,7 +60,8 @@ typedef struct {
 
 #ifdef MSX_NO_MALLOC
 static RamMapper rm_global;
-static char ram_global[0x4000*8]; // 128kB of RAM maximum
+// 128kB of RAM maximum
+char msxRam_global[0x4000*8];
 #endif
 
 static void writeIo(RamMapper* rm, UInt16 page, UInt8 value);
@@ -212,7 +213,7 @@ int ramMapperCreate(int size, int slot, int sslot, int startPage, UInt8** ramPtr
         printf("Tried to allocate more than 8 pages of RAM : %d",pages);
         return 0; // No more than 128kB of ram supported
     }
-    rm->ramData  = ram_global;
+    rm->ramData  = msxRam_global;
 #endif
 
     rm->size     = size;

@@ -36,7 +36,7 @@ typedef struct Mixer Mixer;
 #ifndef TARGET_GNW
 #define AUDIO_MONO_BUFFER_SIZE    10000
 #else
-#define AUDIO_MONO_BUFFER_SIZE    882// TODO : Check how much is really needed
+#define AUDIO_MONO_BUFFER_SIZE    500// TODO : Check how much is really needed
 #endif
 #define AUDIO_STEREO_BUFFER_SIZE  (2 * AUDIO_MONO_BUFFER_SIZE)
 #ifndef TARGET_GNW
@@ -66,7 +66,7 @@ typedef enum {
     MIXER_CHANNEL_RIGHT
 } MixerChannelPan;
 
-#define MAX_CHANNELS 16
+#define MAX_CHANNELS 3
 
 typedef Int32* (*MixerUpdateCallback)(void*, UInt32);
 typedef void (*MixerSetSampleRateCallback)(void*, UInt32);

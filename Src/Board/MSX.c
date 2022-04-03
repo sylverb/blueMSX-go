@@ -101,7 +101,7 @@ static void reset()
     deviceManagerReset();
 }
 
-static void destroy() {        
+static void destroy() {
     rtcDestroy(rtc);
 
     boardRemoveExternalDevices();
