@@ -29,7 +29,9 @@
 #include "MediaDb.h"
 #include "SlotManager.h"
 #include "DeviceManager.h"
+#ifndef MSX_NO_SAVESTATE
 #include "SaveState.h"
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -48,6 +50,11 @@ typedef struct {
     int romMapper[4];
 } RomMapperASCII16nf;
 
+#ifdef MSX_NO_MALLOC
+static RomMapperASCII16nf rm_global;
+#endif
+
+#ifndef MSX_NO_SAVESTATE
 static void saveState(RomMapperASCII16nf* rm)
 {
     SaveState* state = saveStateOpenForWrite("mapperASCII16nf");
@@ -81,14 +88,17 @@ static void loadState(RomMapperASCII16nf* rm)
         slotMapPage(rm->slot, rm->sslot, rm->startPage + i + 1, bankData + 0x2000, 1, 0);
     }
 }
+#endif
 
 static void destroy(RomMapperASCII16nf* rm)
 {
     slotUnregister(rm->slot, rm->sslot, rm->startPage);
     deviceManagerUnregister(rm->deviceHandle);
 
+#ifdef MSX_NO_MALLOC
     free(rm->romData);
     free(rm);
+#endif
 }
 
 static void write(RomMapperASCII16nf* rm, UInt16 address, UInt8 value) 
@@ -118,19 +128,31 @@ static void write(RomMapperASCII16nf* rm, UInt16 address, UInt8 value)
 int romMapperASCII16nfCreate(const char* filename, UInt8* romData, 
                              int size, int slot, int sslot, int startPage) 
 {
+#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, NULL, saveState, loadState };
+#else
+    DeviceCallbacks callbacks = { destroy, NULL, NULL, NULL };
+#endif
     RomMapperASCII16nf* rm;
     int i;
 
+#ifdef MSX_NO_MALLOC
     rm = malloc(sizeof(RomMapperASCII16nf));
+#else
+    rm = &rm_global;
+#endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_ASCII16NF, &callbacks, rm);
     slotRegister(slot, sslot, startPage, 4, NULL, NULL, write, destroy, rm);
 
     size = (size + 0x3fff) & ~0x3fff;
 
+#ifndef MSX_NO_MALLOC
     rm->romData = malloc(size);
     memcpy(rm->romData, romData, size);
+#else
+    rm->romData = romData;
+#endif
     rm->romMask = size / 0x4000 - 1;
     rm->slot  = slot;
     rm->sslot = sslot;

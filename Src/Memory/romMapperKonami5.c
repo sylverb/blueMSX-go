@@ -196,7 +196,6 @@ int romMapperKonami5Create(const char* filename, UInt8* romData,
 
     int origSize = size;
     
-    printf("romMapperKonami5Create %s %x %d %d %d %d\n",filename,romData,size,slot,sslot,startPage);
     size = 0x8000;
     while (size < origSize) {
         size *= 2;

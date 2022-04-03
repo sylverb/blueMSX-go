@@ -29,7 +29,9 @@
 #include "MediaDb.h"
 #include "SlotManager.h"
 #include "DeviceManager.h"
+#ifndef MSX_NO_SAVESTATE
 #include "SaveState.h"
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -45,15 +47,22 @@ typedef struct {
     int romMapper[4];
 } RomMapperASCII16;
 
+#ifdef MSX_NO_MALLOC
+static RomMapperASCII16 rm_global;
+#endif
+
 static void destroy(RomMapperASCII16* rm)
 {
     slotUnregister(rm->slot, rm->sslot, rm->startPage);
     deviceManagerUnregister(rm->deviceHandle);
 
+#ifndef MSX_NO_MALLOC
     free(rm->romData);
     free(rm);
+#endif
 }
 
+#ifndef MSX_NO_SAVESTATE
 static void saveState(RomMapperASCII16* rm)
 {
     SaveState* state = saveStateOpenForWrite("mapperASCII16");
@@ -87,6 +96,7 @@ static void loadState(RomMapperASCII16* rm)
         slotMapPage(rm->slot, rm->sslot, rm->startPage + i + 1, bankData + 0x2000, 1, 0);
     }
 }
+#endif
 
 static void write(RomMapperASCII16* rm, UInt16 address, UInt8 value) 
 {
@@ -115,7 +125,11 @@ static void write(RomMapperASCII16* rm, UInt16 address, UInt8 value)
 int romMapperASCII16Create(const char* filename, UInt8* romData, 
                            int size, int slot, int sslot, int startPage) 
 {
+#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, NULL, saveState, loadState };
+#else
+    DeviceCallbacks callbacks = { destroy, NULL, NULL, NULL };
+#endif
     RomMapperASCII16* rm;
     int i;
     int origSize = size;
@@ -125,15 +139,23 @@ int romMapperASCII16Create(const char* filename, UInt8* romData,
         size *= 2;
     }
 
+#ifndef MSX_NO_MALLOC
     rm = malloc(sizeof(RomMapperASCII16));
+#else
+    rm = &rm_global;
+#endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_ASCII16, &callbacks, rm);
     slotRegister(slot, sslot, startPage, 4, NULL, NULL, write, destroy, rm);
 
     size = (size + 0x3fff) & ~0x3fff;
 
+#ifndef MSX_NO_MALLOC
     rm->romData = calloc(1, size);
     memcpy(rm->romData, romData, origSize);
+#else
+    rm->romData = romData;
+#endif
     rm->romMask = size / 0x4000 - 1;
     rm->slot  = slot;
     rm->sslot = sslot;

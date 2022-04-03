@@ -404,7 +404,6 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
 #endif
 
         switch (romType) {
-#ifndef TARGET_GNW
         case ROM_0x4000:
             success &= romMapperNormalCreate(romName, buf, size, slot, sslot, 2);
             break;
@@ -413,6 +412,7 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
             success &= romMapperNormalCreate(romName, buf, size, slot, sslot, 2);
             break;
 
+#ifndef TARGET_GNW
         case ROM_BASIC:
             success &= romMapperBasicCreate(romName, buf, size, slot, sslot, 4);
             break;
@@ -440,11 +440,13 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
         case ROM_FMPAK:
             success &= romMapperFMPAKCreate(romName, buf, size, slot, sslot, 0);
             break;
+#endif
 
         case ROM_STANDARD:
             success &= romMapperStandardCreate(romName, buf, size, slot, sslot, 2);
             break;
-            
+
+#ifndef TARGET_GNW
         case ROM_MSXDOS2:
             success &= romMapperMsxDos2Create(romName, buf, size, slot, sslot, 2);
             break;
@@ -452,7 +454,6 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
         case ROM_MUPACK:
             success &= romMapperMuPackCreate(romName, buf, size, slot, sslot, 2);
             break;
-
 
         case ROM_MANBOW2:
             if (size > 0x70000) size = 0x70000;
@@ -578,7 +579,8 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
                 }
             }
             break;
-            
+#endif
+
         case ROM_ASCII8:
             success &= romMapperASCII8Create(romName, buf, size, slot, sslot, 2);
             break;
@@ -586,7 +588,8 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
         case ROM_ASCII16:
             success &= romMapperASCII16Create(romName, buf, size, slot, sslot, 2);
             break;
-            
+
+#ifndef TARGET_GNW
         case ROM_ASCII8SRAM:
             success &= romMapperASCII8sramCreate(romName, buf, size, slot, sslot, 2);
             break;
@@ -598,7 +601,8 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
         case ROM_KOEI:
             success &= romMapperKoeiCreate(romName, buf, size, slot, sslot, 2);
             break;
-            
+#endif
+
         case ROM_KONAMI4NF:
             success &= romMapperKonami4nfCreate(romName, buf, size, slot, sslot, 2);
             break;
@@ -606,7 +610,8 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
         case ROM_ASCII16NF:
             success &= romMapperASCII16nfCreate(romName, buf, size, slot, sslot, 2);
             break;
-            
+
+#ifndef TARGET_GNW
         case ROM_GAMEMASTER2:
             success &= romMapperGameMaster2Create(romName, buf, size, slot, sslot, 2);
             break;

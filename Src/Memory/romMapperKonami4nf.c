@@ -29,7 +29,9 @@
 #include "MediaDb.h"
 #include "SlotManager.h"
 #include "DeviceManager.h"
+#ifndef MSX_NO_SAVESTATE
 #include "SaveState.h"
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -49,6 +51,11 @@ typedef struct {
     int romMapper[4];
 } RomMapperKonami4nf;
 
+#ifdef MSX_NO_MALLOC
+static RomMapperKonami4nf rm_global;
+#endif
+
+#ifndef MSX_NO_SAVESTATE
 static void saveState(RomMapperKonami4nf* rm)
 {
     SaveState* state = saveStateOpenForWrite("mapperKonami4nf");
@@ -80,14 +87,17 @@ static void loadState(RomMapperKonami4nf* rm)
         slotMapPage(rm->slot, rm->sslot, rm->startPage + i, rm->romData + rm->romMapper[i] * 0x2000, 1, 0);
     }
 }
+#endif
 
 static void destroy(RomMapperKonami4nf* rm)
 {
     slotUnregister(rm->slot, rm->sslot, rm->startPage);
     deviceManagerUnregister(rm->deviceHandle);
 
+#ifdef MSX_NO_MALLOC
     free(rm->romData);
     free(rm);
+#endif
 }
 
 static void write(RomMapperKonami4nf* rm, UInt16 address, UInt8 value) 
@@ -111,7 +121,11 @@ static void write(RomMapperKonami4nf* rm, UInt16 address, UInt8 value)
 int romMapperKonami4nfCreate(const char* filename, UInt8* romData, 
                              int size, int slot, int sslot, int startPage) 
 {
+#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, NULL, saveState, loadState };
+#else
+    DeviceCallbacks callbacks = { destroy, NULL, NULL, NULL };
+#endif
     RomMapperKonami4nf* rm;
     int i;
 
@@ -119,13 +133,21 @@ int romMapperKonami4nfCreate(const char* filename, UInt8* romData,
         return 0;
     }
 
+#ifndef MSX_NO_MALLOC
     rm = malloc(sizeof(RomMapperKonami4nf));
+#else
+    rm = &rm_global;
+#endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_KONAMI4NF, &callbacks, rm);
     slotRegister(slot, sslot, startPage, 4, NULL, NULL, write, destroy, rm);
 
+#ifndef MSX_NO_MALLOC
     rm->romData = malloc(size);
     memcpy(rm->romData, romData, size);
+#else
+    rm->romData = romData;
+#endif
     rm->size = size;
     rm->slot  = slot;
     rm->sslot = sslot;
