@@ -31,7 +31,7 @@
 #include <string.h>
 
 static char* eventNames[256];
-int   eventMap[256];
+char   eventMap[256];
 
 static void initKeyNameTable()
 {

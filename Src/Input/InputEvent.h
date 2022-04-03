@@ -242,7 +242,7 @@ const char* inputEventCodeToString(int eventCode);
 #define EC_KEYCOUNT                     198
 
 // Inlines
-extern int eventMap[256];
+extern char eventMap[256];
 
 #define inputEventIsJoystick1(eventCode) \
         ((eventCode >= EC_JOY1_UP   && eventCode <= EC_JOY1_BUTTON6) || \
