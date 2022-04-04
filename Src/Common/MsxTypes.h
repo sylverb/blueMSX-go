@@ -89,12 +89,21 @@ typedef UInt8 Pixel;
 
 #else
 
+#ifdef VIDEO_COLOR_TYPE_RGB565
+#define COLSHIFT_R  11
+#define COLMASK_R   0x1F
+#define COLSHIFT_G  5
+#define COLMASK_G   0x3F
+#define COLSHIFT_B  0
+#define COLMASK_B   0x1F
+#else
 #define COLSHIFT_R  5
 #define COLMASK_R   0x07
 #define COLSHIFT_G  2
 #define COLMASK_G   0x03
 #define COLSHIFT_B  0
 #define COLMASK_B   0x07
+#endif
 
 typedef UInt16 Pixel;
 
