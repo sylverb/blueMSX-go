@@ -414,7 +414,7 @@ Int32 mixerRegisterChannel(Mixer* mixer, Int32 audioType, Int32 stereo, MixerUpd
     MixerChannel*  channel = mixer->channels + mixer->channelCount;
     AudioTypeInfo* type    = mixer->audioTypeInfo + audioType;
 
-    if (mixer->channelCount == MAX_CHANNELS - 1) {
+    if (mixer->channelCount == MAX_CHANNELS) {
         return 0;
     }
 
@@ -454,11 +454,13 @@ void mixerUnregisterChannel(Mixer* mixer, Int32 handle)
         return;
 
     mixer->channelCount--;
+#ifndef TARGET_GNW
     while (i < mixer->channelCount)
     {
 	    mixer->channels[i] = mixer->channels[i + 1];
 	    i++;
     }
+#endif
 }
 
 void mixerReset(Mixer* mixer)
