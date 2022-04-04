@@ -1286,12 +1286,14 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
             success &= romMapperTurboRIOCreate();
             continue;
         }
+#endif
 
         if (machine->slotInfo[i].romType == ROM_F4DEVICE) {
             success &= romMapperF4deviceCreate(0);
             continue;
         }
 
+#ifndef TARGET_GNW
         if (machine->slotInfo[i].romType == ROM_MSXMIDI) {
             success &= MSXMidiCreate(0);
             continue;
