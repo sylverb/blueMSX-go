@@ -117,7 +117,19 @@ void deviceManagerUnregister(int handle)
 {
     int i;
 
-    if (deviceManager.count == 0 || deviceManager.shutDown) {
+    if (deviceManager.shutDown) {
+#ifdef TARGET_GNW
+        deviceManager.count = 0;
+#endif
+        return;
+    }
+
+    if (deviceManager.count == 0) {
+        return;
+    }
+
+    if (deviceManager.shutDown) {
+        deviceManager.count = 0;
         return;
     }
 
@@ -132,8 +144,10 @@ void deviceManagerUnregister(int handle)
     }
 
     deviceManager.count--;
+#ifndef TARGET_GNW
     while (i < deviceManager.count) {
         deviceManager.di[i] = deviceManager.di[i + 1];
         i++;
     }
+#endif
 }

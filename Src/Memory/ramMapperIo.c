@@ -118,8 +118,8 @@ static void destroy(RamMapperIo* rm)
 
 #ifndef MSX_NO_MALLOC
     free(mapperIo);
-#endif
     mapperIo = NULL;
+#endif
 }
 
 static UInt8 read(RamMapperIo* rm, UInt16 ioPort)
