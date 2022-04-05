@@ -47,6 +47,9 @@ void vdpSetNoSpriteLimits(int enable);
 int  vdpGetNoSpritesLimit();
 void vdpSetDisplayEnable(int enable);
 int  vdpGetDisplayEnable();
+#ifdef TARGET_GNW
+void vdpSetSyncMode(VdpSyncMode sync);
+#endif
 
 void vdpForceSync();
 #ifdef TARGET_GNW

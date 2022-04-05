@@ -2252,6 +2252,23 @@ static void videoDisable(VDP* vdp)
     vdp->videoEnabled = 0;
 }
 
+#ifdef TARGET_GNW
+void vdpSetSyncMode(VdpSyncMode sync) {
+    if (sync == VDP_SYNC_AUTO) {
+        vdp_global.palMask  = ~0;
+        vdp_global.palValue = 0;
+    }
+    else if (sync == VDP_SYNC_50HZ) {
+        vdp_global.palMask  = ~0x02;
+        vdp_global.palValue = 0x02;
+    }
+    else if (sync == VDP_SYNC_60HZ) {
+        vdp_global.palMask  = ~0x02;
+        vdp_global.palValue = 0x00;
+    }
+}
+#endif
+
 void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int vramPages)
 {
 #ifndef MSX_NO_SAVESTATE
@@ -2394,6 +2411,7 @@ void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int
         }
         break;
 
+#ifndef TARGET_GNW
     case VDP_SVI:
         ioPortRegister(0x80, NULL,       write,      vdp); // vdp->vdpRegs vdp->vram Write
         ioPortRegister(0x81, NULL,       writeLatch, vdp); // vdp->vdpRegs Address Latch
@@ -2412,6 +2430,7 @@ void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int
         ioPortRegister(0xbe, read,       write,      vdp);
         ioPortRegister(0xbf, readStatus, writeLatch, vdp);
         break;
+#endif
     }
 }
 
