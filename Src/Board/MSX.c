@@ -151,7 +151,7 @@ static UInt8* getRamPage(int page) {
 
 #ifndef MSX_NO_SAVESTATE
 static void saveState()
-{   
+{
     SaveState* state = saveStateOpenForWrite("msx");
 
     saveStateSet(state, "z80Frequency",    z80Frequency);

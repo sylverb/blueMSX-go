@@ -84,7 +84,7 @@ typedef struct {
 
     void   (*destroy)();
     void   (*softReset)();
-#ifdef MSX_NO_SAVESTATE
+#ifndef MSX_NO_SAVESTATE
     void   (*loadState)();
     void   (*saveState)();
 #endif

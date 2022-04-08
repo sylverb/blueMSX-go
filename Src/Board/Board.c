@@ -97,7 +97,9 @@ static int     useMegaRam;
 static int     useFmPac;
 static RomType currentRomType[2];
 
+#ifndef TARGET_GNW
 static BoardType boardLoadState(void);
+#endif
 static void boardUpdateDisketteInfo();
 
 static char saveStateVersion[32] = "blueMSX - state  v 8";
@@ -300,19 +302,16 @@ void boardCaptureInit()
 
 void boardCaptureDestroy()
 {
- #ifndef MSX_NO_SAVESTATE
    boardCaptureStop();
 
     if (cap.timer != NULL) {
         boardTimerDestroy(cap.timer);
         cap.timer = NULL;
     }
-#endif
     cap.state = CAPTURE_IDLE;
 }
 
 void boardCaptureStart(const char* filename) {
-#ifndef MSX_NO_SAVESTATE
     FILE* f;
 
     if (cap.state == CAPTURE_REC) {
@@ -349,11 +348,9 @@ void boardCaptureStart(const char* filename) {
     }
 
     cap.startTime64 = boardSystemTime64();
-#endif
 }
 
 void boardCaptureStop() {
-#ifndef MSX_NO_SAVESTATE
     boardTimerRemove(cap.timer);
 
     if (cap.state == CAPTURE_REC) {
@@ -392,7 +389,6 @@ void boardCaptureStop() {
     }
     // go back to idle state
     cap.state = CAPTURE_IDLE;
-#endif
 }
 
 UInt8 boardCaptureUInt8(UInt8 logId, UInt8 value) {
@@ -409,9 +405,7 @@ UInt8 boardCaptureUInt8(UInt8 logId, UInt8 value) {
     }
     return value;
 }
-#endif
 
-#ifndef MSX_NO_SAVESTATE
 static void boardCaptureSaveState()
 {
     if (cap.state == CAPTURE_REC) {
@@ -569,7 +563,7 @@ static void onMixerSync(void* ref, UInt32 time)
 
 static void onStateSync(void* ref, UInt32 time)
 {
-#ifndef MSX_NO_SAVESTATE
+#ifndef TARGET_GNW
     if (enableSnapshots) {
         char memFilename[8];
         ramStateCur = (ramStateCur + 1) % ramMaxStates;
@@ -648,7 +642,7 @@ static void onBreakpointSync(void* ref, UInt32 time) {
     doSync(time, 1);
 }
 
-#ifndef MSX_NO_SAVESTATE
+#ifndef TARGET_GNW
 int boardRewindOne() {
     UInt32 rewindTime;
     if (stateFrequency <= 0) {
@@ -818,7 +812,6 @@ int boardRun(Machine* machine,
         if (!skipSync) {
             syncToRealClock(0, 0);
         }
-printf("boardInfo.run \n");
         boardInfo.run(boardInfo.cpuRef);
 
         if (periodicTimer != NULL) {
@@ -928,7 +921,7 @@ void boardSetDataBus(UInt8 value, UInt8 defValue, int useDef) {
     }
 }
 
-#ifndef MSX_NO_SAVESTATE
+#ifndef TARGET_GW
 static BoardType boardLoadState(void)
 {
     BoardDeviceInfo* di = boardDeviceInfo;
@@ -948,12 +941,16 @@ static BoardType boardLoadState(void)
     di->carts[0].inserted = saveStateGet(state, "cartInserted00", 0);
     di->carts[0].type     = saveStateGet(state, "cartType00",     0);
     saveStateGetBuffer(state, "cartName00",  di->carts[0].name, sizeof(di->carts[0].name));
+#ifndef MSX_NO_ZIP
     saveStateGetBuffer(state, "cartInZip00", di->carts[0].inZipName, sizeof(di->carts[0].inZipName));
+#endif
 
     di->carts[1].inserted = saveStateGet(state, "cartInserted01", 0);
     di->carts[1].type     = saveStateGet(state, "cartType01",     0);
     saveStateGetBuffer(state, "cartName01",  di->carts[1].name, sizeof(di->carts[1].name));
+#ifndef MSX_NO_ZIP
     saveStateGetBuffer(state, "cartInZip01", di->carts[1].inZipName, sizeof(di->carts[1].inZipName));
+#endif
 #if 0
     di->disks[0].inserted = saveStateGet(state, "diskInserted00", 0);
     saveStateGetBuffer(state, "diskName00",  di->disks[0].name, sizeof(di->disks[0].name));
@@ -968,14 +965,18 @@ static BoardType boardLoadState(void)
         di->disks[i].inserted = saveStateGet(state, tag, 0);
         sprintf(tag, "diskName%.2d", i);
         saveStateGetBuffer(state, tag, di->disks[i].name, sizeof(di->disks[i].name));
+#ifndef MSX_NO_ZIP
         sprintf(tag, "diskInZip%.2d", i);
         saveStateGetBuffer(state, tag, di->disks[i].inZipName, sizeof(di->disks[i].inZipName));
+#endif
     }
 #endif
 
     di->tapes[0].inserted = saveStateGet(state, "casInserted", 0);
     saveStateGetBuffer(state, "casName",  di->tapes[0].name, sizeof(di->tapes[0].name));
+#ifndef MSX_NO_ZIP
     saveStateGetBuffer(state, "casInZip", di->tapes[0].inZipName, sizeof(di->tapes[0].inZipName));
+#endif
 
     di->video.vdpSyncMode = saveStateGet(state, "vdpSyncMode", 0);
 
@@ -1023,11 +1024,15 @@ void boardSaveState(const char* stateFile, int screenshot)
     saveStateSet(state, "cartInserted00", di->carts[0].inserted);
     saveStateSet(state, "cartType00",     di->carts[0].type);
     saveStateSetBuffer(state, "cartName00",  di->carts[0].name, strlen(di->carts[0].name) + 1);
+#ifndef MSX_NO_ZIP
     saveStateSetBuffer(state, "cartInZip00", di->carts[0].inZipName, strlen(di->carts[0].inZipName) + 1);
+#endif
     saveStateSet(state, "cartInserted01", di->carts[1].inserted);
     saveStateSet(state, "cartType01",     di->carts[1].type);
     saveStateSetBuffer(state, "cartName01",  di->carts[1].name, strlen(di->carts[1].name) + 1);
+#ifndef MSX_NO_ZIP
     saveStateSetBuffer(state, "cartInZip01", di->carts[1].inZipName, strlen(di->carts[1].inZipName) + 1);
+#endif
 #if 0
     saveStateSet(state, "diskInserted00", di->disks[0].inserted);
     saveStateSetBuffer(state, "diskName00",  di->disks[0].name, strlen(di->disks[0].name) + 1);
@@ -1041,22 +1046,28 @@ void boardSaveState(const char* stateFile, int screenshot)
     saveStateSet(state, buf, di->disks[i].inserted);
     sprintf(buf, "diskName%.2d", i);
     saveStateSetBuffer(state, buf,  di->disks[i].name, strlen(di->disks[i].name) + 1);
+#ifndef MSX_NO_ZIP
     sprintf(buf, "diskInZip%.2d", i);
     saveStateSetBuffer(state, buf, di->disks[i].inZipName, strlen(di->disks[i].inZipName) + 1);
+#endif
     }
 #endif
     saveStateSet(state, "casInserted", di->tapes[0].inserted);
     saveStateSetBuffer(state, "casName",  di->tapes[0].name, strlen(di->tapes[0].name) + 1);
+#ifndef MSX_NO_ZIP
     saveStateSetBuffer(state, "casInZip", di->tapes[0].inZipName, strlen(di->tapes[0].inZipName) + 1);
+#endif
 
     saveStateSet(state, "vdpSyncMode",   di->video.vdpSyncMode);
 
     saveStateClose(state);
 
+#ifndef TARGET_GNW
     boardCaptureSaveState();
 
     videoManagerSaveState();
     tapeSaveState();
+#endif
 
     // Save machine state
     machineSaveState(boardMachine);
@@ -1064,21 +1075,21 @@ void boardSaveState(const char* stateFile, int screenshot)
     // Call board dependent save state
     boardInfo.saveState(stateFile);
 
+#ifndef TARGET_GNW
     if (screenshot) {
         bitmap = archScreenCapture(SC_SMALL, &size, 1);
         if( bitmap != NULL && size > 0 ) {
 #ifdef WII
             zipSaveFile(stateFile, "screenshot.png", 1, bitmap, size);
 #else
-#ifndef MSX_NO_ZIP
             zipSaveFile(stateFile, "screenshot.bmp", 1, bitmap, size);
-#endif
 #endif
         }
         if( bitmap != NULL ) {
             free(bitmap);
         }
     }
+#endif
 
     memset(buf, 0, 128);
     time(&ltime);
