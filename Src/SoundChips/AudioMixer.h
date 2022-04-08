@@ -35,10 +35,10 @@ typedef struct Mixer Mixer;
 
 #ifndef TARGET_GNW
 #define AUDIO_MONO_BUFFER_SIZE    10000
-#else
-#define AUDIO_MONO_BUFFER_SIZE    500// TODO : Check how much is really needed
-#endif
 #define AUDIO_STEREO_BUFFER_SIZE  (2 * AUDIO_MONO_BUFFER_SIZE)
+#else
+#define AUDIO_MONO_BUFFER_SIZE    1000// TODO : Check how much is really needed
+#endif
 #ifndef TARGET_GNW
 #define AUDIO_SAMPLERATE       44100
 #else
@@ -96,6 +96,9 @@ void mixerSetWriteCallback(Mixer* mixer, MixerWriteCallback callback, void*, int
 /* Internal interface methods */
 void mixerReset(Mixer* mixer);
 void mixerSync(Mixer* mixer);
+#ifdef TARGET_GNW
+void mixerSyncAudioBuffer(Mixer* mixer, Int16 *buffer, UInt32 count);
+#endif
 
 Int32 mixerRegisterChannel(Mixer* mixer, Int32 audioType, Int32 stereo, 
                            MixerUpdateCallback callback, MixerSetSampleRateCallback rateCallback,

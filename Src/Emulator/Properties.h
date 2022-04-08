@@ -197,16 +197,16 @@ typedef struct {
 #endif
     int  enableFdcTiming;
     int  noSpriteLimits;
+    int  vdpSyncMode;
+#ifndef TARGET_GNW
     int  frontSwitch;
     int  audioSwitch;
     int  pauseSwitch;
     int  speed;
     int  ejectMediaOnExit;
-    int  registerFileTypes;
-    int  disableWinKeys;
     int  priorityBoost;
-    int  vdpSyncMode;
-#ifndef TARGET_GNW
+    int  disableWinKeys;
+    int  registerFileTypes;
     int  reverseEnable;
     int  reverseMaxTime;
 #endif

@@ -149,7 +149,7 @@ struct Mixer
 };
 
 #ifdef MSX_NO_MALLOC
-static Mixer mixer_global;// __attribute__((section(".dtcram")));
+static Mixer mixer_global;
 #endif
 
 
@@ -471,6 +471,7 @@ void mixerReset(Mixer* mixer)
 
 void mixerSync(Mixer* mixer)
 {
+#ifndef TARGET_GNW
     UInt32 systemTime = boardSystemTime();
     Int16* buffer   = mixer->buffer;
     Int32* chBuff[MAX_CHANNELS];
@@ -669,7 +670,119 @@ void mixerSync(Mixer* mixer)
         }
         mixer->volIndex = 0;
     }
+#else
+    return;
+#endif
 }
+
+#ifdef TARGET_GNW
+void mixerSyncAudioBuffer(Mixer* mixer, Int16 *buffer, UInt32 count)
+{
+    Int32* chBuff[MAX_CHANNELS];
+    UInt64 elapsed;
+    int i;
+
+    mixer->index = 0;
+
+    if (count == 0 || count > AUDIO_MONO_BUFFER_SIZE) {
+        return;
+    }
+
+    if (!mixer->enable) {
+        while (count--) {
+            buffer[mixer->index++] = 0;
+        }
+        return;
+    }
+    
+    for (i = 0; i < mixer->channelCount; i++) {
+        if (mixer->channels[i].updateCallback != NULL) {
+            chBuff[i] = mixer->channels[i].updateCallback(mixer->channels[i].ref, count);
+        }
+        else {
+            chBuff[i] = NULL;
+        }
+    }
+
+    while (count--) {
+        Int32 left = 0;
+
+        for (i = 0; i < mixer->channelCount; i++) {
+            Int32 chanLeft;
+
+            if (chBuff[i] == NULL) {
+                continue;
+            }
+            chanLeft = mixer->channels[i].volumeLeft * *chBuff[i]++;
+
+            mixer->channels[i].volCntLeft  += (chanLeft > 0 ? chanLeft : -chanLeft) / 2048;
+            mixer->channels[i].volCntRight += (chanLeft > 0 ? chanLeft : -chanLeft) / 2048;
+            left  += chanLeft;
+        }
+
+        left  /= 4096;
+
+        mixer->volCntLeft  += left > 0 ? left : -left;
+        mixer->volCntRight += left > 0 ? left : -left;
+
+        if (left  >  32767) left  = 32767;
+        if (left  < -32767) left  = -32767;
+
+        buffer[mixer->index++] = (Int16)left;
+        
+        mixer->volIndex++;
+    }
+
+    if (mixer->volIndex >= 441) {
+        Int32 newVolumeLeft  = mixer->volCntLeft  / mixer->volIndex / 164;
+        Int32 newVolumeRight = mixer->volCntRight / mixer->volIndex / 164;
+    
+        if (newVolumeLeft > 100) {
+            newVolumeLeft = 100;
+        }
+        if (newVolumeLeft > mixer->volIntLeft) {
+            mixer->volIntLeft  = newVolumeLeft;
+        }
+
+        if (newVolumeRight > 100) {
+            newVolumeRight = 100;
+        }
+        if (newVolumeRight > mixer->volIntRight) {
+            mixer->volIntRight  = newVolumeRight;
+        }
+
+        mixer->volCntLeft  = 0;
+        mixer->volCntRight = 0;
+
+        for (i = 0; i < mixer->channelCount; i++) {
+            Int32 newVolumeLeft  = (Int32)(mixer->channels[i].volCntLeft  / mixer->masterVolume / mixer->volIndex / 328);
+            Int32 newVolumeRight = (Int32)(mixer->channels[i].volCntRight / mixer->masterVolume / mixer->volIndex / 328);
+
+            if (newVolumeLeft > 100) {
+                newVolumeLeft = 100;
+            }
+            if (newVolumeLeft > mixer->channels[i].volIntLeft) {
+                mixer->channels[i].volIntLeft  = newVolumeLeft;
+            }
+
+            if (newVolumeRight > 100) {
+                newVolumeRight = 100;
+            }
+            if (newVolumeRight > mixer->channels[i].volIntRight) {
+                mixer->channels[i].volIntRight  = newVolumeRight;
+            }
+
+            mixer->channels[i].volCntLeft  = 0;
+            mixer->channels[i].volCntRight = 0;
+
+            if (chBuff[i] && chBuff[i][0]) {
+                mixer->channels[i].active++;
+            }
+        }
+        mixer->volIndex = 0;
+    }
+}
+#endif
 
 void mixerSetEnable(Mixer* mixer, int enable)
 {

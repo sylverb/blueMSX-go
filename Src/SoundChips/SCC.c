@@ -37,7 +37,7 @@
 
 
 //#define BASE_PHASE_STEP 0x28959becUL  /* = (1 << 28) * 3579545 / 32 / 44100 */
-#define BASE_PHASE_STEP 0xA2566FBUL  /* = (1 << 28) * 3579545 / 32 / (44100 * 4) */
+#define BASE_PHASE_STEP (0x144ACDF6UL)  /* = (1 << 28) * 3579545 / 32 / (22050 * 4) */
 
 #define ROTATE_OFF 32
 #define ROTATE_ON  28

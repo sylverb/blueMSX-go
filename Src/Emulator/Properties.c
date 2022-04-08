@@ -208,10 +208,8 @@ void propInitDefaults(Properties* properties, int langType, PropKeyboardLanguage
     properties->emulation.shortcutProfile[0] = 0;
     strcpy(properties->emulation.machineName, "MSX2");
 #endif
+#ifndef TARGET_GNW
     properties->emulation.speed             = 50;
-    properties->emulation.vdpSyncMode       = P_VDP_SYNCAUTO;
-    properties->emulation.enableFdcTiming   = 1;
-    properties->emulation.noSpriteLimits    = 0;
     properties->emulation.frontSwitch       = 0;
     properties->emulation.pauseSwitch       = 0;
     properties->emulation.audioSwitch       = 0;
@@ -219,10 +217,12 @@ void propInitDefaults(Properties* properties, int langType, PropKeyboardLanguage
     properties->emulation.registerFileTypes = 0;
     properties->emulation.disableWinKeys    = 0;
     properties->emulation.priorityBoost     = 0;
-#ifndef TARGET_GNW
     properties->emulation.reverseEnable     = 1;
     properties->emulation.reverseMaxTime    = 15;
 #endif
+    properties->emulation.vdpSyncMode       = P_VDP_SYNCAUTO;
+    properties->emulation.enableFdcTiming   = 1;
+    properties->emulation.noSpriteLimits    = 0;
 
     properties->video.monitorColor          = P_VIDEO_COLOR;
     properties->video.monitorType           = P_VIDEO_PALMON;

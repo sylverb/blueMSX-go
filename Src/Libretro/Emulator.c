@@ -273,9 +273,6 @@ void emulatorStartMachine(const char* stateName, Machine *machine) {
     mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MSXMUSIC, 1);
     mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_SCC, 1);
 
-
-    properties->emulation.pauseSwitch = 0;
-
     if (machine == NULL) {
         emuState = EMU_STOPPED;
         return;
