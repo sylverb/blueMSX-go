@@ -39,7 +39,7 @@
 #ifndef TARGET_GNW
 #define PROP_MAXPATH 512
 #else
-#define PROP_MAXPATH 40
+#define PROP_MAXPATH 128
 #endif
 #define CARTNAME_SNATCHER    "The Snatcher Cartridge"
 #define CARTNAME_SDSNATCHER  "SD-Snatcher Cartridge"
