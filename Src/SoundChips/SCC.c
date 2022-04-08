@@ -613,6 +613,7 @@ void sccGetDebugInfo(SCC* scc, DbgDevice* dbgDevice)
 }
 #endif
 
+#ifndef TARGET_GNW
 static Int32 filter(SCC* scc, Int32 input) {
     scc->in[4] = scc->in[3];
     scc->in[3] = scc->in[2];
@@ -630,6 +631,7 @@ static Int32 filter(SCC* scc, Int32 input) {
 
     return scc->outHp[0];
 }
+#endif
 
 // Filter type: Low pass
 // Passband: 0.0 - 750.0 Hz

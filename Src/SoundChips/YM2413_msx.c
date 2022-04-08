@@ -25,6 +25,7 @@
 **
 ******************************************************************************
 */
+#include <string.h>
 #include "YM2413_msx.h"
 #include "emu2413_msx.h"
 #include "Board.h"
@@ -87,7 +88,6 @@ void ym2413WriteAddress(YM_2413* ym2413, UInt8 address)
 void ym2413WriteData(YM_2413* ym2413, UInt8 data)
 {
     if (mixerIsChannelTypeEnable(ym2413->mixer,MIXER_CHANNEL_MSXMUSIC)) {
-        UInt32 systemTime = boardSystemTime();
         mixerSync(ym2413->mixer);
         OPLL_writeReg(ym2413->ym2413,ym2413->address, data);
     }
@@ -97,19 +97,11 @@ static Int32* ym2413Sync(void* ref, UInt32 count)
 {
     YM_2413* ym2413 = (YM_2413*)ref;
     if (mixerIsChannelTypeEnable(ym2413->mixer,MIXER_CHANNEL_MSXMUSIC)) {
-        UInt32 i;
         for (int i = 0; i < count; i++) {
             ym2413->buffer[i] = OPLL_calc(ym2413->ym2413) << 6;
         }
     }
     return ym2413->buffer;
-}
-
-static char* regText(int d)
-{
-    static char text[5];
-    sprintf(text, "R%.2x", d);
-    return text;
 }
 
 void ym2413SetSampleRate(void* ref, UInt32 rate)

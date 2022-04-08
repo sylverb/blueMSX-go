@@ -45,7 +45,6 @@
 
 
 static int mixerCPUFrequency;
-static int mixerConnector;
 static int mixerCPUFrequencyFixed;
 
 void mixerSetBoardFrequency(int CPUFrequency)
@@ -679,7 +678,6 @@ void mixerSync(Mixer* mixer)
 void mixerSyncAudioBuffer(Mixer* mixer, Int16 *buffer, UInt32 count)
 {
     Int32* chBuff[MAX_CHANNELS];
-    UInt64 elapsed;
     int i;
 
     mixer->index = 0;
