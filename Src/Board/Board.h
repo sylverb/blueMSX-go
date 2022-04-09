@@ -42,7 +42,7 @@ typedef struct {
 #ifndef TARGET_GNW
         char    name[512];
 #else
-        char    name[80];
+        char    name[PROP_MAXPATH];
 #endif
 #ifndef MSX_NO_ZIP
         char    inZipName[512];
@@ -53,7 +53,7 @@ typedef struct {
 #ifndef TARGET_GNW
         char name[512];
 #else
-        char name[80];
+        char name[PROP_MAXPATH];
 #endif
 #ifndef MSX_NO_ZIP
         char inZipName[512];

@@ -42,6 +42,12 @@ extern "C" {
 #define DIR_SEPARATOR "/"
 #endif
 
+#ifndef TARGET_GNW
+#define PROP_MAXPATH 512
+#else
+#define PROP_MAXPATH 128
+#endif
+
 /* Define double type for different targets
  */
 #if defined(__x86_64__) || defined(__i386__) || defined _WIN32

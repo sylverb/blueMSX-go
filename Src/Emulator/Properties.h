@@ -36,11 +36,6 @@
 #define PROP_MAX_CARTS  2
 #define PROP_MAX_TAPES  1
 
-#ifndef TARGET_GNW
-#define PROP_MAXPATH 512
-#else
-#define PROP_MAXPATH 128
-#endif
 #define CARTNAME_SNATCHER    "The Snatcher Cartridge"
 #define CARTNAME_SDSNATCHER  "SD-Snatcher Cartridge"
 #define CARTNAME_SCCMIRRORED "SCC Mirrored Cartridge"

@@ -59,7 +59,7 @@ int insertCartridge(Properties* properties, int drive, const char* fname, const 
     char filename[512] = "";
     int isZip = isFileExtension(fname, ".zip");
 #else
-    char filename[80] = "";
+    char filename[PROP_MAXPATH] = "";
 #endif
 
     if (fname) strcpy(filename, fname);
@@ -304,7 +304,7 @@ int insertDiskette(Properties* properties, int drive, const char* fname, const c
     int noautostart = forceAutostart == -1;
     int isZip = isFileExtension(fname, ".zip");
 #else
-    char filename[80] = "";
+    char filename[PROP_MAXPATH] = "";
 #endif
 
     if (fname) strcpy(filename, fname);

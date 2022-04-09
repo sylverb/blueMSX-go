@@ -61,7 +61,7 @@ typedef struct {
     char name[512];
     char inZipName[128];
 #else
-    char name[80];
+    char name[PROP_MAXPATH];
 #endif
     int slot;
     int subslot;
