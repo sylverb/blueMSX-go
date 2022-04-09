@@ -581,10 +581,16 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
             break;
 #endif
 
+#ifdef TARGET_GNW
+        case ROM_ASCII8SRAM:
+#endif
         case ROM_ASCII8:
             success &= romMapperASCII8Create(romName, buf, size, slot, sslot, 2);
             break;
             
+#ifdef TARGET_GNW
+        case ROM_ASCII16SRAM:
+#endif
         case ROM_ASCII16:
             success &= romMapperASCII16Create(romName, buf, size, slot, sslot, 2);
             break;
