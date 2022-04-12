@@ -1044,7 +1044,7 @@ void machineSaveState(Machine* machine)
         
         sprintf(tag, "slotName%.2d", i);
         saveStateSetBuffer(state, tag, machine->slotInfo[i].name, 512);
-        
+
 #ifndef MSX_NO_ZIP
         sprintf(tag, "slotInZipName%.2d", i);
         saveStateSetBuffer(state, tag, machine->slotInfo[i].inZipName, 128);
@@ -1065,7 +1065,9 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
     void* jisyoRom   = NULL;
     int jisyoRomSize = 0;
     int success = 1;
+#ifndef TARGET_GNW
     int hdId = FIRST_INTERNAL_HD_INDEX;
+#endif
     UInt8* buf;
     int size;
     int i;

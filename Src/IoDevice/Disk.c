@@ -48,8 +48,8 @@
 #define DISK_ERRORS_SIZE        ((MAXSECTOR+7)/8)
 
 static int   drivesEnabled[MAXDRIVES] = { 1, 1 };
-static int   drivesIsCdrom[MAXDRIVES];
 #ifndef TARGET_GNW
+static int   drivesIsCdrom[MAXDRIVES];
 static FILE* drives[MAXDRIVES];
 #else
 static char* drives[MAXDRIVES];
@@ -77,11 +77,12 @@ UInt8 diskEnabled(int driveId)
     return driveId >= 0 && driveId < MAXDRIVES && drivesEnabled[driveId];
 }
 
+#ifndef TARGET_GNW
 int diskIsCdrom(int driveId)
 {
     return driveId >= 0 && driveId < MAXDRIVES && drivesIsCdrom[driveId];
 }
-
+#endif
 
 UInt8 diskReadOnly(int driveId)
 {
@@ -542,10 +543,12 @@ UInt8 diskWriteSector(int driveId, UInt8 *buffer, int sector, int side, int trac
     return 0;
 }
 
+#ifndef TARGET_GNW
 void diskSetInfo(int driveId, char* fileName, const char* fileInZipFile)
 {
     drivesIsCdrom[driveId] = fileName && strcmp(fileName, DISK_CDROM) == 0;
 }
+#endif
 
 static char *makeErrorsFileName(const char *fileName)
 {
@@ -571,7 +574,9 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
     if (driveId >= MAXDRIVES)
         return 0;
 
+#ifndef TARGET_GNW
     drivesIsCdrom[driveId] = 0;
+#endif
 
     /* Close previous disk image */
     if(drives[driveId] != NULL) { 
@@ -600,11 +605,12 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
         return 1;
     }
 
+#ifndef TARGET_GNW
     if (strcmp(fileName, DISK_CDROM) == 0) {
         drivesIsCdrom[driveId] = 1;
         return 1;
     }
-
+#endif
 #ifndef MSX_NO_FILESYSTEM
     rv = stat(fileName, &s);
     if (rv == 0) {

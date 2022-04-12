@@ -30,6 +30,7 @@
 
 #include "MsxTypes.h"
 
+#ifndef TARGET_GNW
 #define MAX_FDC_COUNT            2
 
 #define MAX_HD_COUNT             4
@@ -40,6 +41,12 @@
 #define DISK_CDROM               "CD-Rom"
 
 #define MAXDRIVES (MAX_FDC_COUNT + MAX_DRIVES_PER_HD * MAX_HD_COUNT)
+#else
+#define MAX_FDC_COUNT            1
+
+#define MAXDRIVES MAX_FDC_COUNT
+#endif
+
 
 typedef enum {
     DSKE_OK,

@@ -84,8 +84,10 @@ static UInt32 boardRamSize;
 static UInt32 boardVramSize;
 static int boardRunning = 0;
 
+#ifndef TARGET_GNW
 static HdType hdType[MAX_HD_COUNT];
-  
+#endif
+
 static int     ramMaxStates;
 static int     ramStateCur;
 static int     ramStateCount;
@@ -99,8 +101,8 @@ static RomType currentRomType[2];
 
 #ifndef TARGET_GNW
 static BoardType boardLoadState(void);
-#endif
 static void boardUpdateDisketteInfo();
+#endif
 
 static char saveStateVersion[32] = "blueMSX - state  v 8";
 
@@ -723,7 +725,9 @@ int boardRun(Machine* machine,
     printf("boardRun set boardDeviceInfo %x\n",boardDeviceInfo);
     boardMachine    = machine;
 
+#ifndef TARGET_GNW
     boardUpdateDisketteInfo();
+#endif
 
     boardType = machine->board.type;
     PatchReset(boardType);
@@ -858,9 +862,12 @@ Mixer* boardGetMixer()
 void boardSetMachine(Machine* machine)
 {
     int i;
+#ifndef TARGET_GNW
     int hdIndex = FIRST_INTERNAL_HD_INDEX;
+#endif
 
     // Update HD info
+#ifndef TARGET_GNW
     for (i = FIRST_INTERNAL_HD_INDEX; i < MAX_HD_COUNT; i++) {
         hdType[i] = HD_NONE;
     }
@@ -876,6 +883,7 @@ void boardSetMachine(Machine* machine)
         case ROM_GOUDASCSI:   hdType[hdIndex++] = HD_GOUDASCSI;  break;
         }
     }
+#endif
 
     // Update RAM info
     boardRamSize  = 0;
@@ -1170,6 +1178,7 @@ int boardUseFmPac()
     return useFmPac;
 }
 
+#ifndef TARGET_GNW
 HdType boardGetHdType(int hdIndex)
 {
     if (hdIndex < 0 || hdIndex >= MAX_HD_COUNT) {
@@ -1177,6 +1186,7 @@ HdType boardGetHdType(int hdIndex)
     }
     return hdType[hdIndex];
 }
+#endif
 
 void boardChangeCartridge(int cartNo, RomType romType, char* cart, char* cartZip)
 {
@@ -1256,6 +1266,7 @@ void boardChangeCartridge(int cartNo, RomType romType, char* cart, char* cartZip
     }
 }
 
+#ifndef TARGET_GNW
 static void boardUpdateDisketteInfo()
 {
     int i;
@@ -1273,6 +1284,7 @@ static void boardUpdateDisketteInfo()
         }
     }
 }
+#endif
 
 void boardChangeDiskette(int driveId, char* fileName, const char* fileInZipFile)
 {
