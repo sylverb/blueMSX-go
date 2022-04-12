@@ -51,24 +51,24 @@ YM_2413 ym2413_global;
 
 void ym2413SaveState(YM_2413* ref)
 {
-/*    YM_2413* ym2413 = (YM_2413*)ref;
+    YM_2413* ym2413 = (YM_2413*)ref;
     SaveState* state = saveStateOpenForWrite("msxmusic");
 
-    saveStateSetBuffer(state, "regs", ym2413->registers, 256);
+    saveStateSetBuffer(state, "regs", ym2413->ym2413, sizeof(OPLL));
+    saveStateSet(state, "address",ym2413->address);
 
-    saveStateClose(state);*/
+    saveStateClose(state);
 }
 
 void ym2413LoadState(YM_2413* ref)
 {
-/*    YM_2413* ym2413 = (YM_2413*)ref;
+    YM_2413* ym2413 = (YM_2413*)ref;
     SaveState* state = saveStateOpenForRead("msxmusic");
 
-    saveStateGetBuffer(state, "regs", ym2413->registers, 256);
+    saveStateGetBuffer(state, "regs", ym2413->ym2413, sizeof(OPLL));
+    ym2413->address = saveStateGet(state, "address",0);
 
     saveStateClose(state);
-
-    ym2413->ym2413->loadState();*/
 }
 
 void ym2413Reset(YM_2413* ref)
