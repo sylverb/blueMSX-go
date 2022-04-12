@@ -29,9 +29,7 @@
 #include "MediaDb.h"
 #include "SlotManager.h"
 #include "DeviceManager.h"
-#ifndef MSX_NO_SAVESTATE
 #include "SaveState.h"
-#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -51,7 +49,6 @@ typedef struct {
 static RomMapperStandard rm_global;
 #endif
 
-#ifndef MSX_NO_SAVESTATE
 static void saveState(RomMapperStandard* rm)
 {
     SaveState* state = saveStateOpenForWrite("mapperStandard");
@@ -83,7 +80,6 @@ static void loadState(RomMapperStandard* rm)
         slotMapPage(rm->slot, rm->sslot, rm->startPage + i, rm->romData + rm->romMapper[i] * 0x2000, 1, 0);
     }
 }
-#endif
 
 static void destroy(RomMapperStandard* rm)
 {
@@ -125,11 +121,7 @@ static void write(RomMapperStandard* rm, UInt16 address, UInt8 value)
 int romMapperStandardCreate(const char* filename, UInt8* romData, 
                             int size, int slot, int sslot, int startPage) 
 {
-#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, NULL, saveState, loadState };
-#else
-    DeviceCallbacks callbacks = { destroy, NULL, NULL, NULL };
-#endif
     RomMapperStandard* rm;
     int i;
 

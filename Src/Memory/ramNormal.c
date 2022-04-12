@@ -32,9 +32,7 @@
 #ifndef TARGET_GNW
 #include "DebugDeviceManager.h"
 #endif
-#ifndef MSX_NO_SAVESTATE
 #include "SaveState.h"
-#endif
 #include "Language.h"
 #include <stdlib.h>
 #include <string.h>
@@ -57,7 +55,7 @@ typedef struct {
 static RamNormal rm_global;
 extern char msxRam_global[0x4000*8];
 #endif
-#ifndef MSX_NO_SAVESTATE
+
 static void saveState(RamNormal* rm)
 {
     SaveState* state = saveStateOpenForWrite("mapperNormalRam");
@@ -83,7 +81,6 @@ static void loadState(RamNormal* rm)
 //        slotMapPage(rm->slot, rm->sslot, i + rm->startPage, rm->ramData + 0x2000 * i, 1, 1);
     }
 }
-#endif
 
 static void destroy(RamNormal* rm)
 {
@@ -120,11 +117,7 @@ static int dbgWriteMemory(RamNormal* rm, char* name, void* data, int start, int 
 
 int ramNormalCreate(int size, int slot, int sslot, int startPage, UInt8** ramPtr, UInt32* ramSize) 
 {
-#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, NULL, saveState, loadState };
-#else
-    DeviceCallbacks callbacks = { destroy, NULL, NULL, NULL };
-#endif
 #ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, dbgWriteMemory, NULL, NULL };
 #endif

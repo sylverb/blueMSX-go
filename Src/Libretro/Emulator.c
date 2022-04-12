@@ -99,21 +99,20 @@ void emulatorSetState(EmuState state) {
         archMidiEnable(1);
     else
         archMidiEnable(0);
-#endif
+
     if (state == EMU_STEP) {
         state = EMU_RUNNING;
         emuSingleStep = 1;
     }
+
     if (state == EMU_STEP_BACK) {
         EmuState oldState = state;
         state = EMU_RUNNING;
-#ifndef MSX_NO_SAVESTATE
         if (!boardRewindOne()) {
             state = oldState;
         }
-#endif
-
     }
+#endif
     emuState = state;
 }
 

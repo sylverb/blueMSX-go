@@ -106,7 +106,6 @@ void i8255Destroy(I8255* i8255)
 #endif
 }
 
-#ifndef MSX_NO_SAVESTATE
 void i8255LoadState(I8255* i8255)
 {
     SaveState* state = saveStateOpenForRead("i8255");
@@ -130,7 +129,6 @@ void i8255SaveState(I8255* i8255)
 
     saveStateClose(state);
 }
-#endif
 
 UInt8 i8255Peek(I8255* i8255, UInt16 port)
 {

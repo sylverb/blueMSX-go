@@ -30,9 +30,7 @@
 #include "MediaDb.h"
 #include "SlotManager.h"
 #include "DeviceManager.h"
-#ifndef MSX_NO_SAVESTATE
 #include "SaveState.h"
-#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -54,7 +52,6 @@ typedef struct {
 RomMapperTC8566AF rm_global __attribute__((section(".itcram")));
 #endif
 
-#ifndef MSX_NO_SAVESTATE
 static void saveState(RomMapperTC8566AF* rm)
 {
     SaveState* state = saveStateOpenForWrite("mapperTC8566AF");
@@ -92,7 +89,6 @@ static void loadState(RomMapperTC8566AF* rm)
 
     tc8566afLoadState(rm->fdc);
 }
-#endif
 
 static void destroy(RomMapperTC8566AF* rm)
 {
@@ -242,11 +238,7 @@ int romMapperTC8566AFCreate(const char* filename, UInt8* romData,
                            int size, int slot, int sslot, int startPage,
                            RomType romType) 
 {
-#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
-#else
-    DeviceCallbacks callbacks = { destroy, reset, NULL, NULL };
-#endif
     RomMapperTC8566AF* rm;
 
 #ifndef MSX_NO_MALLOC

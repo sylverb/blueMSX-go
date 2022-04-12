@@ -83,7 +83,6 @@ struct SCC
 static SCC scc_global;
 #endif
 
-#ifndef MSX_NO_SAVESTATE
 void sccLoadState(SCC* scc)
 {
     SaveState* state = saveStateOpenForRead("scc");
@@ -177,7 +176,6 @@ void sccSaveState(SCC* scc)
 
     saveStateClose(state);
 }
-#endif
 
 static UInt8 sccGetWave(SCC* scc, UInt8 channel, UInt8 address)
 {

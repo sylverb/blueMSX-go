@@ -765,9 +765,7 @@ int boardRun(Machine* machine,
     }
 #ifndef TARGET_GNW
     boardCaptureInit();
-#endif
 
-#ifndef MSX_NO_SAVESTATE
     if (success && loadState) {
         boardInfo.loadState();
         boardCaptureLoadState();
@@ -921,7 +919,7 @@ void boardSetDataBus(UInt8 value, UInt8 defValue, int useDef) {
     }
 }
 
-#ifndef TARGET_GW
+#ifndef TARGET_GNW
 static BoardType boardLoadState(void)
 {
     BoardDeviceInfo* di = boardDeviceInfo;
@@ -987,8 +985,8 @@ static BoardType boardLoadState(void)
 
     return boardType;
 }
+#endif
 
-#ifndef MSX_NO_SAVESTATE
 void boardSaveState(const char* stateFile, int screenshot)
 {
     BoardDeviceInfo* di = boardDeviceInfo;
@@ -1008,10 +1006,10 @@ void boardSaveState(const char* stateFile, int screenshot)
     
 #ifndef MSX_NO_ZIP
     rv = zipSaveFile(stateFile, "version", 0, saveStateVersion, strlen(saveStateVersion) + 1);
-#endif
     if (!rv) {
         return;
     }
+#endif
     
     state = saveStateOpenForWrite("board");
 
@@ -1099,8 +1097,6 @@ void boardSaveState(const char* stateFile, int screenshot)
 #endif
     saveStateDestroy();
 }
-#endif
-#endif
 
 void boardSetFrequency(int frequency)
 {

@@ -108,7 +108,6 @@ static void reset(MsxPPI* ppi)
     i8255Reset(ppi->i8255);
 }
 
-#ifndef MSX_NO_SAVESTATE
 static void loadState(MsxPPI* ppi)
 {
     SaveState* state = saveStateOpenForRead("MsxPPI");
@@ -134,7 +133,6 @@ static void saveState(MsxPPI* ppi)
 
     i8255SaveState(ppi->i8255);
 }
-#endif
 
 static void writeA(MsxPPI* ppi, UInt8 value)
 {
@@ -225,11 +223,7 @@ static void getDebugInfo(MsxPPI* ppi, DbgDevice* dbgDevice)
 
 void msxPPICreate(int ignoreKeyboard)
 {
-#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
-#else
-    DeviceCallbacks callbacks = { destroy, reset, NULL, NULL };
-#endif
 #ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, NULL, NULL };
 #endif

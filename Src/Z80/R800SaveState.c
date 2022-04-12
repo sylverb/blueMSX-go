@@ -89,7 +89,6 @@ void r800LoadState(R800* r800)
     int i;
     
     r800->systemTime =         saveStateGet(state, "systemTime", 0);
-    r800->systemTime =         saveStateGet(state, "systemTime", 0);
     r800->vdpTime    =         saveStateGet(state, "vdpTime",    0);
     r800->cachePage  = (UInt16)saveStateGet(state, "cachePage",  0);
     r800->dataBus    = (UInt8) saveStateGet(state, "dataBus",    0);
@@ -99,10 +98,7 @@ void r800LoadState(R800* r800)
     r800->cpuMode    = (CpuMode)saveStateGet(state, "cpuMode",    0);
     r800->oldCpuMode = (CpuMode)saveStateGet(state, "oldCpuMode", 0);
     
-    for (i = 0; i < sizeof(r800->delay) / sizeof(r800->delay[0]); i++) {
-        sprintf(tag, "delay%d", i);
-        r800->delay[i] = saveStateGet(state, tag, 0);
-    }
+    r800UpdateDelayTable(r800);
 
     r800LoadRegisterState(state, r800->regs,        00);
     r800LoadRegisterState(state, r800->regBanks[0], 01);
@@ -132,11 +128,6 @@ void r800SaveState(R800* r800)
     saveStateSet(state, "nmiEdge",    r800->nmiEdge);
     saveStateSet(state, "cpuMode",    r800->cpuMode);
     saveStateSet(state, "oldCpuMode", r800->oldCpuMode);
-
-    for (i = 0; i < sizeof(r800->delay) / sizeof(r800->delay[0]); i++) {
-        sprintf(tag, "delay%d", i);
-        saveStateSet(state, tag, r800->delay[i]);
-    }
 
     r800SaveRegisterState(state, r800->regs,        00);
     r800SaveRegisterState(state, r800->regBanks[0], 01);

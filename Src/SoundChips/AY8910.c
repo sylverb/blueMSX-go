@@ -102,7 +102,6 @@ static AY8910 ay8910_global;
 #endif
 
 
-#ifndef MSX_NO_SAVESTATE
 void ay8910LoadState(AY8910* ay8910)
 {
     SaveState* state = saveStateOpenForRead("ay8910");
@@ -188,7 +187,6 @@ void ay8910SaveState(AY8910* ay8910)
     
     saveStateClose(state);
 }
-#endif
 
 #ifndef TARGET_GNW
 static void getDebugInfo(AY8910* ay8910, DbgDevice* dbgDevice)

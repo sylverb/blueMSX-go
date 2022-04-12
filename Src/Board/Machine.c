@@ -978,6 +978,7 @@ void machineLoadState(Machine* machine)
 
     machineUpdate(machine);
 }
+#endif
 
 void machineSaveState(Machine* machine)
 {
@@ -1044,13 +1045,14 @@ void machineSaveState(Machine* machine)
         sprintf(tag, "slotName%.2d", i);
         saveStateSetBuffer(state, tag, machine->slotInfo[i].name, 512);
         
+#ifndef MSX_NO_ZIP
         sprintf(tag, "slotInZipName%.2d", i);
         saveStateSetBuffer(state, tag, machine->slotInfo[i].inZipName, 128);
+#endif
     }
 
     saveStateClose(state);
 }
-#endif
 
 int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UInt32* mainRamStart)
 {

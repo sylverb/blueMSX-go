@@ -84,10 +84,8 @@ typedef struct {
 
     void   (*destroy)();
     void   (*softReset)();
-#ifndef MSX_NO_SAVESTATE
     void   (*loadState)();
     void   (*saveState)();
-#endif
     int    (*getRefreshRate)();
     UInt8* (*getRamPage)(int);
     void   (*setDataBus)(void*, UInt8, UInt8, int);

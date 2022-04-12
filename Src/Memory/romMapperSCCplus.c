@@ -31,9 +31,7 @@
 #include "DeviceManager.h"
 #include "SCC.h"
 #include "Board.h"
-#ifndef MSX_NO_SAVESTATE
 #include "SaveState.h"
-#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -64,7 +62,6 @@ typedef struct {
 static RomMapperSCCplus rm_global;
 #endif
 
-#ifndef MSX_NO_SAVESTATE
 static void saveState(RomMapperSCCplus* rm)
 {
     SaveState* state = saveStateOpenForWrite("mapperSCCplus");
@@ -141,7 +138,6 @@ static void loadState(RomMapperSCCplus* rm)
         slotMapPage(rm->slot, rm->sslot, rm->startPage + 3, NULL, 1, 0);
     }
 }
-#endif
 
 static void destroy(RomMapperSCCplus* rm)
 {
@@ -296,11 +292,7 @@ static void write(RomMapperSCCplus* rm, UInt16 address, UInt8 value)
 int romMapperSCCplusCreate(const char* filename, UInt8* romData, 
                            int size, int slot, int sslot, int startPage, SccType sccType) 
 {
-#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
-#else
-    DeviceCallbacks callbacks = { destroy, reset, NULL, NULL };
-#endif
     RomMapperSCCplus* rm;
 
 #ifndef MSX_NO_MALLOC

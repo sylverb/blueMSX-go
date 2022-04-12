@@ -78,7 +78,6 @@ static int ramMapperIoGetMask(RamMapperIo* rm)
     return (size / 0x4000) - 1;
 }
 
-#ifndef MSX_NO_SAVESTATE
 static void saveState(RamMapperIo* rm)
 {
     SaveState* state = saveStateOpenForWrite("mapperRamIo");
@@ -102,7 +101,6 @@ static void loadState(RamMapperIo* rm)
 
     saveStateClose(state);
 }
-#endif
 
 static void destroy(RamMapperIo* rm) 
 {
@@ -160,11 +158,7 @@ static void getDebugInfo(RamMapperIo* rm, DbgDevice* dbgDevice)
 int ramMapperIoCreate() 
 {
     RamMapperIo* rm;
-#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, NULL, saveState, loadState };
-#else
-    DeviceCallbacks callbacks = { destroy, NULL, NULL, NULL };
-#endif
 #ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, NULL, NULL };
 #endif

@@ -206,7 +206,6 @@ static void write(MsxPsg* msxPsg, UInt16 address, UInt8 value)
     msxPsg->registers[address & 1] = value;
 }
 
-#ifndef MSX_NO_SAVESTATE
 static void saveState(MsxPsg* msxPsg)
 {
     // dink: fix for certain games where buttons are stuck after reload of state
@@ -248,7 +247,6 @@ static void loadState(MsxPsg* msxPsg)
 
     ay8910LoadState(msxPsg->ay8910);
 }
-#endif
 
 static void reset(MsxPsg* msxPsg)
 {
@@ -301,11 +299,7 @@ void msxPsgRegisterCassetteRead(MsxPsg* msxPsg, CassetteCb cb, void* ref)
 
 MsxPsg* msxPsgCreate(PsgType type, int stereo, int* pan, int maxPorts)
 {
-#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
-#else
-    DeviceCallbacks callbacks = { destroy, reset, NULL, NULL };
-#endif
 #ifndef MSX_NO_MALLOC
     MsxPsg* msxPsg = (MsxPsg*)calloc(1, sizeof(MsxPsg));
 #else

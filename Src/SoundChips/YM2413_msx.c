@@ -49,15 +49,14 @@ struct YM_2413 {
 YM_2413 ym2413_global;
 #endif
 
-#ifndef MSX_NO_SAVESTATE
 void ym2413SaveState(YM_2413* ref)
 {
-    YM_2413* ym2413 = (YM_2413*)ref;
+/*    YM_2413* ym2413 = (YM_2413*)ref;
     SaveState* state = saveStateOpenForWrite("msxmusic");
 
-//    saveStateSetBuffer(state, "regs", ym2413->registers, 256);
+    saveStateSetBuffer(state, "regs", ym2413->registers, 256);
 
-    saveStateClose(state);
+    saveStateClose(state);*/
 }
 
 void ym2413LoadState(YM_2413* ref)
@@ -71,7 +70,6 @@ void ym2413LoadState(YM_2413* ref)
 
     ym2413->ym2413->loadState();*/
 }
-#endif
 
 void ym2413Reset(YM_2413* ref)
 {

@@ -1674,7 +1674,6 @@ static void loadState(VDP* vdp)
 
 #else
 
-#ifndef MSX_NO_SAVESTATE
 static void saveState(VDP* vdp)
 {
     SaveState* state = saveStateOpenForWrite("vdp");
@@ -1888,7 +1887,6 @@ static void loadState(VDP* vdp)
     }
 
 }
-#endif
 #endif
 
 #ifndef TARGET_GNW
@@ -2271,11 +2269,7 @@ void vdpSetSyncMode(VdpSyncMode sync) {
 
 void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int vramPages)
 {
-#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
-#else
-    DeviceCallbacks callbacks = { destroy, reset, NULL, NULL };
-#endif
 #ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, dbgWriteMemory, dbgWriteRegister, NULL };
 #endif

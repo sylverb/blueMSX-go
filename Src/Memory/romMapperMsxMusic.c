@@ -35,9 +35,7 @@
 #include "IoPort.h"
 #include "YM2413_msx.h"
 #include "Board.h"
-#ifndef MSX_NO_SAVESTATE
 #include "SaveState.h"
-#endif
 #include "Language.h"
 #include <stdlib.h>
 #include <string.h>
@@ -86,7 +84,6 @@ static void reset(MsxMusic* rm)
     }
 }
 
-#ifndef MSX_NO_SAVESTATE
 static void loadState(MsxMusic* rm)
 {
     if (rm->ym2413 != NULL) {
@@ -100,7 +97,6 @@ static void saveState(MsxMusic* rm)
         ym2413SaveState(rm->ym2413);
     }
 }
-#endif
 
 static void write(MsxMusic* rm, UInt16 ioPort, UInt8 data)
 {
@@ -140,11 +136,7 @@ static void getDebugInfo(MsxMusic* rm, DbgDevice* dbgDevice)
 int romMapperMsxMusicCreate(const char* filename, UInt8* romData, 
                             int size, int slot, int sslot, int startPage) 
 {
-#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
-#else
-    DeviceCallbacks callbacks = { destroy, reset, NULL, NULL };
-#endif
 #ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, NULL, NULL };
 #endif

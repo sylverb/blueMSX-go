@@ -508,5 +508,6 @@ SystemTime r800GetTimeTrace(R800* r800, int offset);
 *************************************************************************
 */
 SystemTime r800GetSystemTime(R800* r800);
+void r800UpdateDelayTable(R800* r800);
 
 #endif /* Z80_H */

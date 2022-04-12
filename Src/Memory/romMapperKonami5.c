@@ -52,7 +52,6 @@ typedef struct {
 static RomMapperKonami5 rm_global;
 #endif
 
-#ifndef MSX_NO_SAVESTATE
 static void saveState(RomMapperKonami5* rm)
 {
     SaveState* state = saveStateOpenForWrite("mapperKonami5");
@@ -99,7 +98,6 @@ static void loadState(RomMapperKonami5* rm)
         slotMapPage(rm->slot, rm->sslot, rm->startPage + 2, rm->romData + rm->romMapper[2] * 0x2000, 1, 0);
     }
 }
-#endif
 
 static void destroy(RomMapperKonami5* rm)
 {
@@ -186,11 +184,7 @@ static void write(RomMapperKonami5* rm, UInt16 address, UInt8 value)
 int romMapperKonami5Create(const char* filename, UInt8* romData, 
                            int size, int slot, int sslot, int startPage) 
 {
-#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
-#else
-    DeviceCallbacks callbacks = { destroy, reset, NULL, NULL };
-#endif
     RomMapperKonami5* rm;
     int i;
 

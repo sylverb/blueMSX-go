@@ -33,9 +33,7 @@
 
 #include "R800.h"
 #include "R800Dasm.h"
-#ifndef MSX_NO_SAVESTATE
 #include "R800SaveState.h"
-#endif
 #ifndef TARGET_GNW
 #include "R800Debug.h"
 #endif
@@ -149,7 +147,6 @@ static UInt8* getRamPage(int page) {
 	return msxRam + start;
 }
 
-#ifndef MSX_NO_SAVESTATE
 static void saveState()
 {
     SaveState* state = saveStateOpenForWrite("msx");
@@ -179,7 +176,6 @@ static void loadState()
     slotLoadState();
     rtcLoadState(rtc);
 }
-#endif
 
 #ifndef TARGET_GNW
 static UInt8 testPort(void* dummy, UInt16 ioPort)
@@ -215,10 +211,8 @@ int msxCreate(Machine* machine,
 
     boardInfo->destroy          = destroy;
     boardInfo->softReset        = reset;
-#ifndef MSX_NO_SAVESTATE
     boardInfo->loadState        = loadState;
     boardInfo->saveState        = saveState;
-#endif
     boardInfo->getRefreshRate   = getRefreshRate;
     boardInfo->getRamPage       = getRamPage;
 

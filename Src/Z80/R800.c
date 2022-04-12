@@ -5714,8 +5714,6 @@ static void r800InitTables() {
 }
 
 static void r800SwitchCpu(R800* r800) {
-    int freqAdjust;
-
     switch (r800->oldCpuMode) {
     case CPU_Z80:
         r800->regBanks[0] = r800->regs;
@@ -5735,6 +5733,12 @@ static void r800SwitchCpu(R800* r800) {
         r800->regs = r800->regBanks[1];
         break;
     }
+
+    r800UpdateDelayTable(r800);
+}
+
+void r800UpdateDelayTable(R800* r800) {
+    int freqAdjust;
 
     switch (r800->cpuMode) {
     default:

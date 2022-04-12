@@ -28,9 +28,7 @@
 #include "romMapperF4device.h"
 #include "MediaDb.h"
 #include "DeviceManager.h"
-#ifndef MSX_NO_SAVESTATE
 #include "DebugDeviceManager.h"
-#endif
 #include "SaveState.h"
 #include "IoPort.h"
 #include "Language.h"
@@ -40,7 +38,7 @@
 
 typedef struct {
     int deviceHandle;
-#ifndef MSX_NO_SAVESTATE
+#ifndef TARGET_GNW
     int debugHandle;
 #endif
     int inverted;
@@ -51,7 +49,6 @@ typedef struct {
 static RomMapperF4device rm_global;
 #endif
 
-#ifndef MSX_NO_SAVESTATE
 static void saveState(RomMapperF4device* rm)
 {
     SaveState* state = saveStateOpenForWrite("mapperF4device");
@@ -69,7 +66,6 @@ static void loadState(RomMapperF4device* rm)
 
     saveStateClose(state);
 }
-#endif
 
 static void destroy(RomMapperF4device* rm)
 {
@@ -117,11 +113,7 @@ static void getDebugInfo(RomMapperF4device* rm, DbgDevice* dbgDevice)
 
 int romMapperF4deviceCreate(int inverted) 
 {
-#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
-#else
-    DeviceCallbacks callbacks = { destroy, reset, NULL, NULL };
-#endif
 #ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, NULL, NULL };
 #endif

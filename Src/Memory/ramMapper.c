@@ -66,7 +66,6 @@ char msxRam_global[0x4000*8];
 
 static void writeIo(RamMapper* rm, UInt16 page, UInt8 value);
 
-#ifndef MSX_NO_SAVESTATE
 static void saveState(RamMapper* rm)
 {
     SaveState* state = saveStateOpenForWrite("mapperRam");
@@ -109,7 +108,6 @@ static void loadState(RamMapper* rm)
     }
 #endif
 }
-#endif
 
 static void writeIo(RamMapper* rm, UInt16 page, UInt8 value)
 {
@@ -177,11 +175,7 @@ static int dbgWriteMemory(RamMapper* rm, char* name, void* data, int start, int 
 
 int ramMapperCreate(int size, int slot, int sslot, int startPage, UInt8** ramPtr, UInt32* ramSize) 
 {
-#ifndef MSX_NO_SAVESTATE
     DeviceCallbacks callbacks = { destroy, NULL, saveState, loadState };
-#else
-    DeviceCallbacks callbacks = { destroy, NULL, NULL, NULL };
-#endif
 #ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, dbgWriteMemory, NULL, NULL };
 #endif
