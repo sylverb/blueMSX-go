@@ -1190,7 +1190,6 @@ HdType boardGetHdType(int hdIndex)
 
 void boardChangeCartridge(int cartNo, RomType romType, char* cart, char* cartZip)
 {
-    printf("boardChangeCartridge %s\n",cart);
     if (cart && strlen(cart) == 0) {
         cart = NULL;
     }
