@@ -381,6 +381,7 @@ static void tc8566afCommandPhaseWrite(TC8566AF* tc, UInt8 value)
 		}
 		break;
 
+#ifndef TARGET_GNW
 	case CMD_FORMAT:
 		switch (tc->phaseStep++) {
 		case 0:
@@ -409,6 +410,7 @@ static void tc8566afCommandPhaseWrite(TC8566AF* tc, UInt8 value)
 			break;
         }
         break;
+#endif
 
 	case CMD_SEEK:
 		switch (tc->phaseStep++) {
@@ -481,6 +483,7 @@ static void tc8566afCommandPhaseWrite(TC8566AF* tc, UInt8 value)
 	}
 }
 
+#ifndef TARGET_GNW
 static void tc8566afExecutionPhaseWrite(TC8566AF* tc, UInt8 value)
 {
     int rv;
@@ -497,9 +500,7 @@ static void tc8566afExecutionPhaseWrite(TC8566AF* tc, UInt8 value)
                     tc->status1 |= ST1_NW;
                 }
 
-#ifndef TARGET_GNW
                 fdcAudioSetReadWrite(tc->fdcAudio);
-#endif
 
                 boardSetFdcActive();
 
@@ -537,6 +538,7 @@ static void tc8566afExecutionPhaseWrite(TC8566AF* tc, UInt8 value)
         break;
 	}
 }
+#endif
 
 TC8566AF* tc8566afCreate()
 {
@@ -614,6 +616,7 @@ UInt8 tc8566afReadRegister(TC8566AF* tc, UInt8 reg)
     return 0x00;
 }
 
+#ifndef TARGET_GNW
 UInt8 tc8566afPeekRegister(TC8566AF* tc, UInt8 reg)
 {
     switch (reg) {
@@ -629,6 +632,7 @@ UInt8 tc8566afPeekRegister(TC8566AF* tc, UInt8 reg)
     }
     return 0xff;
 }
+#endif
 
 void tc8566afWriteRegister(TC8566AF* tc, UInt8 reg, UInt8 value)
 {
@@ -655,7 +659,9 @@ void tc8566afWriteRegister(TC8566AF* tc, UInt8 reg, UInt8 value)
             break;
             
 		case PHASE_DATATRANSFER:
+#ifndef TARGET_GNW
             tc8566afExecutionPhaseWrite(tc, value);
+#endif
             tc->dataTransferTime = boardSystemTime();
             tc->mainStatus &= ~STM_RQM;
         	break;

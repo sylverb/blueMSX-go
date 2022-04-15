@@ -62,8 +62,10 @@ UInt8 diskReadOnly(int driveId);
 UInt8 diskPresent(int driveId);
 DSKE  diskRead(int driveId, UInt8* buffer, int sector);
 DSKE  diskReadSector(int driveId, UInt8* buffer, int sector, int side, int track, int density, int *sectorSize);
+#ifndef TARGET_GNW
 UInt8 diskWrite(int driveId, UInt8* buffer, int sector);
 UInt8 diskWriteSector(int driveId, UInt8 *buffer, int sector, int side, int track, int density);
+#endif
 int   diskGetSectorsPerTrack(int driveId);
 int   diskGetSectorSize(int driveId, int side, int track, int density);
 int   diskIsCdrom(int driveId);

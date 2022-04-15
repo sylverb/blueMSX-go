@@ -36,7 +36,9 @@ TC8566AF* tc8566afCreate();
 void tc8566afDestroy(TC8566AF* tc);
 void tc8566afReset(TC8566AF* tc);
 UInt8 tc8566afReadRegister(TC8566AF* tc, UInt8 reg);
+#ifndef TARGET_GNW
 UInt8 tc8566afPeekRegister(TC8566AF* tc, UInt8 reg);
+#endif
 void tc8566afWriteRegister(TC8566AF* tc, UInt8 reg, UInt8 value);
 int tc8566afDiskChanged(TC8566AF* tc, int drive);
 

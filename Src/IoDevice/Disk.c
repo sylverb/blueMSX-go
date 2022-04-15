@@ -47,14 +47,21 @@
 #define DISK_ERRORS_HEADER_SIZE 0x14
 #define DISK_ERRORS_SIZE        ((MAXSECTOR+7)/8)
 
-static int   drivesEnabled[MAXDRIVES] = { 1, 1 };
 #ifndef TARGET_GNW
+static int   drivesEnabled[MAXDRIVES] = { 1, 1 };
 static int   drivesIsCdrom[MAXDRIVES];
 static FILE* drives[MAXDRIVES];
 #else
+static int   drivesEnabled[MAXDRIVES] = { 1 };
 static char* drives[MAXDRIVES];
 #endif
 static int   RdOnly[MAXDRIVES];
+#ifdef TARGET_GNW
+static int   compressed[MAXDRIVES];
+static int   cachedSide[MAXDRIVES];
+static int   cachedTrack[MAXDRIVES];
+static char  ramTrackBuffer[MAXDRIVES][512*9]; // 512 bytes by sector and 9 sectors by track
+#endif
 static char* ramImageBuffer[MAXDRIVES];
 static int   ramImageSize[MAXDRIVES];
 static int   sectorsPerTrack[MAXDRIVES];
@@ -67,10 +74,18 @@ static int   diskType[MAXDRIVES];
 static int   maxSector[MAXDRIVES];
 static char* drivesErrors[MAXDRIVES];
 static const UInt8 svi328Cpm80track[] = "CP/M-80";
+#ifndef TARGET_GNW
 static void diskHdUpdateInfo(int driveId);
 static void diskReadHdIdentifySector(int driveId, UInt8* buffer);
+#endif
 
-enum { MSX_DISK, SVI328_DISK, IDEHD_DISK } diskTypes;
+enum {
+    MSX_DISK,
+    SVI328_DISK,
+#ifndef TARGET_GNW
+    IDEHD_DISK
+#endif
+} diskTypes;
 
 UInt8 diskEnabled(int driveId)
 {
@@ -220,10 +235,12 @@ DSKE diskReadSector(int driveId, UInt8* buffer, int sector, int side, int track,
     if (!diskPresent(driveId))
         return DSKE_NO_DATA;
 
+#ifndef TARGET_GNW
     if (diskType[driveId] == IDEHD_DISK && sector == -1) {
         diskReadHdIdentifySector(driveId, buffer);
         return DSKE_OK;
     }
+#endif
 
     offset = diskGetSectorOffset(driveId, sector, side, track, density);
     secSize = diskGetSectorSize(driveId, side, track, density);
@@ -251,9 +268,29 @@ DSKE diskReadSector(int driveId, UInt8* buffer, int sector, int side, int track,
                 return success? diskReadError(driveId, sectornum) : DSKE_NO_DATA;
             }
 #else
-            memcpy(buffer,drives[driveId] + offset,secSize);
-            int sectornum = sector - 1 + diskGetSectorsPerTrack(driveId) * (track * diskGetSides(driveId) + side);
-            return diskReadError(driveId, sectornum);
+            if (compressed[driveId]) {
+                // if we access a new track, update cache
+                if ((cachedSide[driveId] != side) || (cachedTrack[driveId] != track)) {
+                    UInt32 lzmaDataOffset;
+                    // Get offset for current track/sector
+                    offset = 4+2*track*4+side*4;
+                    lzmaDataOffset = (*(drives[driveId]+offset))        +
+                                     (*(drives[driveId]+offset+1) <<8)  +
+                                     (*(drives[driveId]+offset+2) <<16) +
+                                     (*(drives[driveId]+offset+3) <<24);
+                    lzma_inflate(
+                            ramTrackBuffer[driveId],
+                            secSize*9, // Track size
+                            drives[driveId] + lzmaDataOffset,
+                            secSize*9*2);
+                }
+                memcpy(buffer, &ramTrackBuffer[driveId][((sector-1)*secSize)], secSize);
+                return DSKE_OK;
+            } else {
+                memcpy(buffer,drives[driveId] + offset,secSize);
+                int sectornum = sector - 1 + diskGetSectorsPerTrack(driveId) * (track * diskGetSides(driveId) + side);
+                return diskReadError(driveId, sectornum);
+            }
 #endif
         }
     }
@@ -282,6 +319,11 @@ static void diskUpdateInfo(int driveId)
     int secSize;
     DSKE rv;
 
+#ifdef TARGET_GNW
+    compressed[driveId]      = 0;
+    cachedSide[driveId]      = -1;
+    cachedTrack[driveId]     = -1;
+#endif
     sectorsPerTrack[driveId] = 9;
     sides[driveId]           = 2;
     tracks[driveId]          = 80;
@@ -290,11 +332,13 @@ static void diskUpdateInfo(int driveId)
     diskType[driveId]        = MSX_DISK;
     maxSector[driveId]       = MAXSECTOR;
 
+#ifndef TARGET_GNW
     if (fileSize[driveId] > 2 * 1024 * 1024) {
         // HD image
         diskHdUpdateInfo(driveId);
         return;
     }
+#endif
 
     if (fileSize[driveId] / 512 == 1440) {
         return;
@@ -304,6 +348,14 @@ static void diskUpdateInfo(int driveId)
     if (rv != DSKE_OK) {
         return;
     }
+
+    // Compressed MSX 720KB image
+#ifdef TARGET_GNW
+    if (memcmp(buf,"lzma",4)==0) {
+        compressed[driveId] = 1;
+        return;
+    }
+#endif
 
     switch (fileSize[driveId]) {
         case 163840:
@@ -472,6 +524,7 @@ static void diskUpdateInfo(int driveId)
     }
 }
 
+#ifndef TARGET_GNW
 UInt8 diskWrite(int driveId, UInt8 *buffer, int sector)
 {
     if (!diskPresent(driveId)) {
@@ -543,7 +596,6 @@ UInt8 diskWriteSector(int driveId, UInt8 *buffer, int sector, int side, int trac
     return 0;
 }
 
-#ifndef TARGET_GNW
 void diskSetInfo(int driveId, char* fileName, const char* fileInZipFile)
 {
     drivesIsCdrom[driveId] = fileName && strcmp(fileName, DISK_CDROM) == 0;
@@ -647,17 +699,15 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
 
 #ifdef TARGET_GNW
     retro_emulator_file_t *rom_file;
-    printf("Looking for disk %s\n",fileName);
 
     rom_system_t *rom_system = (rom_system_t *)rom_manager_system(&rom_mgr, "MSX");
     rom_file = (retro_emulator_file_t *)rom_manager_get_file((const rom_system_t *)rom_system,fileName);
-    if (rom_file != NULL) {
-    printf("Found disk %s at 0x%x\n",fileName,rom_file->address);
-    } else {
+    if (rom_file == NULL) {
         return 0;
     }
     drives[driveId] = (UInt8*)rom_file->address;
     RdOnly[driveId] = 1;
+    compressed[driveId] = 0;
     fileSize[driveId] = rom_file->size;
 #else
     drives[driveId] = fopen(fileName, "r+b");
@@ -703,6 +753,7 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
 
 /* Harddisk IDE HD */
 
+#ifndef TARGET_GNW
 static const UInt8 hdIdentifyBlock[512] = {
     0x5a,0x0c,0xba,0x09,0x00,0x00,0x10,0x00,0x00,0x00,0x00,0x00,0x3f,0x00,0x00,0x00,
     0x00,0x00,0x00,0x00,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,
@@ -769,6 +820,7 @@ static void diskHdUpdateInfo(int driveId)
     diskType[driveId]        = IDEHD_DISK;
     maxSector[driveId]       = 99999999;
 }
+#endif
 
 /* SCSI device */
 

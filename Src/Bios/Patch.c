@@ -214,7 +214,7 @@ static void phydio(void* ref, CpuRegs* cpu) {
     while (cpu->BC.B.h) {
 #ifndef TARGET_GNW
         PatchDiskSetBusy(drive, 1);
-#endif
+
         if (write) {
             for (i = 0; i < 512; i++) {
                 buffer[i]=slotRead(ref, address++);
@@ -227,7 +227,9 @@ static void phydio(void* ref, CpuRegs* cpu) {
                 return;
             }
         }
-        else {
+        else
+#endif
+        {
             if (diskRead(drive, buffer, sector) != DSKE_OK) {
                 cpu->AF.W = 0x0401;
                 slotWrite(ref, 0xffff, origSlotSec);
@@ -348,6 +350,7 @@ static void getdpb(void* ref, CpuRegs* cpu) {
 }
 
 static void dskfmt(void* ref, CpuRegs* cpu) {
+#ifndef TARGET_GNW
     UInt8 buffer[512];
     UInt8 index;
     int j;
@@ -409,14 +412,11 @@ static void dskfmt(void* ref, CpuRegs* cpu) {
     buffer[27] = 0;
 
     /* If can't write bootblock, return "Write protected": */
-#ifndef TARGET_GNW
     PatchDiskSetBusy(cpu->DE.B.h, 1);
-#endif
     if (!diskWrite(cpu->DE.B.h, buffer, 0)) {
         cpu->AF.W = 0x0001;
         return;
     }
-
 
     /* Writing FATs: */
     sector = 1;
@@ -462,6 +462,29 @@ static void dskfmt(void* ref, CpuRegs* cpu) {
 
     /* Return success      */
     cpu->AF.B.l &= ~C_FLAG;
+#else
+    UInt8 index;
+    /* If invalid choice, return "Bad parameter": */
+    if (cpu->AF.B.h == 0x87) {
+        cpu->AF.B.h = 2;
+    }
+
+    index = cpu->AF.B.h - 1;
+    if (index > 1) {
+        cpu->AF.W = 0x0c01;
+        return;
+    }
+
+    /* If no disk, return "Not ready": */
+    if(!diskPresent(cpu->DE.B.h)) {
+        cpu->AF.W=0x0201;
+        return;
+    }
+
+    // Return Write protected
+    cpu->AF.W = 0x0001;
+    return;
+#endif
 }
 
 
