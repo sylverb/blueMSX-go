@@ -42,7 +42,7 @@ typedef struct Mixer Mixer;
 #ifndef TARGET_GNW
 #define AUDIO_SAMPLERATE       44100
 #else
-#define AUDIO_SAMPLERATE       22050
+#define AUDIO_SAMPLERATE       16000
 #endif
 
 typedef enum { 

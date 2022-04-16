@@ -37,8 +37,11 @@
 #include <string.h>
 #include <math.h>
 
-//#define BASE_PHASE_STEP 0x28959becUL  /* = (1 << 28) * 3579545 / 32 / 44100 */
-#define BASE_PHASE_STEP 0x512b37d8UL  /* = (1 << 28) * 3579545 / 32 / 22050 */
+#ifndef TARGET_GNW
+#define BASE_PHASE_STEP 0x28959becUL  /* = (1 << 28) * 3579545 / 32 / 44100 */
+#else
+#define BASE_PHASE_STEP 0x6fdc5c28UL  /* = (1 << 28) * 3579545 / 32 / 16000 */
+#endif
 
 static Int16 voltTable[16];
 static Int16 voltEnvTable[32];
