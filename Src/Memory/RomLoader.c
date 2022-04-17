@@ -86,7 +86,6 @@ error:
     return NULL;
 #else
     retro_emulator_file_t *rom_file;
-    printf("Looking for rom %s\n",fileName);
 
     rom_system_t *rom_system = (rom_system_t *)rom_manager_system(&rom_mgr, "MSX_BIOS");
     rom_file = (retro_emulator_file_t *)rom_manager_get_file((const rom_system_t *)rom_system,fileName);
@@ -98,7 +97,7 @@ error:
         printf("%s rom not found\n",fileName);
         return NULL;
     }
-    printf("Found rom %s at 0x%x\n",fileName,rom_file->address);
+    *size = rom_file->size;
     return (UInt8*)rom_file->address;
 #endif
 }
