@@ -44,6 +44,10 @@ typedef struct {
     int size;
 } RomMapperPlain;
 
+#ifdef MSX_NO_MALLOC
+static RomMapperPlain rm_global;
+#endif
+
 static void destroy(void* arg)
 {
     RomMapperPlain* rm = (RomMapperPlain*)arg;
@@ -51,8 +55,10 @@ static void destroy(void* arg)
     slotUnregister(rm->slot, rm->sslot, rm->startPage);
     deviceManagerUnregister(rm->deviceHandle);
 
+#ifndef MSX_NO_MALLOC
     free(rm->romData);
     free(rm);
+#endif
 }
 
 static UInt16 getRomStart(UInt8* romData, int size) 
@@ -110,11 +116,19 @@ int romMapperPlainCreate(const char* filename, UInt8* romData,
         return 0;
     }
 
+#ifndef MSX_NO_MALLOC
     rm = malloc(sizeof(RomMapperPlain));
+#else
+    rm = &rm_global;
+#endif
 
+#ifndef MSX_NO_MALLOC
     rm->romData = malloc(0x10000);
     memset(rm->romData, 0xff, 0x10000);
     memcpy(rm->romData, romData, size);
+#else
+    rm->romData = romData;
+#endif
 
     // Align ROM size up to next valid rom size
     if      (size <= 0x2000)  size = 0x2000;
@@ -187,8 +201,10 @@ int romMapperPlainCreate(const char* filename, UInt8* romData,
         break;
         
     default:
+#ifndef MSX_NO_MALLOC
         free(rm->romData);
         free(rm);
+#endif
         return 0;
     }
 

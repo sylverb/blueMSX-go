@@ -412,19 +412,21 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
             success &= romMapperNormalCreate(romName, buf, size, slot, sslot, 2);
             break;
 
-#ifndef TARGET_GNW
         case ROM_BASIC:
             success &= romMapperBasicCreate(romName, buf, size, slot, sslot, 4);
             break;
 
+#ifndef TARGET_GNW
         case ROM_FMDAS:
             success &= romMapperFmDasCreate(romName, buf, size, slot, sslot, 0);
             break;
+#endif
 
         case ROM_PLAIN:
             success &= romMapperPlainCreate(romName, buf, size, slot, sslot, 0);
             break;
 
+#ifndef TARGET_GNW
         case ROM_NETTOUYAKYUU:
             success &= romMapperNettouYakyuuCreate(romName, buf, size, slot, sslot, 2);
             break;
@@ -603,11 +605,11 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
         case ROM_ASCII16SRAM:
             success &= romMapperASCII16sramCreate(romName, buf, size, slot, sslot, 2);
             break;
-            
+#endif
+
         case ROM_KOEI:
             success &= romMapperKoeiCreate(romName, buf, size, slot, sslot, 2);
             break;
-#endif
 
         case ROM_KONAMI4NF:
             success &= romMapperKonami4nfCreate(romName, buf, size, slot, sslot, 2);

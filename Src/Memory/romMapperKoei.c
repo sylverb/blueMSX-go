@@ -69,15 +69,23 @@
 typedef struct {
     int deviceHandle;
     UInt8* romData;
+#ifndef TARGET_GNW
     UInt8 sram[SRAM_PAGES << 13];
     char sramFilename[512];
+#endif
     int slot;
     int sslot;
     int startPage;
+#ifndef TARGET_GNW
     int sramEnabled;
+#endif
     UInt32 romMask;
     int romMapper[4];
 } RomMapperKoei;
+
+#ifdef MSX_NO_MALLOC
+static RomMapperKoei rm_global;
+#endif
 
 static void saveState(RomMapperKoei* rm)
 {
@@ -90,7 +98,9 @@ static void saveState(RomMapperKoei* rm)
         saveStateSet(state, tag, rm->romMapper[i]);
     }
     
+#ifndef TARGET_GNW
     saveStateSet(state, "sramEnabled", rm->sramEnabled);
+#endif
 
     saveStateClose(state);
 }
@@ -105,16 +115,21 @@ static void loadState(RomMapperKoei* rm)
         sprintf(tag, "romMapper%d", i);
         rm->romMapper[i] = saveStateGet(state, tag, 0);
     }
-    
+
+#ifndef TARGET_GNW
     rm->sramEnabled = saveStateGet(state, "sramEnabled", 0);
+#endif
 
     saveStateClose(state);
 
     for (i = 0; i < 4; i++) {   
+#ifndef TARGET_GNW
         if (rm->sramEnabled & (1 << i)) {
             slotMapPage(rm->slot, rm->sslot, rm->startPage + i, rm->sram + (rm->romMapper[i] & (SRAM_PAGES - 1)) * 0x2000, 1, 0);
         }
-        else {
+        else
+#endif
+        {
             slotMapPage(rm->slot, rm->sslot, rm->startPage + i, rm->romData + rm->romMapper[i] * 0x2000, 1, 0);
         }
     }
@@ -122,13 +137,17 @@ static void loadState(RomMapperKoei* rm)
 
 static void destroy(RomMapperKoei* rm)
 {
+#ifndef TARGET_GNW
     sramSave(rm->sramFilename, rm->sram, SRAM_PAGES << 13, NULL, 0);
+#endif
 
     slotUnregister(rm->slot, rm->sslot, rm->startPage);
     deviceManagerUnregister(rm->deviceHandle);
 
+#ifndef MSX_NO_MALLOC
     free(rm->romData);
     free(rm);
+#endif
 }
 
 static void write(RomMapperKoei* rm, UInt16 address, UInt8 value) 
@@ -141,13 +160,17 @@ static void write(RomMapperKoei* rm, UInt16 address, UInt8 value)
         UInt8* bankData;
 
         if (value & ~rm->romMask) {
+#ifndef TARGET_GNW
             bankData = rm->sram + ((int)(value & (SRAM_PAGES - 1)) << 13);
-            writeCache = bank != 1;
             rm->sramEnabled |= (1 << bank);
+#endif
+            writeCache = bank != 1;
         }
         else {
             bankData = rm->romData + ((int)value << 13);
+#ifndef TARGET_GNW
             rm->sramEnabled &= ~(1 << bank);
+#endif
         }
 
         rm->romMapper[bank] = value;
@@ -166,22 +189,34 @@ int romMapperKoeiCreate(const char* filename, UInt8* romData,
         return 0;
     }
 
+#ifndef MSX_NO_MALLOC
     rm = malloc(sizeof(RomMapperKoei));
+#else
+    rm = &rm_global;
+#endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_KOEI, &callbacks, rm);
     slotRegister(slot, sslot, startPage, 4, NULL, NULL, write, destroy, rm);
 
+#ifndef MSX_NO_MALLOC
     rm->romData = malloc(size);
     memcpy(rm->romData, romData, size);
+#else
+    rm->romData = romData;
+#endif
+#ifndef TARGET_GNW
     memset(rm->sram, 0xff, SRAM_PAGES << 13);
+#endif
     rm->romMask = size / 8192 - 1;
     rm->slot  = slot;
     rm->sslot = sslot;
     rm->startPage  = startPage;
+#ifndef TARGET_GNW
     rm->sramEnabled = 0;
     strcpy(rm->sramFilename, sramCreateFilename(filename));
 
     sramLoad(rm->sramFilename, rm->sram, SRAM_PAGES << 13, NULL, 0);
+#endif
 
     rm->romMapper[0] = 0;
     rm->romMapper[1] = 0;
