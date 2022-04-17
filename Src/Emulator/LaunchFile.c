@@ -176,15 +176,13 @@ int insertCartridge(Properties* properties, int drive, const char* fname, const 
         char* buf = romLoad(filename, NULL, &size);
 #endif
 
-        if (buf != NULL) {
 #ifndef TARGET_GNW
+        if (buf != NULL) {
             MediaType* mediaType  = mediaDbGuessRom(buf, size);
             RomType    chkRomType = mediaDbGetRomType(mediaType);
             strcpy(prettyRomName, mediaDbGetPrettyString(mediaType));
             free(buf);
-#endif
 
-#ifndef TARGET_GNW
             if (prettyRomName[0] != 0) {
                 setExtendedRomName(drive, prettyRomName);
             }
@@ -194,8 +192,8 @@ int insertCartridge(Properties* properties, int drive, const char* fname, const 
             if (romType == ROM_UNKNOWN) {
                 romType = chkRomType;
             }
-#endif
         }
+#endif
     }
 
 #ifndef TARGET_GNW
