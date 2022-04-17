@@ -37,7 +37,7 @@ typedef struct Mixer Mixer;
 #define AUDIO_MONO_BUFFER_SIZE    10000
 #define AUDIO_STEREO_BUFFER_SIZE  (2 * AUDIO_MONO_BUFFER_SIZE)
 #else
-#define AUDIO_MONO_BUFFER_SIZE    1000// TODO : Check how much is really needed
+#define AUDIO_MONO_BUFFER_SIZE    320 // 320 samples needed for each frame at 50Hz
 #endif
 #ifndef TARGET_GNW
 #define AUDIO_SAMPLERATE       44100
