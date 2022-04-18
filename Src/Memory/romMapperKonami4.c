@@ -140,13 +140,13 @@ int romMapperKonami4Create(const char* filename, UInt8* romData,
 #ifndef MSX_NO_MALLOC
     rm->romData = malloc(romSize);
     memcpy(rm->romData, romData, size);
-#else
-    rm->romData = romData;
-#endif
 
     if (size < 0x40000) {
         memset(rm->romData + size, 0xff, 0x40000 - size);
     }
+#else
+    rm->romData = romData;
+#endif
 
     rm->size = romSize;
     rm->slot  = slot;
