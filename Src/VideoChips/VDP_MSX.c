@@ -44,6 +44,8 @@
 //#define ENABLE_VRAM_DECAY
 // Global configuration (not device specific)
 
+static const char* VdpNames[] = { "V9938", "V9958", "TMS9929A", "TMS99x8A" };
+
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 

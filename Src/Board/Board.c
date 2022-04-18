@@ -90,9 +90,13 @@ static HdType hdType[MAX_HD_COUNT];
 
 static int     ramMaxStates;
 static int     ramStateCur;
+#ifndef TARGET_GNW
 static int     ramStateCount;
+#endif
 static int     stateFrequency;
+#ifndef TARGET_GNW
 static int     enableSnapshots;
+#endif
 static int     useRom;
 static int     useMegaRom;
 static int     useMegaRam;
@@ -104,7 +108,9 @@ static BoardType boardLoadState(void);
 static void boardUpdateDisketteInfo();
 #endif
 
+#ifndef MSX_NO_ZIP
 static char saveStateVersion[32] = "blueMSX - state  v 8";
+#endif
 
 static BoardTimerCb periodicCb;
 static void*        periodicRef;
@@ -117,6 +123,7 @@ void boardTimerCleanup();
 #define boardFrequency64() (HIRES_CYCLES_PER_LORES_CYCLE * boardFrequency())
 
 
+#ifndef TARGET_GNW
 static void boardPeriodicCallback(void* ref, UInt32 time)
 {
     if (periodicCb != NULL) {
@@ -124,6 +131,7 @@ static void boardPeriodicCallback(void* ref, UInt32 time)
         boardTimerAdd(periodicTimer, time + periodicInterval);
     }
 }
+#endif
 
 //------------------------------------------------------
 // Board supports one external periodic timer (can be
@@ -582,10 +590,12 @@ static void onStateSync(void* ref, UInt32 time)
     boardTimerAdd(stateTimer, boardSystemTime() + stateFrequency);
 }
 
+#ifndef __LIBRETRO__
 static void onSync(void* ref, UInt32 time)
 {
     doSync(time, 0);
 }
+#endif
 
 void boardOnBreakpoint(UInt16 pc)
 {
@@ -710,7 +720,9 @@ int boardRun(Machine* machine,
              int reverseBufferCnt,
              int (*syncCallback)(int, int))
 {
+#ifndef TARGET_GNW
     int loadState = 0;
+#endif
     int success = 0;
 
     syncToRealClock = syncCallback;
@@ -722,7 +734,6 @@ int boardRun(Machine* machine,
 
     boardMixer      = mixer;
     boardDeviceInfo = deviceInfo;
-    printf("boardRun set boardDeviceInfo %x\n",boardDeviceInfo);
     boardMachine    = machine;
 
 #ifndef TARGET_GNW
@@ -821,8 +832,9 @@ int boardRun(Machine* machine,
             periodicTimer = NULL;
         }
 
+#ifndef TARGET_GNW
         boardCaptureDestroy();
-
+#endif
         boardInfo.destroy();
 
         boardTimerDestroy(fdcTimer);
@@ -997,6 +1009,7 @@ static BoardType boardLoadState(void)
 
 void boardSaveState(const char* stateFile, int screenshot)
 {
+#ifndef TARGET_GNW
     BoardDeviceInfo* di = boardDeviceInfo;
     char buf[128];
     time_t ltime;
@@ -1005,6 +1018,7 @@ void boardSaveState(const char* stateFile, int screenshot)
     void* bitmap;
     int rv;
     int i;
+#endif
 
     if (!boardRunning) {
         return;
@@ -1018,7 +1032,8 @@ void boardSaveState(const char* stateFile, int screenshot)
         return;
     }
 #endif
-    
+
+#ifndef TARGET_GNW
     state = saveStateOpenForWrite("board");
 
     saveStateSet(state, "pendingInt", pendingInt);
@@ -1068,15 +1083,14 @@ void boardSaveState(const char* stateFile, int screenshot)
 
     saveStateClose(state);
 
-#ifndef TARGET_GNW
     boardCaptureSaveState();
 
     videoManagerSaveState();
     tapeSaveState();
-#endif
 
     // Save machine state
     machineSaveState(boardMachine);
+#endif
 
     // Call board dependent save state
     boardInfo.saveState(stateFile);
@@ -1095,13 +1109,13 @@ void boardSaveState(const char* stateFile, int screenshot)
             free(bitmap);
         }
     }
-#endif
 
     memset(buf, 0, 128);
     time(&ltime);
     strftime(buf, 128, "%X   %A, %B %d, %Y", localtime(&ltime));
 #ifndef MSX_NO_ZIP
     zipSaveFile(stateFile, "date.txt", 1, buf, strlen(buf) + 1);
+#endif
 #endif
     saveStateDestroy();
 }
@@ -1361,7 +1375,7 @@ typedef struct BoardTimer {
     BoardTimerCb callback;
     void*        ref;
     UInt32       timeout;
-};
+} BoardTimer;
 
 static BoardTimer* timerList = NULL;
 static UInt32 timeAnchor;
