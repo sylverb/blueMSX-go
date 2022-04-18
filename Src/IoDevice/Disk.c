@@ -34,6 +34,7 @@
 #include <string.h>
 #include <stdio.h>
 #ifdef TARGET_GNW
+#include "lzma.h"
 #include "rom_manager.h"
 #endif
 #include <sys/stat.h>
@@ -62,8 +63,10 @@ static int   cachedSide[MAXDRIVES];
 static int   cachedTrack[MAXDRIVES];
 static char  ramTrackBuffer[MAXDRIVES][512*9]; // 512 bytes by sector and 9 sectors by track
 #endif
+#ifndef TARGET_GNW
 static char* ramImageBuffer[MAXDRIVES];
 static int   ramImageSize[MAXDRIVES];
+#endif
 static int   sectorsPerTrack[MAXDRIVES];
 static int   sectorSize[MAXDRIVES];
 static int   fileSize[MAXDRIVES];
@@ -73,7 +76,7 @@ static int   changed[MAXDRIVES];
 static int   diskType[MAXDRIVES];
 static int   maxSector[MAXDRIVES];
 static char* drivesErrors[MAXDRIVES];
-static const UInt8 svi328Cpm80track[] = "CP/M-80";
+static const char svi328Cpm80track[] = "CP/M-80";
 #ifndef TARGET_GNW
 static void diskHdUpdateInfo(int driveId);
 static void diskReadHdIdentifySector(int driveId, UInt8* buffer);
@@ -115,8 +118,12 @@ void  diskEnable(int driveId, int enable)
 
 UInt8 diskPresent(int driveId)
 {
+#ifndef TARGET_GNW
     return driveId >= 0 && driveId < MAXDRIVES && 
         (drives[driveId] != NULL || ramImageBuffer[driveId] != NULL);
+#else
+    return driveId >= 0 && driveId < MAXDRIVES && drives[driveId] != NULL;
+#endif
 }
 
 int diskGetSectorsPerTrack(int driveId)
@@ -202,6 +209,7 @@ DSKE diskRead(int driveId, UInt8* buffer, int sector)
     if (!diskPresent(driveId))
         return DSKE_NO_DATA;
 
+#ifndef TARGET_GNW
     if (ramImageBuffer[driveId] != NULL) {
         int offset = sector * sectorSize[driveId];
 
@@ -212,7 +220,9 @@ DSKE diskRead(int driveId, UInt8* buffer, int sector)
         memcpy(buffer, ramImageBuffer[driveId] + offset, sectorSize[driveId]);
         return DSKE_OK;
     }
-    else {
+    else
+#endif
+    {
         if ((drives[driveId] != NULL)) {
 #ifndef TARGET_GNW
             if (0 == fseek(drives[driveId], sector * sectorSize[driveId], SEEK_SET)) {
@@ -249,6 +259,7 @@ DSKE diskReadSector(int driveId, UInt8* buffer, int sector, int side, int track,
         *sectorSize = secSize;
     }
 
+#ifndef TARGET_GNW
     if (ramImageBuffer[driveId] != NULL) {
         int sectornum;
         if (ramImageSize[driveId] < offset + secSize) {
@@ -259,7 +270,9 @@ DSKE diskReadSector(int driveId, UInt8* buffer, int sector, int side, int track,
         sectornum = sector - 1 + diskGetSectorsPerTrack(driveId) * (track * diskGetSides(driveId) + side);
         return diskReadError(driveId, sectornum);
     }
-    else {
+    else
+#endif
+    {
         if ((drives[driveId] != NULL)) {
 #ifndef TARGET_GNW
             if (0 == fseek(drives[driveId], offset, SEEK_SET)) {
@@ -279,10 +292,10 @@ DSKE diskReadSector(int driveId, UInt8* buffer, int sector, int side, int track,
                                      (*(drives[driveId]+offset+2) <<16) +
                                      (*(drives[driveId]+offset+3) <<24);
                     lzma_inflate(
-                            ramTrackBuffer[driveId],
+                            (uint8_t *)ramTrackBuffer[driveId],
                             secSize*9, // Track size
-                            drives[driveId] + lzmaDataOffset,
-                            secSize*9*2);
+                            (const uint8_t *)(drives[driveId] + lzmaDataOffset),
+                            secSize*9*3);
                 }
                 memcpy(buffer, &ramTrackBuffer[driveId][((sector-1)*secSize)], secSize);
                 return DSKE_OK;
@@ -600,7 +613,6 @@ void diskSetInfo(int driveId, char* fileName, const char* fileInZipFile)
 {
     drivesIsCdrom[driveId] = fileName && strcmp(fileName, DISK_CDROM) == 0;
 }
-#endif
 
 static char *makeErrorsFileName(const char *fileName)
 {
@@ -616,12 +628,15 @@ static char *makeErrorsFileName(const char *fileName)
         return NULL;
     }
 }
+#endif
 
 UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
 {
+#ifndef TARGET_GNW
     struct stat s;
     int rv;
     char *fname;
+#endif
 
     if (driveId >= MAXDRIVES)
         return 0;
@@ -638,6 +653,7 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
         drives[driveId] = NULL; 
     }
 
+#ifndef TARGET_GNW
     if (ramImageBuffer[driveId] != NULL) {
         // Flush to file??
 #ifndef MSX_NO_MALLOC
@@ -645,6 +661,7 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
 #endif
         ramImageBuffer[driveId] = NULL;
     }
+#endif
 
     if (drivesErrors[driveId] != NULL) {
 #ifndef MSX_NO_MALLOC
@@ -705,7 +722,7 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
     if (rom_file == NULL) {
         return 0;
     }
-    drives[driveId] = (UInt8*)rom_file->address;
+    drives[driveId] = (char *)rom_file->address;
     RdOnly[driveId] = 1;
     compressed[driveId] = 0;
     fileSize[driveId] = rom_file->size;
