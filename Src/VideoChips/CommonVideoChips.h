@@ -2605,28 +2605,28 @@ rightBorder = X2 == 33;
 #ifndef TARGET_GNW
                           vdp->yjkColor[y][J][K];
 #else
-                          getyjkColor(y,J,K);
+                          msxYjkColor[y][J][K];
 #endif
                 case 1:
                     col = sprLine[1]; y = t1 >> 3; *linePtr10++ = col ? vdp->palette[col >> 1] : y & 1 ? vdp->palette[y >> 1] :
 #ifndef TARGET_GNW
                           vdp->yjkColor[y][J][K];
 #else
-                          getyjkColor(y,J,K);
+                          msxYjkColor[y][J][K];
 #endif
                 case 2:
                     col = sprLine[2]; y = t2 >> 3; *linePtr10++ = col ? vdp->palette[col >> 1] : y & 1 ? vdp->palette[y >> 1] :
 #ifndef TARGET_GNW
                           vdp->yjkColor[y][J][K];
 #else
-                          getyjkColor(y,J,K);
+                          msxYjkColor[y][J][K];
 #endif
                 case 3:
                     col = sprLine[3]; y = t3 >> 3; *linePtr10++ = col ? vdp->palette[col >> 1] : y & 1 ? vdp->palette[y >> 1] :
 #ifndef TARGET_GNW
                           vdp->yjkColor[y][J][K];
 #else
-                          getyjkColor(y,J,K);
+                          msxYjkColor[y][J][K];
 #endif
                 }
                 sprLine += 4;
@@ -2646,25 +2646,25 @@ rightBorder = X2 == 33;
 #ifndef TARGET_GNW
                   vdp->yjkColor[y][J][K];
 #else
-                  getyjkColor(y,J,K);
+                  msxYjkColor[y][J][K];
 #endif
             col = sprLine[1]; y = t1 >> 3; linePtr10[1] = col ? vdp->palette[col >> 1] : y & 1 ? vdp->palette[y >> 1] :
 #ifndef TARGET_GNW
                   vdp->yjkColor[y][J][K];
 #else
-                  getyjkColor(y,J,K);
+                  msxYjkColor[y][J][K];
 #endif
             col = sprLine[2]; y = t2 >> 3; linePtr10[2] = col ? vdp->palette[col >> 1] : y & 1 ? vdp->palette[y >> 1] :
 #ifndef TARGET_GNW
                   vdp->yjkColor[y][J][K];
 #else
-                  getyjkColor(y,J,K);
+                  msxYjkColor[y][J][K];
 #endif
             col = sprLine[3]; y = t3 >> 3; linePtr10[3] = col ? vdp->palette[col >> 1] : y & 1 ? vdp->palette[y >> 1] :
 #ifndef TARGET_GNW
                   vdp->yjkColor[y][J][K];
 #else
-                  getyjkColor(y,J,K);
+                  msxYjkColor[y][J][K];
 #endif
 
             t0 = charTable[2];        UPDATE_TABLE_10();
@@ -2682,21 +2682,21 @@ rightBorder = X2 == 33;
 #ifndef TARGET_GNW
                     vdp->yjkColor[y][J][K];
 #else
-                    getyjkColor(y,J,K);
+                    msxYjkColor[y][J][K];
 #endif
                 case 2:
                     y = t1 >> 3; col = sprLine[5]; linePtr10[5] = col ? vdp->palette[col >> 1] : y & 1 ? vdp->palette[y >> 1] :
 #ifndef TARGET_GNW
                     vdp->yjkColor[y][J][K];
 #else
-                    getyjkColor(y,J,K);
+                    msxYjkColor[y][J][K];
 #endif
                 case 3:
                     y = t0 >> 3; col = sprLine[4]; linePtr10[4] = col ? vdp->palette[col >> 1] : y & 1 ? vdp->palette[y >> 1] :
 #ifndef TARGET_GNW
                     vdp->yjkColor[y][J][K];
 #else
-                    getyjkColor(y,J,K);
+                    msxYjkColor[y][J][K];
 #endif
                 }
             }
@@ -2705,25 +2705,25 @@ rightBorder = X2 == 33;
 #ifndef TARGET_GNW
                       vdp->yjkColor[y][J][K];
 #else
-                      getyjkColor(y,J,K);
+                      msxYjkColor[y][J][K];
 #endif
                 col = sprLine[5]; y = t1 >> 3; linePtr10[5] = col ? vdp->palette[col >> 1] : y & 1 ? vdp->palette[y >> 1] :
 #ifndef TARGET_GNW
                       vdp->yjkColor[y][J][K];
 #else
-                      getyjkColor(y,J,K);
+                      msxYjkColor[y][J][K];
 #endif
                 col = sprLine[6]; y = t2 >> 3; linePtr10[6] = col ? vdp->palette[col >> 1] : y & 1 ? vdp->palette[y >> 1] :
 #ifndef TARGET_GNW
                       vdp->yjkColor[y][J][K];
 #else
-                      getyjkColor(y,J,K);
+                      msxYjkColor[y][J][K];
 #endif
                 col = sprLine[7]; y = t3 >> 3; linePtr10[7] = col ? vdp->palette[col >> 1] : y & 1 ? vdp->palette[y >> 1] :
 #ifndef TARGET_GNW
                       vdp->yjkColor[y][J][K];
 #else
-                      getyjkColor(y,J,K);
+                      msxYjkColor[y][J][K];
 #endif
                 sprLine += 8; 
             }
@@ -2859,28 +2859,28 @@ static void RefreshLine12(VDP* vdp, int Y, int X, int X2)
 #ifndef TARGET_GNW
                           vdp->yjkColor[t0 >> 3][J][K];
 #else
-                          getyjkColor(t0 >> 3,J,K);
+                          msxYjkColor[t0 >> 3][J][K];
 #endif
                 case 1:
                     col = sprLine[1]; *linePtr12++ = col ? vdp->palette[col >> 1] :
 #ifndef TARGET_GNW
                           vdp->yjkColor[t1 >> 3][J][K];
 #else
-                          getyjkColor(t1 >> 3,J,K);
+                          msxYjkColor[t1 >> 3][J][K];
 #endif
                 case 2:
                     col = sprLine[2]; *linePtr12++ = col ? vdp->palette[col >> 1] :
 #ifndef TARGET_GNW
                           vdp->yjkColor[t2 >> 3][J][K];
 #else
-                          getyjkColor(t2 >> 3,J,K);
+                          msxYjkColor[t2 >> 3][J][K];
 #endif
                 case 3:
                     col = sprLine[3]; *linePtr12++ = col ? vdp->palette[col >> 1] :
 #ifndef TARGET_GNW
                           vdp->yjkColor[t3 >> 3][J][K];
 #else
-                          getyjkColor(t3 >> 3,J,K);
+                          msxYjkColor[t3 >> 3][J][K];
 #endif
                 }
                 sprLine += 4;
@@ -2901,25 +2901,25 @@ static void RefreshLine12(VDP* vdp, int Y, int X, int X2)
 #ifndef TARGET_GNW
                   vdp->yjkColor[t0 >> 3][J][K];
 #else
-                  getyjkColor(t0 >> 3,J,K);
+                  msxYjkColor[t0 >> 3][J][K];
 #endif
             col = sprLine[1]; linePtr12[1] = col ? vdp->palette[col >> 1] :
 #ifndef TARGET_GNW
                   vdp->yjkColor[t1 >> 3][J][K];
 #else
-                  getyjkColor(t1 >> 3,J,K);
+                  msxYjkColor[t1 >> 3][J][K];
 #endif
             col = sprLine[2]; linePtr12[2] = col ? vdp->palette[col >> 1] :
 #ifndef TARGET_GNW
                   vdp->yjkColor[t2 >> 3][J][K];
 #else
-                  getyjkColor(t2 >> 3,J,K);
+                  msxYjkColor[t2 >> 3][J][K];
 #endif
             col = sprLine[3]; linePtr12[3] = col ? vdp->palette[col >> 1] :
 #ifndef TARGET_GNW
                   vdp->yjkColor[t3 >> 3][J][K];
 #else
-                  getyjkColor(t3 >> 3,J,K);
+                  msxYjkColor[t3 >> 3][J][K];
 #endif
 
             t0 = charTable[2];        UPDATE_TABLE_12();
@@ -2937,21 +2937,21 @@ static void RefreshLine12(VDP* vdp, int Y, int X, int X2)
 #ifndef TARGET_GNW
                           vdp->yjkColor[t2 >> 3][J][K];
 #else
-                          getyjkColor(t2 >> 3,J,K);
+                          msxYjkColor[t2 >> 3][J][K];
 #endif
                 case 2:
                     col = sprLine[5]; linePtr12[5] = col ? vdp->palette[col >> 1] :
 #ifndef TARGET_GNW
                           vdp->yjkColor[t1 >> 3][J][K];
 #else
-                          getyjkColor(t1 >> 3,J,K);
+                          msxYjkColor[t1 >> 3][J][K];
 #endif
                 case 3:
                     col = sprLine[4]; linePtr12[4] = col ? vdp->palette[col >> 1] :
 #ifndef TARGET_GNW
                           vdp->yjkColor[t0 >> 3][J][K];
 #else
-                          getyjkColor(t0 >> 3,J,K);
+                          msxYjkColor[t0 >> 3][J][K];
 #endif
                 }
             }
@@ -2960,25 +2960,25 @@ static void RefreshLine12(VDP* vdp, int Y, int X, int X2)
 #ifndef TARGET_GNW
                       vdp->yjkColor[t0 >> 3][J][K];
 #else
-                      getyjkColor(t0 >> 3,J,K);
+                      msxYjkColor[t0 >> 3][J][K];
 #endif
                 col = sprLine[5]; linePtr12[5] = col ? vdp->palette[col >> 1] :
 #ifndef TARGET_GNW
                       vdp->yjkColor[t1 >> 3][J][K];
 #else
-                      getyjkColor(t1 >> 3,J,K);
+                      msxYjkColor[t1 >> 3][J][K];
 #endif
                 col = sprLine[6]; linePtr12[6] = col ? vdp->palette[col >> 1] :
 #ifndef TARGET_GNW
                       vdp->yjkColor[t2 >> 3][J][K];
 #else
-                      getyjkColor(t2 >> 3,J,K);
+                      msxYjkColor[t2 >> 3][J][K];
 #endif
                 col = sprLine[7]; linePtr12[7] = col ? vdp->palette[col >> 1] :
 #ifndef TARGET_GNW
                       vdp->yjkColor[t3 >> 3][J][K];
 #else
-                      getyjkColor(t3 >> 3,J,K);
+                      msxYjkColor[t3 >> 3][J][K];
 #endif
                 sprLine += 8; 
             }

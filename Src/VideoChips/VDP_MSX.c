@@ -1250,28 +1250,14 @@ static void writeLatch(VDP* vdp, UInt16 ioPort, UInt8 value)
 	}
 }
 
-#ifdef TARGET_GNW
-Pixel getyjkColor(int y, int J, int K) {
-    int j = (J & 0x1f) - (J & 0x20);
-    int k = (K & 0x1f) - (K & 0x20);
-    int r = 255 * (y + j) / 31;
-    int g = 255 * (y + k) / 31;
-    int b = 255 * ((5 * y - 2 * j - k) / 4) / 31;
-    r = MIN(255, MAX(0, r));
-    g = MIN(255, MAX(0, g));
-    b = MIN(255, MAX(0, b));
-    return videoGetColor(r, g, b);
-}
-#endif
-
 static void initPalette(VDP* vdp)
 {
     int i;
+#ifndef TARGET_GNW
     int y;
     int J;
     int K;
 
-#ifndef TARGET_GNW
     for (y = 0; y < 32; y++) {
         for (J = 0; J < 64; J++) {
             for (K = 0; K < 64; K++) {

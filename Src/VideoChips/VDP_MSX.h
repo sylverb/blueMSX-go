@@ -51,7 +51,7 @@ void vdpSetSyncMode(VdpSyncMode sync);
 
 void vdpForceSync();
 #ifdef TARGET_GNW
-Pixel getyjkColor(int y, int J, int K);
+__attribute__((section (".flash2"))) extern Pixel msxYjkColor[32][64][64];
 #endif
 // Video DA Interface
 
