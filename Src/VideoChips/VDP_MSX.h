@@ -50,8 +50,21 @@ void vdpSetSyncMode(VdpSyncMode sync);
 #endif
 
 void vdpForceSync();
+
 #ifdef TARGET_GNW
+// If INTFLASH_BANK = 1, then it means that the second internal flash is free for us
+// to store the YJK convertion table in it. It allows to have real time performances
+// in screen 10/11/12 as internal flash is fast.
+// If INTFLASH_BANK = 2 (dual book with patched OFW), then we can't use second
+// internal flash for our convertion table, we will use external flash instead, which
+// is slower and will not allow full speed performances for screen 10/11/12.
+// Note for later : use undocumented 128kB of intflash 1 (.extflash_emu_data) to store
+// this table and store the data that were here (lang and rom data) in external flash.
+#if (INTFLASH_BANK == 1)
 __attribute__((section (".flash2"))) extern Pixel msxYjkColor[32][64][64];
+#else
+__attribute__((section (".extflash_data"))) extern Pixel msxYjkColor[32][64][64];
+#endif
 #endif
 // Video DA Interface
 
