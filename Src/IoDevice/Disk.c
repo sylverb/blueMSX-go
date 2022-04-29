@@ -286,7 +286,7 @@ DSKE diskReadSector(int driveId, UInt8* buffer, int sector, int side, int track,
                 if ((cachedSide[driveId] != side) || (cachedTrack[driveId] != track)) {
                     UInt32 lzmaDataOffset;
                     // Get offset for current track/sector
-                    offset = 4+2*track*4+side*4;
+                    offset = 4+sides[driveId]*track*4+side*4;
                     lzmaDataOffset = (*(drives[driveId]+offset))        +
                                      (*(drives[driveId]+offset+1) <<8)  +
                                      (*(drives[driveId]+offset+2) <<16) +
@@ -362,10 +362,14 @@ static void diskUpdateInfo(int driveId)
         return;
     }
 
-    // Compressed MSX 720KB image
+    // Compressed 360KB or 720KB MSX dsk image
 #ifdef TARGET_GNW
     if (memcmp(buf,"lzma",4)==0) {
         compressed[driveId] = 1;
+        int data_offset = buf[4]+(buf[5]<<8)+(buf[6]<<16)+(buf[7]<<24);
+        if (data_offset <= 0x0144) {
+            sides[driveId] = 1;
+        }
         return;
     }
 #endif
