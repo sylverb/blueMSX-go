@@ -632,10 +632,12 @@ Machine* machineCreate(const char* machineName)
 
 void machineDestroy(Machine* machine)
 {
+#ifndef TARGET_GNW
     if (machine->zipFile)
         free(machine->zipFile);
     
     free(machine);
+#endif
 }
 
 
@@ -1147,12 +1149,9 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
         if (machine->slotInfo[i].romType == RAM_MAPPER) {
             if (ram == NULL && startPage == 0) {
                 success &= ramMapperCreate(size, slot, subslot, startPage, &ram, &ramSize);
-                                            printf("RAM_MAPPER 1 success %d\n",success);
-
             }
             else {
                 success &= ramMapperCreate(size, slot, subslot, startPage, NULL, NULL);
-                                            printf("RAM_MAPPER 2 success %d\n",success);
             }
             continue;
         }
@@ -1187,7 +1186,6 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
         int subslot;
         int startPage;
         char* romName;
-//        printf("romType %d %d\n",i,machine->slotInfo[i].romType);
         // Don't map slots with error
         if (machine->slotInfo[i].error) {
             continue;
@@ -1736,8 +1734,6 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
 
         case ROM_NORMAL:
             success &= romMapperNormalCreate(romName, buf, size, slot, subslot, startPage);
-                            printf("ROM_NORMAL success %d\n",success);
-
             break;
 
 #ifndef TARGET_GNW
@@ -1769,8 +1765,6 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
 
         case ROM_CASPATCH:
             success &= romMapperCasetteCreate(romName, buf, size, slot, subslot, startPage);
-                printf("ROM_CASPATCH success %d\n",success);
-
             break;
 
 #ifndef TARGET_GNW
@@ -1780,9 +1774,7 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
 #endif
 
         case ROM_TC8566AF:
-            printf("ROM_TC8566AF\n");
             success &= romMapperTC8566AFCreate(romName, buf, size, slot, subslot, startPage, ROM_TC8566AF);
-            printf("ROM_TC8566AF %d\n",success);
             break;
 
 #ifndef TARGET_GNW
@@ -1880,11 +1872,13 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
             break;
 #endif
         }
-#ifndef MSX_NO_MALLOC
         if( buf != NULL ) {
+#ifndef MSX_NO_MALLOC
             free(buf);
-        }
+#else
+            buf = NULL;
 #endif
+        }
     }
 
     if (jisyoRom != NULL) {

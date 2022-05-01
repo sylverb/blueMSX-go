@@ -34,6 +34,9 @@
 #include "SaveState.h"
 #include <stdlib.h>
 #include <string.h>
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 
 typedef struct {
@@ -47,10 +50,6 @@ typedef struct {
     int sccEnable;
     SCC* scc;
 } RomMapperKonami5;
-
-#ifdef MSX_NO_MALLOC
-static RomMapperKonami5 rm_global;
-#endif
 
 static void saveState(RomMapperKonami5* rm)
 {
@@ -196,10 +195,10 @@ int romMapperKonami5Create(const char* filename, UInt8* romData,
     }
 
 
-#ifndef MSX_NO_MALLOC
+#ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperKonami5));
 #else
-    rm = &rm_global;
+    rm = itc_malloc(sizeof(RomMapperKonami5));
 #endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_KONAMI5, &callbacks, rm);

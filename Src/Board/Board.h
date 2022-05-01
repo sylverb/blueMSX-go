@@ -123,6 +123,7 @@ void boardEnableSnapshots(int enable);
 BoardType boardGetType();
 
 void boardSetMachine(Machine* machine);
+void boardDestroy();
 void boardReset();
 
 void boardSetDataBus(UInt8 value, UInt8 defaultValue, int setDefault);

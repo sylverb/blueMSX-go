@@ -32,6 +32,8 @@
 #ifndef TARGET_GNW
 #include "Led.h"
 #include "FdcAudio.h"
+#else
+#include "gw_malloc.h"
 #endif
 #include <stdlib.h>
 #include <string.h>
@@ -71,10 +73,6 @@ struct TC8566AF {
     FdcAudio* fdcAudio;
 #endif
 };
-
-#ifdef MSX_NO_MALLOC
-TC8566AF tc_global;
-#endif
 
 #define CMD_UNKNOWN                 0
 #define CMD_READ_DATA               1
@@ -542,10 +540,10 @@ static void tc8566afExecutionPhaseWrite(TC8566AF* tc, UInt8 value)
 
 TC8566AF* tc8566afCreate()
 {
-#ifndef MSX_NO_MALLOC
+#ifndef TARGET_GNW
     TC8566AF* tc = malloc(sizeof(TC8566AF));
 #else
-    TC8566AF* tc = &tc_global;
+    TC8566AF* tc = itc_malloc(sizeof(TC8566AF));
 #endif
 
 #ifndef TARGET_GNW

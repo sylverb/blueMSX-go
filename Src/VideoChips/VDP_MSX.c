@@ -39,6 +39,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 
 //#define ENABLE_VRAM_DECAY
@@ -394,7 +397,7 @@ struct VDP {
     int    vramAccMask;
     int vramOffsets[2];
     int vramMasks[4];
-    UInt8  vram[VRAM_SIZE];
+    UInt8*  vram;
     
     int deviceHandle;
 #ifndef TARGET_GNW
@@ -406,12 +409,12 @@ struct VDP {
     FrameBufferData* frameBuffer;
 };
 
+#ifdef TARGET_GNW
+static UInt8 vram_global[VRAM_SIZE];
+#endif
+
 #include "SpriteLine.h"
 #include "CommonVideoChips.h"
-
-#ifdef MSX_NO_MALLOC
-static VDP vdp_global;
-#endif
 
 static void digitize(VDP* vdp);
 static void updateOutputMode(VDP* vdp);
@@ -1747,7 +1750,7 @@ static void saveState(VDP* vdp)
 
     saveStateSet(state, "vramAccMask",         vdp->vramAccMask);
 
-    saveStateSetBuffer(state, "vram", vdp->vram, sizeof(vdp->vram));
+    saveStateSetBuffer(state, "vram", vdp->vram, VRAM_SIZE);
 
     saveStateClose(state);
 
@@ -1840,7 +1843,7 @@ static void loadState(VDP* vdp)
 
     vdp->vramAccMask = saveStateGet(state, "vramAccMask",         0);
 
-    saveStateGetBuffer(state, "vram", vdp->vram, sizeof(vdp->vram));
+    saveStateGetBuffer(state, "vram", vdp->vram, VRAM_SIZE);
 
     saveStateClose(state);
 
@@ -2225,6 +2228,8 @@ static void destroy(VDP* vdp)
 
 #ifndef MSX_NO_MALLOC
     free(vdp);
+#else
+    vdp = NULL;
 #endif
 }
 
@@ -2240,7 +2245,7 @@ static void videoDisable(VDP* vdp)
 
 #ifdef TARGET_GNW
 void vdpSetSyncMode(VdpSyncMode sync) {
-    if (sync == VDP_SYNC_AUTO) {
+/*    if (sync == VDP_SYNC_AUTO) {
         vdp_global.palMask  = ~0;
         vdp_global.palValue = 0;
     }
@@ -2251,7 +2256,7 @@ void vdpSetSyncMode(VdpSyncMode sync) {
     else if (sync == VDP_SYNC_60HZ) {
         vdp_global.palMask  = ~0x02;
         vdp_global.palValue = 0x00;
-    }
+    }*/
 }
 #endif
 
@@ -2268,11 +2273,12 @@ void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int
     int vramSize;
     int i;
 
-#ifndef MSX_NO_MALLOC
+#ifndef TARGET_GNW
     VDP* vdp = (VDP*)calloc(1, sizeof(VDP));
+    vdp->vram = malloc(VRAM_SIZE);
 #else
-    VDP* vdp = &vdp_global;
-    memset(vdp,0,sizeof(VDP));
+    VDP* vdp = (VDP*)itc_calloc(1, sizeof(VDP));
+    vdp->vram = vram_global;
 #endif
 
     theVdp = vdp;

@@ -30,6 +30,8 @@
 #include "SaveState.h"
 #ifndef TARGET_GNW
 #include "DebugDeviceManager.h"
+#else
+#include "gw_malloc.h"
 #endif
 #include "Language.h"
 #include <stdlib.h>
@@ -82,10 +84,6 @@ struct SCC
 
     Int32  buffer[AUDIO_MONO_BUFFER_SIZE];
 };
-
-#ifdef MSX_NO_MALLOC
-static SCC scc_global;
-#endif
 
 void sccLoadState(SCC* scc)
 {
@@ -391,12 +389,9 @@ SCC* sccCreate(Mixer* mixer)
 {
 #ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, NULL, NULL };
-#endif
-#ifndef MSX_NO_MALLOC
     SCC* scc = (SCC*)calloc(1, sizeof(SCC));
 #else
-    SCC* scc = &scc_global;
-    memset(scc,0,sizeof(SCC));
+    SCC* scc = (SCC*)itc_calloc(1, sizeof(SCC));
 #endif
 
     scc->mixer = mixer;

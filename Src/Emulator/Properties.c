@@ -37,14 +37,13 @@
 #include "JoystickPort.h"
 #include "Board.h"
 #include "AppConfig.h"
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 
 // PacketFileSystem.h Need to be included after all other includes
 #include "PacketFileSystem.h"
-
-#ifdef MSX_NO_MALLOC
-static Properties properties_global;
-#endif
 
 typedef struct ValueNamePair {
     int   value;
@@ -458,10 +457,10 @@ Properties* propCreate(int useDefault, int langType, PropKeyboardLanguage kbdLan
 {
     Properties* properties;
 
-#ifndef MSX_NO_MALLOC
+#ifndef TARGET_GNW
     properties = malloc(sizeof(Properties));
 #else
-    properties = &properties_global;
+    properties = ahb_malloc(sizeof(Properties));
 #endif
 
     if (globalProperties == NULL)

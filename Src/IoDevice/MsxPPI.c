@@ -49,6 +49,9 @@
 #include "DAC.h"
 #endif
 #include <stdlib.h>
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 
 static UInt8 getKeyState(int row);
@@ -70,10 +73,6 @@ typedef struct {
     Int32 regA;
     Int32 regCHi;
 } MsxPPI;
-
-#ifdef MSX_NO_MALLOC
-static MsxPPI ppi_global;
-#endif
 
 static void destroy(MsxPPI* ppi)
 {
@@ -226,11 +225,9 @@ void msxPPICreate(int ignoreKeyboard)
     DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
 #ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, NULL, NULL };
-#endif
-#ifndef MSX_NO_MALLOC
     MsxPPI* ppi = malloc(sizeof(MsxPPI));
 #else
-    MsxPPI* ppi = &ppi_global;
+    MsxPPI* ppi = itc_malloc(sizeof(MsxPPI));
 #endif
 
     ppi->deviceHandle = deviceManagerRegister(RAM_MAPPER, &callbacks, ppi);

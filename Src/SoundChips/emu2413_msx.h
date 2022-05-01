@@ -74,13 +74,8 @@ typedef struct __OPLL_RateConv {
   int ch;
   double timer;
   double f_ratio;
-#ifndef MSX_NO_MALLOC
   int16_t *sinc_table;
   int16_t **buf;
-#else
-  int16_t sinc_table[256*8];
-  int16_t buf[2][16];
-#endif
 } OPLL_RateConv;
 
 OPLL_RateConv *OPLL_RateConv_new(double f_inp, double f_out, int ch);

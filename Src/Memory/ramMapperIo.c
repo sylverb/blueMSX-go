@@ -30,6 +30,8 @@
 #include "DeviceManager.h"
 #ifndef TARGET_GNW
 #include "DebugDeviceManager.h"
+#else
+#include "gw_malloc.h"
 #endif
 #include "SaveState.h"
 #include "Language.h"
@@ -58,9 +60,6 @@ typedef struct {
     int port[4];
 } RamMapperIo;
 
-#ifdef MSX_NO_MALLOC
-static RamMapperIo rm_global;
-#endif
 RamMapperIo* mapperIo = NULL;
 
 
@@ -116,8 +115,8 @@ static void destroy(RamMapperIo* rm)
 
 #ifndef MSX_NO_MALLOC
     free(mapperIo);
-    mapperIo = NULL;
 #endif
+    mapperIo = NULL;
 }
 
 static UInt8 read(RamMapperIo* rm, UInt16 ioPort)
@@ -161,13 +160,9 @@ int ramMapperIoCreate()
     DeviceCallbacks callbacks = { destroy, NULL, saveState, loadState };
 #ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, NULL, NULL };
-#endif
-
-#ifndef MSX_NO_MALLOC
     rm = malloc(sizeof(RamMapperIo));
 #else
-    rm = &rm_global;
-    memset(rm,0,sizeof(RamMapperIo));
+    rm = itc_malloc(sizeof(RamMapperIo));
 #endif
     rm->count = 0;
     rm->mask  = 0;

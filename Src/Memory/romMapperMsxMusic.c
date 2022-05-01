@@ -30,6 +30,8 @@
 #include "DeviceManager.h"
 #ifndef TARGET_GNW
 #include "DebugDeviceManager.h"
+#else
+#include "gw_malloc.h"
 #endif
 #include "SlotManager.h"
 #include "IoPort.h"
@@ -51,10 +53,6 @@ typedef struct {
     int sslot;
     int startPage;
 } MsxMusic;
-
-#ifdef MSX_NO_MALLOC
-static MsxMusic rm_global;
-#endif
 
 static void destroy(MsxMusic* rm)
 {
@@ -139,11 +137,9 @@ int romMapperMsxMusicCreate(const char* filename, UInt8* romData,
     DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
 #ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, NULL, NULL };
-#endif
-#ifdef MSX_NO_MALLOC
     MsxMusic* rm = malloc(sizeof(MsxMusic));
 #else
-    MsxMusic* rm = &rm_global;
+    MsxMusic* rm = itc_malloc(sizeof(MsxMusic));
 #endif
     int pages = size / 0x2000 + ((size & 0x1fff) ? 1 : 0);
     int i;

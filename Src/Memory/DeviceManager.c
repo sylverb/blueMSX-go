@@ -58,7 +58,9 @@ void deviceManagerDestroy()
 {
     int i;
 
+#ifndef TARGET_GNW
     deviceManager.shutDown = 1;
+#endif
     
     for (i = 0; i < deviceManager.count; i++) {
         if (deviceManager.di[i].callbacks.destroy != NULL) {

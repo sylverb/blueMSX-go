@@ -62,6 +62,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 
 #define SRAM_PAGES 4
@@ -82,10 +85,6 @@ typedef struct {
     UInt32 romMask;
     int romMapper[4];
 } RomMapperKoei;
-
-#ifdef MSX_NO_MALLOC
-static RomMapperKoei rm_global;
-#endif
 
 static void saveState(RomMapperKoei* rm)
 {
@@ -189,10 +188,10 @@ int romMapperKoeiCreate(const char* filename, UInt8* romData,
         return 0;
     }
 
-#ifndef MSX_NO_MALLOC
+#ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperKoei));
 #else
-    rm = &rm_global;
+    rm = itc_malloc(sizeof(RomMapperKoei));
 #endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_KOEI, &callbacks, rm);

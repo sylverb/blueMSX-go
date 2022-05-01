@@ -33,6 +33,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 
 typedef struct {
@@ -44,10 +47,6 @@ typedef struct {
     int size;
     int romMapper[4];
 } RomMapperKonami4;
-
-#ifdef MSX_NO_MALLOC
-static RomMapperKonami4 rm_global;
-#endif
 
 static void saveState(RomMapperKonami4* rm)
 {
@@ -127,10 +126,10 @@ int romMapperKonami4Create(const char* filename, UInt8* romData,
         return 0;
     }
 
-#ifndef MSX_NO_MALLOC
+#ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperKonami4));
 #else
-    rm = &rm_global;
+    rm = itc_malloc(sizeof(RomMapperKonami4));
 #endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_KONAMI4, &callbacks, rm);

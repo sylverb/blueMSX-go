@@ -17,6 +17,9 @@
 #include "VDP_MSX.h"
 #include "Board.h"
 #include "SaveState.h"
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 /*************************************************************
 ** Different compilers inline C functions differently.
@@ -170,10 +173,6 @@ struct VdpCmdState {
     int    newScrMode;
     int    timingMode;
 };
-
-#ifdef MSX_NO_MALLOC
-static VdpCmdState vdpCmdState_global;
-#endif
 
 // Pointer to initialized command engine. This should be a list
 // but since there are only one instance at the time its not
@@ -945,10 +944,10 @@ static void HmmcEngine(VdpCmdState* vdpCmd)
 */
 VdpCmdState* vdpCmdCreate(int vramSize, UInt8* vramPtr, UInt32 systemTime)
 {
-#ifndef MSX_NO_MALLOC
+#ifndef TARGET_GNW
     VdpCmdState* vdpCmd = calloc(1, sizeof(VdpCmdState));
 #else
-    VdpCmdState* vdpCmd = &vdpCmdState_global;
+    VdpCmdState* vdpCmd = itc_calloc(1, sizeof(VdpCmdState));
 #endif
     vdpCmd->systemTime = systemTime;
     vdpCmd->vramBase = vramPtr;

@@ -109,8 +109,10 @@ typedef struct {
 #else
     SlotInfo slotInfo[10];
 #endif
+#ifndef TARGET_GNW
     int isZipped;
     char *zipFile;
+#endif
 } Machine;
 
 

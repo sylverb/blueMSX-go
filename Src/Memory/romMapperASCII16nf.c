@@ -33,6 +33,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 //  Uses ASCII16 but in different adresses :
 //  Know Game : Super Pierrot
@@ -47,10 +50,6 @@ typedef struct {
     UInt32 romMask;
     int romMapper[4];
 } RomMapperASCII16nf;
-
-#ifdef MSX_NO_MALLOC
-static RomMapperASCII16nf rm_global;
-#endif
 
 static void saveState(RomMapperASCII16nf* rm)
 {
@@ -128,10 +127,10 @@ int romMapperASCII16nfCreate(const char* filename, UInt8* romData,
     RomMapperASCII16nf* rm;
     int i;
 
-#ifdef MSX_NO_MALLOC
+#ifdef TARGET_GNW
     rm = malloc(sizeof(RomMapperASCII16nf));
 #else
-    rm = &rm_global;
+    rm = itc_malloc(sizeof(RomMapperASCII16nf));
 #endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_ASCII16NF, &callbacks, rm);

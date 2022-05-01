@@ -33,6 +33,9 @@
 #include "R800.h"
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 typedef void (*Opcode)(R800*);
 typedef void (*OpcodeNn)(R800*, UInt16);
@@ -41,10 +44,6 @@ static UInt8  ZSXYTable[256];
 static UInt8  ZSPXYTable[256];
 static UInt8  ZSPHTable[256];
 static UInt16 DAATable[0x800];
-
-#ifdef MSX_NO_MALLOC
-static R800 r800_global;
-#endif
 
 static void cb(R800* r800);
 static void dd(R800* r800);
@@ -5833,10 +5832,10 @@ R800* r800Create(UInt32 cpuFlags,
                  R800WriteCb watchpointIoCb,
                  void* ref)
 {
-#ifndef MSX_NO_MALLOC
+#ifndef TARGET_GNW
     R800* r800 = calloc(1, sizeof(R800));
 #else
-    R800* r800 = &r800_global;
+    R800* r800 = itc_calloc(1, sizeof(R800));
 #endif
     
     r800->cpuFlags    = cpuFlags;

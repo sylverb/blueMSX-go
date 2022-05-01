@@ -34,6 +34,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 
 typedef struct {
@@ -47,10 +50,6 @@ typedef struct {
     UInt32 romMask;
     int romMapper[4];
 } RomMapperTC8566AF;
-
-#ifdef MSX_NO_MALLOC
-RomMapperTC8566AF rm_global __attribute__((section(".itcram")));
-#endif
 
 static void saveState(RomMapperTC8566AF* rm)
 {
@@ -241,10 +240,10 @@ int romMapperTC8566AFCreate(const char* filename, UInt8* romData,
     DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
     RomMapperTC8566AF* rm;
 
-#ifndef MSX_NO_MALLOC
+#ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperTC8566AF));
 #else
-    rm = &rm_global;
+    rm = itc_malloc(sizeof(RomMapperTC8566AF));
 #endif
 
     rm->deviceHandle = deviceManagerRegister(romType, &callbacks, rm);

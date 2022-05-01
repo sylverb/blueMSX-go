@@ -35,6 +35,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 
 typedef struct {
@@ -57,10 +60,6 @@ typedef struct {
     SccMode sccMode;
     SCC* scc;
 } RomMapperSCCplus;
-
-#ifdef MSX_NO_MALLOC
-static RomMapperSCCplus rm_global;
-#endif
 
 static void saveState(RomMapperSCCplus* rm)
 {
@@ -295,10 +294,10 @@ int romMapperSCCplusCreate(const char* filename, UInt8* romData,
     DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
     RomMapperSCCplus* rm;
 
-#ifndef MSX_NO_MALLOC
+#ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperSCCplus));
 #else
-    rm = &rm_global;
+    rm = itc_malloc(sizeof(RomMapperSCCplus));
 #endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_SCCEXTENDED, &callbacks, rm);

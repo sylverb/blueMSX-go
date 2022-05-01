@@ -33,6 +33,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 
 typedef struct {
@@ -44,10 +47,6 @@ typedef struct {
     UInt32 romMask;
     int romMapper[4];
 } RomMapperASCII8;
-
-#ifdef MSX_NO_MALLOC
-static RomMapperASCII8 rm_global;
-#endif
 
 static void saveState(RomMapperASCII8* rm)
 {
@@ -128,10 +127,10 @@ int romMapperASCII8Create(const char* filename, UInt8* romData,
         size *= 2;
     }
 
-#ifndef MSX_NO_MALLOC
+#ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperASCII8));
 #else
-    rm = &rm_global;
+    rm = itc_malloc(sizeof(RomMapperASCII8));
 #endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_ASCII8, &callbacks, rm);

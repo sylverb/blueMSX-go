@@ -29,11 +29,11 @@
 #include "IoPort.h"
 #include "Board.h"
 #include "SaveState.h"
-#ifdef TARGET_GNW
-extern time_t GW_GetUnixTime(void);
-#endif
 #ifndef TARGET_GNW
 #include "DebugDeviceManager.h"
+#else
+extern time_t GW_GetUnixTime(void);
+#include "gw_malloc.h"
 #endif
 #include "Language.h"
 #include <time.h>
@@ -95,10 +95,6 @@ struct RTC {
     
     UInt8 latch;
 };
-
-#ifdef MSX_NO_MALLOC
-static RTC rtc_global;
-#endif
 
 void rtcLoadState(RTC* rtc)
 {
@@ -327,12 +323,9 @@ RTC* rtcCreate(int enable, char* cmosName)
 {
 #ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, NULL, NULL };
-#endif
-#ifndef MSX_NO_MALLOC
     RTC* rtc = (RTC*)calloc(1, sizeof(RTC));
 #else
-    RTC* rtc = &rtc_global;
-    memset(rtc,0,sizeof(RTC));
+    RTC* rtc = (RTC*)itc_calloc(1, sizeof(RTC));
 #endif
 
     rtc->modeReg = MODE_TIMERENABLE;

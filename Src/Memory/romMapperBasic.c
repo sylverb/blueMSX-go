@@ -33,6 +33,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 
 typedef struct {
@@ -43,10 +46,6 @@ typedef struct {
     int startPage;
     int size;
 } RomMapperBasic;
-
-#ifdef MSX_NO_MALLOC
-static RomMapperBasic rm_global;
-#endif
 
 static void destroy(void* arg)
 {
@@ -70,10 +69,10 @@ int romMapperBasicCreate(const char* filename, UInt8* romData,
         return 0;
     }
 
-#ifndef MSX_NO_MALLOC
+#ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperBasic));
 #else
-    rm = &rm_global;
+    rm = itc_malloc(sizeof(RomMapperBasic));
 #endif
 
 #ifndef MSX_NO_MALLOC

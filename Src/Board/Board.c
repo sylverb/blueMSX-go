@@ -926,6 +926,11 @@ void boardSetMachine(Machine* machine)
 #endif
 }
 
+void boardDestroy()
+{
+    boardRunning = 0;
+}
+
 void boardReset()
 {
     if (boardRunning) {

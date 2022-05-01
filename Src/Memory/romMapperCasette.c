@@ -34,6 +34,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 static UInt16 patchAddress[] = { 0x00e1, 0x00e4, 0x00e7, 0x00ea, 0x00ed, 0x00f0, 0x00f3, 0 };
 static UInt16 patchAddressSVI[] = {0x006C,0x006F,0x0072,0x0075,0x0078,0x210A,0x21A9,0}; // 0x0069
@@ -45,11 +48,6 @@ typedef struct {
     int sslot;
     int startPage;
 } RomMapperCasette;
-
-#ifdef MSX_NO_MALLOC
-static RomMapperCasette rm_global;
-#endif
-
 
 static void destroy(RomMapperCasette* rm)
 {
@@ -74,11 +72,10 @@ int romMapperCasetteCreate(const char* filename, UInt8* romData,
         return 0;
     }
 
-#ifndef MSX_NO_MALLOC
+#ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperCasette));
 #else
-    rm = &rm_global;
-    memset(rm,0,sizeof(RomMapperCasette));
+    rm = itc_malloc(sizeof(RomMapperCasette));
 #endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_CASPATCH, &callbacks, rm);

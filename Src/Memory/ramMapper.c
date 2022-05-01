@@ -33,6 +33,8 @@
 #include "DeviceManager.h"
 #ifndef TARGET_GNW
 #include "DebugDeviceManager.h"
+#else
+#include "gw_malloc.h"
 #endif
 #include "SaveState.h"
 #include "IoPort.h"
@@ -58,8 +60,7 @@ typedef struct {
     int size;
 } RamMapper;
 
-#ifdef MSX_NO_MALLOC
-static RamMapper rm_global;
+#ifdef TARGET_GNW
 // 128kB of RAM maximum
 char msxRam_global[0x4000*8];
 #endif
@@ -197,12 +198,11 @@ int ramMapperCreate(int size, int slot, int sslot, int startPage, UInt8** ramPtr
         return 0;
     }
 
-#ifndef MSX_NO_MALLOC
+#ifndef TARGET_GNW
     rm = malloc(sizeof(RamMapper));
     rm->ramData  = malloc(size);
 #else
-    rm = &rm_global;
-    memset(rm,0,sizeof(RamMapper));
+    rm = itc_malloc(sizeof(RamMapper));
     if (pages > 8) {
         printf("Tried to allocate more than 8 pages of RAM : %d",pages);
         return 0; // No more than 128kB of ram supported

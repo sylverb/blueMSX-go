@@ -29,6 +29,9 @@
 #include "Board.h"
 #include <stdlib.h>
 #include <string.h>
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 
 #define OFFSETOF(s, a) ((int)(&((s*)0)->a))
@@ -62,10 +65,6 @@ struct DAC
 #endif
 };
 
-#ifdef MSX_NO_MALLOC
-static DAC dac_global;
-#endif
-
 void dacReset(DAC* dac) {
     dac->oldSampleVolume[DAC_CH_LEFT]  = 0;
     dac->sampleVolume[DAC_CH_LEFT]     = 0;
@@ -79,11 +78,10 @@ void dacReset(DAC* dac) {
 
 DAC* dacCreate(Mixer* mixer, DacMode mode)
 {
-#ifndef MSX_NO_MALLOC
+#ifndef TARGET_GNW
     DAC* dac = (DAC*)calloc(1, sizeof(DAC));
 #else
-    DAC* dac = &dac_global;
-    memset(dac,0,sizeof(DAC));
+    DAC* dac = (DAC*)itc_calloc(sizeof(DAC));
 #endif
 
     dac->mixer = mixer;

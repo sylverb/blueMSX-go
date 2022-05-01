@@ -34,6 +34,7 @@
 #include <string.h>
 #include <stdio.h>
 #ifdef TARGET_GNW
+#include "gw_malloc.h"
 #include "lzma.h"
 #include "rom_manager.h"
 #endif
@@ -61,7 +62,7 @@ static int   RdOnly[MAXDRIVES];
 static int   compressed[MAXDRIVES];
 static int   cachedSide[MAXDRIVES];
 static int   cachedTrack[MAXDRIVES];
-static char  ramTrackBuffer[MAXDRIVES][512*9]; // 512 bytes by sector and 9 sectors by track
+static char  *ramTrackBuffer[MAXDRIVES];
 #endif
 #ifndef TARGET_GNW
 static char* ramImageBuffer[MAXDRIVES];
@@ -365,6 +366,10 @@ static void diskUpdateInfo(int driveId)
     // Compressed 360KB or 720KB MSX dsk image
 #ifdef TARGET_GNW
     if (memcmp(buf,"lzma",4)==0) {
+
+        if (ramTrackBuffer[driveId] == NULL) {
+          ramTrackBuffer[driveId] = itc_malloc(512*9); // 512 bytes by sector and 9 sectors by track
+        }
         compressed[driveId] = 1;
         int data_offset = buf[4]+(buf[5]<<8)+(buf[6]<<16)+(buf[7]<<24);
         if (data_offset <= 0x0144) {
@@ -660,9 +665,7 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
 #ifndef TARGET_GNW
     if (ramImageBuffer[driveId] != NULL) {
         // Flush to file??
-#ifndef MSX_NO_MALLOC
         free(ramImageBuffer[driveId]);
-#endif
         ramImageBuffer[driveId] = NULL;
     }
 #endif

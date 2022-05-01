@@ -36,6 +36,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 #ifndef TARGET_GNW
 #define BASE_PHASE_STEP 0x28959becUL  /* = (1 << 28) * 3579545 / 32 / 44100 */
@@ -99,11 +102,6 @@ struct AY8910 {
     Int32  buffer[AUDIO_MONO_BUFFER_SIZE];
 #endif
 };
-
-#ifdef MSX_NO_MALLOC
-static AY8910 ay8910_global;
-#endif
-
 
 void ay8910LoadState(AY8910* ay8910)
 {
@@ -242,12 +240,9 @@ AY8910* ay8910Create(Mixer* mixer, Ay8910Connector connector, PsgType type, Int3
 {
 #ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, dbgWriteRegister, NULL };
-#endif
-#ifndef MSX_NO_MALLOC
     AY8910* ay8910 = (AY8910*)calloc(1, sizeof(AY8910));
 #else
-    AY8910* ay8910 = &ay8910_global;
-    memset(ay8910,0,sizeof(AY8910));
+    AY8910* ay8910 = (AY8910*)itc_calloc(1, sizeof(AY8910));
 #endif
     int i;
 

@@ -285,7 +285,6 @@ int msxCreate(Machine* machine,
         slotMapRamPage(0, 0, i);
     }
 
-    printf("successsuccess = %d\n",success);
     if (success) {
         success = boardInsertExternalDevices();
     }

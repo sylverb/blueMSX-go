@@ -37,6 +37,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 
 typedef struct {
@@ -51,8 +54,7 @@ typedef struct {
     UInt8 *ramData;
 } RamNormal;
 
-#ifdef MSX_NO_MALLOC
-static RamNormal rm_global;
+#ifdef TARGET_GNW
 extern char msxRam_global[0x4000*8];
 #endif
 
@@ -134,10 +136,10 @@ int ramNormalCreate(int size, int slot, int sslot, int startPage, UInt8** ramPtr
         return 0;
     }
 
-#ifndef MSX_NO_MALLOC
+#ifndef TARGET_GNW
     rm = malloc(sizeof(RamNormal));
 #else
-    rm = &rm_global;
+    rm = itc_malloc(sizeof(RamNormal));
 #endif
 
     rm->slot      = slot;
@@ -146,7 +148,7 @@ int ramNormalCreate(int size, int slot, int sslot, int startPage, UInt8** ramPtr
     rm->pages     = pages;
 
     size = pages * 0x4000;
-#ifndef MSX_NO_MALLOC
+#ifndef TARGET_GNW
     rm->ramData = malloc(size);
 #else
     rm->ramData = msxRam_global;

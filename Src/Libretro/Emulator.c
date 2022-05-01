@@ -279,8 +279,6 @@ void emulatorStartMachine(const char* stateName, Machine *machine) {
 
     boardSetMachine(machine);
 
-    printf("emulatorStartMachine prop.carts[0].fileName = %s\n",properties->media.carts[0].fileName);
-
     setDeviceInfo(&deviceInfo);
 
     inputEventReset();

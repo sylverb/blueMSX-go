@@ -35,6 +35,9 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 #define BITSPERSAMPLE     16
 
@@ -146,10 +149,6 @@ struct Mixer
     FILE*   file;
     int     enable;
 };
-
-#ifdef MSX_NO_MALLOC
-static Mixer mixer_global;
-#endif
 
 
 static void recalculateChannelVolume(Mixer* mixer, MixerChannel* channel);
@@ -357,11 +356,10 @@ Mixer* mixerGetGlobalMixer(void)
 
 Mixer* mixerCreate(void)
 {
-#ifndef MSX_NO_MALLOC
+#ifndef TARGET_GNW
     Mixer* mixer        = (Mixer*)calloc(1, sizeof(Mixer));
 #else
-    Mixer* mixer        = &mixer_global;
-    memset(mixer,0,sizeof(Mixer));
+    Mixer* mixer        = (Mixer*)itc_calloc(1, sizeof(Mixer));
 #endif
 
     mixer->fragmentSize = 512;
@@ -413,6 +411,7 @@ Int32 mixerRegisterChannel(Mixer* mixer, Int32 audioType, Int32 stereo, MixerUpd
     MixerChannel*  channel = mixer->channels + mixer->channelCount;
     AudioTypeInfo* type    = mixer->audioTypeInfo + audioType;
 
+    printf("register type %d count %d\n",audioType,mixer->channelCount);
     if (mixer->channelCount == MAX_CHANNELS) {
         return 0;
     }
@@ -439,6 +438,8 @@ Int32 mixerRegisterChannel(Mixer* mixer, Int32 audioType, Int32 stereo, MixerUpd
 void mixerUnregisterChannel(Mixer* mixer, Int32 handle) 
 {
     int i;
+
+    printf("unregister count %d\n",mixer->channelCount);
 
     if (mixer->channelCount == 0)
         return;

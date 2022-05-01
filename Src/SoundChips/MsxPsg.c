@@ -42,6 +42,8 @@
 #include "MsxGunstick.h"
 #include "MsxAsciiLaser.h"
 #include "MsxMouse.h"
+#else
+#include "gw_malloc.h"
 #endif
 #include "Board.h"
 #include "MsxTetrisDongle.h"
@@ -64,10 +66,6 @@ struct MsxPsg {
     DAC*   dac;
 #endif
 };
-
-#ifdef MSX_NO_MALLOC
-static MsxPsg msxPsg_global;
-#endif
 
 #ifndef TARGET_GNW
 static void joystickPortHandler(MsxPsg* msxPsg, int port, JoystickPortType type)
@@ -300,11 +298,10 @@ void msxPsgRegisterCassetteRead(MsxPsg* msxPsg, CassetteCb cb, void* ref)
 MsxPsg* msxPsgCreate(PsgType type, int stereo, int* pan, int maxPorts)
 {
     DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
-#ifndef MSX_NO_MALLOC
+#ifndef TARGET_GNW
     MsxPsg* msxPsg = (MsxPsg*)calloc(1, sizeof(MsxPsg));
 #else
-    MsxPsg* msxPsg = &msxPsg_global;
-    memset(msxPsg,0,sizeof(MsxPsg));
+    MsxPsg* msxPsg = (MsxPsg*)itc_calloc(1, sizeof(MsxPsg));
 #endif
 
     msxPsg->ay8910 = ay8910Create(boardGetMixer(), AY8910_MSX, type, stereo, pan);

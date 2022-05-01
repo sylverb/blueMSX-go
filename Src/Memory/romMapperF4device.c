@@ -35,6 +35,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 typedef struct {
     int deviceHandle;
@@ -44,10 +47,6 @@ typedef struct {
     int inverted;
     int status;
 } RomMapperF4device;
-
-#ifdef MSX_NO_MALLOC
-static RomMapperF4device rm_global;
-#endif
 
 static void saveState(RomMapperF4device* rm)
 {
@@ -116,12 +115,10 @@ int romMapperF4deviceCreate(int inverted)
     DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
 #ifndef TARGET_GNW
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, NULL, NULL };
-#endif
 
-#ifndef MSX_NO_MALLOC
     RomMapperF4device* rm = malloc(sizeof(RomMapperF4device));
 #else
-    RomMapperF4device* rm = &rm_global;
+    RomMapperF4device* rm = itc_malloc(sizeof(RomMapperF4device));
 #endif
 
     rm->inverted   = inverted;

@@ -34,6 +34,9 @@
 #include "MediaDb.h"
 #include "DeviceManager.h"
 #include "Language.h"
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 
 struct YM_2413 {
@@ -44,10 +47,6 @@ struct YM_2413 {
     UInt8  address;
     Int32  buffer[AUDIO_MONO_BUFFER_SIZE];
 };
-
-#ifdef MSX_NO_MALLOC
-YM_2413 ym2413_global;
-#endif
 
 void ym2413SaveState(YM_2413* ref)
 {
@@ -112,20 +111,19 @@ YM_2413* ym2413Create(Mixer* mixer)
 {
     YM_2413* ym2413;
 
-#ifndef MSX_NO_MALLOC
+#ifndef TARGET_GNW
     ym2413 = (YM_2413*)calloc(1, sizeof(YM_2413));
 #else
-    ym2413 = &ym2413_global;
-    memset (ym2413,0,sizeof(YM_2413));
+    ym2413 = (YM_2413*)itc_calloc(1, sizeof(YM_2413));
 #endif
 
     ym2413->ym2413 = OPLL_new(3579545, mixerGetSampleRate(mixer));
-    OPLL_reset(ym2413->ym2413);
+//    OPLL_reset(ym2413->ym2413);
     ym2413->mixer = mixer;
 
     ym2413->handle = mixerRegisterChannel(mixer, MIXER_CHANNEL_MSXMUSIC, 0, ym2413Sync, ym2413SetSampleRate, ym2413);
 
-    OPLL_setRate(ym2413->ym2413,mixerGetSampleRate(mixer));
+//    OPLL_setRate(ym2413->ym2413,mixerGetSampleRate(mixer));
 
 //	ym2413->ym2413->setVolume(32767 * 9 / 10);
 
