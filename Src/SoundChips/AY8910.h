@@ -46,10 +46,10 @@ void ay8910Destroy(AY8910* ay8910);
 void ay8910Reset(AY8910* ay8910);
 
 /* Register read/write methods */
-void ay8910WriteAddress(AY8910* ay8910, UInt16 ioPort, UInt8 address);
+void ay8910WriteAddress(void* ay8910, UInt16 ioPort, UInt8 address);
 UInt8 ay8910PeekData(AY8910* ay8910, UInt16 ioPort);
-UInt8 ay8910ReadData(AY8910* ay8910, UInt16 ioPort);
-void ay8910WriteData(AY8910* ay8910, UInt16 ioPort, UInt8 data);
+UInt8 ay8910ReadData(void* ay8910, UInt16 ioPort);
+void ay8910WriteData(void* ay8910, UInt16 ioPort, UInt8 data);
 
 typedef UInt8 (*AY8910ReadCb)(void*, UInt16);
 typedef void (*AY8910WriteCb)(void*, UInt16, UInt8);

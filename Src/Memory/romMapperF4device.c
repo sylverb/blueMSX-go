@@ -48,8 +48,9 @@ typedef struct {
     int status;
 } RomMapperF4device;
 
-static void saveState(RomMapperF4device* rm)
+static void saveState(void* rmv)
 {
+    RomMapperF4device *rm = (RomMapperF4device *)rmv;
     SaveState* state = saveStateOpenForWrite("mapperF4device");
 
     saveStateSet(state, "status", rm->status);
@@ -57,8 +58,9 @@ static void saveState(RomMapperF4device* rm)
     saveStateClose(state);
 }
 
-static void loadState(RomMapperF4device* rm)
+static void loadState(void* rmv)
 {
+    RomMapperF4device *rm = (RomMapperF4device *)rmv;
     SaveState* state = saveStateOpenForRead("mapperF4device");
     
     rm->status = saveStateGet(state, "status", 0);
@@ -66,8 +68,9 @@ static void loadState(RomMapperF4device* rm)
     saveStateClose(state);
 }
 
-static void destroy(RomMapperF4device* rm)
+static void destroy(void* rmv)
 {
+    RomMapperF4device *rm = (RomMapperF4device *)rmv;
     deviceManagerUnregister(rm->deviceHandle);
 #ifndef TARGET_GNW
     debugDeviceUnregister(rm->debugHandle);
@@ -80,13 +83,14 @@ static void destroy(RomMapperF4device* rm)
 #endif
 }
 
-static UInt8 read(RomMapperF4device* rm, UInt16 ioPort)
+static UInt8 read(void* rm, UInt16 ioPort)
 {
-    return rm->status;
+    return ((RomMapperF4device *)rm)->status;
 }
 
-static void write(RomMapperF4device* rm, UInt16 ioPort, UInt8 value)
+static void write(void* rmv, UInt16 ioPort, UInt8 value)
 {	
+    RomMapperF4device *rm = (RomMapperF4device *)rmv;
 	if (rm->inverted) {
 		rm->status = value | 0x7f;
 	} 
@@ -95,9 +99,9 @@ static void write(RomMapperF4device* rm, UInt16 ioPort, UInt8 value)
 	}
 }
 
-static void reset(RomMapperF4device* rm)
+static void reset(void* rm)
 {
-    rm->status = rm->inverted ? 0xff : 0;
+    ((RomMapperF4device *)rm)->status = ((RomMapperF4device *)rm)->inverted ? 0xff : 0;
 }
 
 #ifndef TARGET_GNW

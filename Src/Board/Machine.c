@@ -168,6 +168,7 @@ UInt8* g_mainRam=NULL;
 UInt32 g_mainRamSize=0;
 static char machinesDir[PROP_MAXPATH]  = ".";
 
+#ifndef TARGET_GNW
 int toint(char* buffer) 
 {
     int i;
@@ -182,6 +183,7 @@ int toint(char* buffer)
 
     return atoi(buffer);
 }
+#endif
 
 #ifdef WIN32
 
@@ -1064,10 +1066,10 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
     UInt8* ram2      = NULL;
     UInt32 ram2Size  = 0;
     UInt32 ram2Start = 0;
-    void* jisyoRom   = NULL;
-    int jisyoRomSize = 0;
     int success = 1;
 #ifndef TARGET_GNW
+    void* jisyoRom   = NULL;
+    int jisyoRomSize = 0;
     int hdId = FIRST_INTERNAL_HD_INDEX;
 #endif
     UInt8* buf;
@@ -1077,11 +1079,13 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
     // Prioritize 1kB Mirrored ram as main ram (works good with coleco style
     // systems with expansion ram but maybe main ram type should be an arg instead?).
     for (i = 0; i < machine->slotInfoCount; i++) {
+#ifndef TARGET_GNW
         int slot;
         int subslot;
         int startPage;
         char* romName;
-        
+#endif
+
         // Don't map slots with error
         if (machine->slotInfo[i].error) {
             continue;
@@ -1089,12 +1093,10 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
 
 #ifndef TARGET_GNW
         romName   = strlen(machine->slotInfo[i].inZipName) ? machine->slotInfo[i].inZipName : machine->slotInfo[i].name;
-#else
-        romName   = machine->slotInfo[i].name;
-#endif
         slot      = machine->slotInfo[i].slot;
         subslot   = machine->slotInfo[i].subslot;
         startPage = machine->slotInfo[i].startPage;
+#endif
         size      = 0x2000 * machine->slotInfo[i].pageCount;
 
 #ifndef TARGET_GNW
@@ -1117,8 +1119,10 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
         int slot;
         int subslot;
         int startPage;
+#ifndef TARGET_GNW
         char* romName;
-        
+#endif
+
         // Don't map slots with error
         if (machine->slotInfo[i].error) {
             continue;
@@ -1126,8 +1130,6 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
 
 #ifndef TARGET_GNW
         romName   = strlen(machine->slotInfo[i].inZipName) ? machine->slotInfo[i].inZipName : machine->slotInfo[i].name;
-#else
-        romName   = machine->slotInfo[i].name;
 #endif
         slot      = machine->slotInfo[i].slot;
         subslot   = machine->slotInfo[i].subslot;
@@ -1881,9 +1883,11 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
         }
     }
 
+#ifndef TARGET_GNW
     if (jisyoRom != NULL) {
         free(jisyoRom);
     }
+#endif
 
     if (mainRam != NULL) {
         *mainRam = ram;

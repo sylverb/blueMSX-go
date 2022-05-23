@@ -85,8 +85,6 @@
 void r800LoadState(R800* r800)
 {
     SaveState* state = saveStateOpenForRead("r800");
-    char tag[32];
-    int i;
     
     r800->systemTime =         saveStateGet(state, "systemTime", 0);
     r800->vdpTime    =         saveStateGet(state, "vdpTime",    0);
@@ -116,8 +114,6 @@ void r800LoadState(R800* r800)
 void r800SaveState(R800* r800)
 {
     SaveState* state = saveStateOpenForWrite("r800");
-    char tag[32];
-    int i;
     
     saveStateSet(state, "systemTime", r800->systemTime);
     saveStateSet(state, "vdpTime",    r800->vdpTime);

@@ -117,6 +117,7 @@ void emulatorSetState(EmuState state) {
 }
 
 
+#ifndef TARGET_GNW
 static void getDeviceInfo(BoardDeviceInfo* di)
 {
     int i;
@@ -156,6 +157,7 @@ static void getDeviceInfo(BoardDeviceInfo* di)
     properties->emulation.vdpSyncMode      = di->video.vdpSyncMode;
 
 }
+#endif
 
 static void setDeviceInfo(BoardDeviceInfo* di)
 {
@@ -263,12 +265,10 @@ void emulatorStartMachine(const char* stateName, Machine *machine) {
    int frequency;
    int success = 0;
 
-    archEmulationStartNotification();
     emulatorResume();
 
     emuExitFlag = 0;
 
-//    mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MSXAUDIO, 1);
     mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MSXMUSIC, 1);
     mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_SCC, 1);
 
@@ -298,9 +298,7 @@ void emulatorStartMachine(const char* stateName, Machine *machine) {
                        0,
                        NULL);
     if (!success) {
-        archEmulationStopNotification();
         emuState = EMU_STOPPED;
-        archEmulationStartFailure();
     }
 }
 #endif
@@ -332,12 +330,15 @@ void emulatorStop() {
     mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MSXMUSIC, 1);
     mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_SCC, 1);
 
+#ifndef TARGET_GNW
     archEmulationStopNotification();
+#endif
 
 }
 
 
 
+#ifndef TARGET_GNW
 void emulatorSetFrequency(int logFrequency, int* frequency) {
     emuFrequency = (int)(3579545 * pow(2.0, (logFrequency - 50) / 15.0515));
 
@@ -347,6 +348,17 @@ void emulatorSetFrequency(int logFrequency, int* frequency) {
 
     boardSetFrequency(emuFrequency);
 }
+#else
+void emulatorSetFrequency(int logFrequency, int* frequency) {
+    emuFrequency = (int)3579545;
+
+    if (frequency != NULL) {
+        *frequency  = emuFrequency;
+    }
+
+    boardSetFrequency(emuFrequency);
+}
+#endif
 
 void emulatorSuspend() {
     if (emuState == EMU_RUNNING) {

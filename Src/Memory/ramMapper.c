@@ -62,13 +62,14 @@ typedef struct {
 
 #ifdef TARGET_GNW
 // 128kB of RAM maximum
-char msxRam_global[0x4000*8];
+UInt8 msxRam_global[0x4000*8];
 #endif
 
-static void writeIo(RamMapper* rm, UInt16 page, UInt8 value);
+static void writeIo(void* rmv, UInt16 page, UInt8 value);
 
-static void saveState(RamMapper* rm)
+static void saveState(void* rmv)
 {
+    RamMapper* rm = (RamMapper *)rmv;
     SaveState* state = saveStateOpenForWrite("mapperRam");
     
     saveStateSet(state, "mask",     rm->mask);
@@ -80,8 +81,9 @@ static void saveState(RamMapper* rm)
     saveStateClose(state);
 }
 
-static void loadState(RamMapper* rm)
+static void loadState(void* rmv)
 {
+    RamMapper* rm = (RamMapper *)rmv;
     SaveState* state = saveStateOpenForRead("mapperRam");
     int i;
     
@@ -110,8 +112,9 @@ static void loadState(RamMapper* rm)
 #endif
 }
 
-static void writeIo(RamMapper* rm, UInt16 page, UInt8 value)
+static void writeIo(void* rmv, UInt16 page, UInt8 value)
 {
+    RamMapper* rm = (RamMapper *)rmv;
     int baseAddr = 0x4000 * (value & rm->mask);
     rm->port[page] = value;
     if (rm->dramMode && baseAddr >= (rm->size - 0x10000)) {
@@ -124,8 +127,9 @@ static void writeIo(RamMapper* rm, UInt16 page, UInt8 value)
     }
 }
 
-static void setDram(RamMapper* rm, int enable)
+static void setDram(void* rmv, int enable)
 {
+    RamMapper* rm = (RamMapper *)rmv;
     int i;
 
     rm->dramMode = enable;
@@ -140,8 +144,9 @@ static void reset(RamMapper* rm)
     setDram(rm, 0);
 }
 
-static void destroy(RamMapper* rm)
+static void destroy(void* rmv)
 {
+    RamMapper* rm = (RamMapper *)rmv;
 #ifndef TARGET_GNW
     debugDeviceUnregister(rm->debugHandle);
 #endif

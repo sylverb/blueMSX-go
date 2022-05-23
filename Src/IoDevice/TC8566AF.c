@@ -138,6 +138,7 @@ struct TC8566AF {
 #define ST3_WP     0x40
 #define ST3_FLT    0x80
 
+#ifndef TARGET_GNW
 static UInt8 tc8566afExecutionPhasePeek(TC8566AF* tc)
 {
 	switch (tc->command) {
@@ -149,7 +150,7 @@ static UInt8 tc8566afExecutionPhasePeek(TC8566AF* tc)
     }
     return 0xff;
 }
-
+#endif
 
 static UInt8 tc8566afExecutionPhaseRead(TC8566AF* tc)
 {
@@ -169,6 +170,7 @@ static UInt8 tc8566afExecutionPhaseRead(TC8566AF* tc)
     return 0xff;
 }
 
+#ifndef TARGET_GNW
 static UInt8 tc8566afResultsPhasePeek(TC8566AF* tc)
 {
 	switch (tc->command) {
@@ -212,6 +214,7 @@ static UInt8 tc8566afResultsPhasePeek(TC8566AF* tc)
 
     return 0xff;
 }
+#endif
 
 static UInt8 tc8566afResultsPhaseRead(TC8566AF* tc)
 {

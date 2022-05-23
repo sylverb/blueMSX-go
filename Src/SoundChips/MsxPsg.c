@@ -57,8 +57,10 @@ struct MsxPsg {
     AY8910* ay8910;
     int currentPort;
     int maxPorts;
+#ifndef TARGET_GNW
     CassetteCb casCb;
     void*      casRef;
+#endif
     UInt8 registers[2];
     UInt8 readValue[2];
 #ifndef TARGET_GNW
@@ -122,6 +124,7 @@ static void joystickPortHandler(MsxPsg* msxPsg, int port, JoystickPortType type)
 }
 #endif
 
+#ifndef TARGET_GNW
 static UInt8 peek(MsxPsg* msxPsg, UInt16 address)
 {
     if (address & 1) {
@@ -132,10 +135,12 @@ static UInt8 peek(MsxPsg* msxPsg, UInt16 address)
     /* r14 */
     else return msxPsg->readValue[address & 1];
 }
+#endif
 
-static UInt8 read(MsxPsg* msxPsg, UInt16 address)
+static UInt8 read(void* msxPsgv, UInt16 address)
 {
-    UInt8 casdat = 0;
+//    UInt8 casdat = 0;
+    MsxPsg *msxPsg = (MsxPsg *)msxPsgv;
 
     if (address & 1) {
     	/* r15 */
@@ -162,11 +167,13 @@ static UInt8 read(MsxPsg* msxPsg, UInt16 address)
         /* ANSI/JIS */
         state |= 0x40;
         
+#ifndef TARGET_GNW
         /* cas signal */
         // Call cassette Callback (for coin select
         if (msxPsg->casCb != NULL && msxPsg->casCb(msxPsg->casRef)) {
             state |= 0x80;
         }
+#endif
 
 #if 0
         // COmment out until cassette wave is working
@@ -180,8 +187,9 @@ static UInt8 read(MsxPsg* msxPsg, UInt16 address)
     }
 }
 
-static void write(MsxPsg* msxPsg, UInt16 address, UInt8 value)
+static void write(void* msxPsgv, UInt16 address, UInt8 value)
 {
+    MsxPsg *msxPsg = (MsxPsg *)msxPsgv;
     if (address & 1) {
         /* r15 */
 #ifndef TARGET_GNW
@@ -204,8 +212,9 @@ static void write(MsxPsg* msxPsg, UInt16 address, UInt8 value)
     msxPsg->registers[address & 1] = value;
 }
 
-static void saveState(MsxPsg* msxPsg)
+static void saveState(void* msxPsgv)
 {
+    MsxPsg *msxPsg = (MsxPsg *)msxPsgv;
     // dink: fix for certain games where buttons are stuck after reload of state
     SaveState* state = saveStateOpenForWrite("MsxPsg");
     saveStateSet(state, "currentport", msxPsg->currentPort);
@@ -225,8 +234,9 @@ static void saveState(MsxPsg* msxPsg)
     ay8910SaveState(msxPsg->ay8910);
 }
 
-static void loadState(MsxPsg* msxPsg)
+static void loadState(void* msxPsgv)
 {
+    MsxPsg *msxPsg = (MsxPsg *)msxPsgv;
     // dink: fix for certain games where buttons are stuck after reload of state
     SaveState* state = saveStateOpenForRead("MsxPsg");
     msxPsg->currentPort =          saveStateGet(state, "currentport", 0);
@@ -246,8 +256,9 @@ static void loadState(MsxPsg* msxPsg)
     ay8910LoadState(msxPsg->ay8910);
 }
 
-static void reset(MsxPsg* msxPsg)
+static void reset(void* msxPsgv)
 {
+    MsxPsg *msxPsg = (MsxPsg *)msxPsgv;
     msxPsg->currentPort  = 0;
     msxPsg->registers[0] = 0;
     msxPsg->registers[1] = 0;
@@ -266,8 +277,9 @@ static void reset(MsxPsg* msxPsg)
     ay8910Reset(msxPsg->ay8910);
 }
 
-static void destroy(MsxPsg* msxPsg) 
+static void destroy(void* msxPsgv) 
 {
+    MsxPsg *msxPsg = (MsxPsg *)msxPsgv;
     ay8910SetIoPort(msxPsg->ay8910, NULL, NULL, NULL, NULL);
     ay8910Destroy(msxPsg->ay8910);
 
@@ -289,11 +301,13 @@ static void destroy(MsxPsg* msxPsg)
 #endif
 }
 
+#ifndef TARGET_GNW
 void msxPsgRegisterCassetteRead(MsxPsg* msxPsg, CassetteCb cb, void* ref)
 {
     msxPsg->casCb  = cb;
     msxPsg->casRef = ref;
 }
+#endif
 
 MsxPsg* msxPsgCreate(PsgType type, int stereo, int* pan, int maxPorts)
 {
@@ -311,7 +325,11 @@ MsxPsg* msxPsgCreate(PsgType type, int stereo, int* pan, int maxPorts)
     msxPsg->dac = dacCreate(boardGetMixer(), DAC_MONO);
 #endif
 
+#ifndef TARGET_GNW
     ay8910SetIoPort(msxPsg->ay8910, read, peek, write, msxPsg);
+#else
+    ay8910SetIoPort(msxPsg->ay8910, read, NULL, write, msxPsg);
+#endif
 
 #ifndef TARGET_GNW
     joystickPortUpdateHandlerRegister(joystickPortHandler, msxPsg);

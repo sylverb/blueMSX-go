@@ -37,7 +37,7 @@ typedef struct Mixer Mixer;
 #define AUDIO_MONO_BUFFER_SIZE    10000
 #define AUDIO_STEREO_BUFFER_SIZE  (2 * AUDIO_MONO_BUFFER_SIZE)
 #else
-#define AUDIO_MONO_BUFFER_SIZE    320 // 320 samples needed for each frame at 50Hz
+#define AUDIO_MONO_BUFFER_SIZE    640 // 320 samples needed for each frame at 50Hz, sometimes 321
 #endif
 #ifndef TARGET_GNW
 #define AUDIO_SAMPLERATE       44100
@@ -96,8 +96,9 @@ void mixerSetWriteCallback(Mixer* mixer, MixerWriteCallback callback, void*, int
 /* Internal interface methods */
 void mixerReset(Mixer* mixer);
 void mixerSync(Mixer* mixer);
+
 #ifdef TARGET_GNW
-void mixerSyncAudioBuffer(Mixer* mixer, Int16 *buffer, UInt32 count);
+void mixerSyncGNW(Mixer* mixer,UInt32 count);
 #endif
 
 Int32 mixerRegisterChannel(Mixer* mixer, Int32 audioType, Int32 stereo, 

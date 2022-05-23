@@ -38,8 +38,10 @@
 #include "gw_malloc.h"
 #endif
 
+#ifndef TARGET_GNW
 static UInt16 patchAddress[] = { 0x00e1, 0x00e4, 0x00e7, 0x00ea, 0x00ed, 0x00f0, 0x00f3, 0 };
 static UInt16 patchAddressSVI[] = {0x006C,0x006F,0x0072,0x0075,0x0078,0x210A,0x21A9,0}; // 0x0069
+#endif
 
 typedef struct {
     int deviceHandle;
@@ -49,8 +51,9 @@ typedef struct {
     int startPage;
 } RomMapperCasette;
 
-static void destroy(RomMapperCasette* rm)
+static void destroy(void* rmv)
 {
+    RomMapperCasette *rm = (RomMapperCasette *)rmv;
     slotUnregister(rm->slot, rm->sslot, rm->startPage);
     deviceManagerUnregister(rm->deviceHandle);
 

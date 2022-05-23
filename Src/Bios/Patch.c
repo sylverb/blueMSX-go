@@ -34,6 +34,7 @@
 #include "Led.h"
 #include <string.h>
 
+#ifndef TARGET_GNW
  typedef struct {
     int sectors;
     UInt8 heads;
@@ -79,6 +80,7 @@ static const UInt8 bootSector[] = {
     0xD2, 0x00, 0x32, 0x26, 0x40, 0x94, 0x61, 0x19,
     0x20, 0xE6, 0x80, 0x6D, 0x8A, 0x00, 0x00, 0x00
 };
+#endif
 
 static int patchEnabled = 0;
 static int patchBoardType = 0;
@@ -93,6 +95,7 @@ void PatchDiskSetBusy(int driveId, int busy)
 }
 #endif
 
+#ifndef TARGET_GNW
 static const FormatInfo formatInfo[8] = {
     { 720,  1, 112, 9, 2, 2 },
     { 1440, 2, 112, 9, 3, 2 },
@@ -103,12 +106,14 @@ static const FormatInfo formatInfo[8] = {
     { 320,  1, 64,  8, 1, 1 },
     { 640,  2, 112, 8, 1, 2 }
 };
+#endif
 
 static void phydio(void* ref, CpuRegs* cpu);
 static void dskchg(void* ref, CpuRegs* cpu);
 static void getdpb(void* ref, CpuRegs* cpu);
 static void dskfmt(void* ref, CpuRegs* cpu);
 static void drvoff(void* ref, CpuRegs* cpu);
+#ifndef TARGET_GNW
 static void tapion(void* ref, CpuRegs* cpu);
 static void tapin(void* ref, CpuRegs* cpu);
 static void tapiof(void* ref, CpuRegs* cpu);
@@ -117,6 +122,7 @@ static void stmotr(void* ref, CpuRegs* cpu);
 static void tapoof(void* ref, CpuRegs* cpu);
 static void tapout(void* ref, CpuRegs* cpu);
 static void casout(void* ref, CpuRegs* cpu);
+#endif
 
 void vdpCmdFlushAll();
 
@@ -140,6 +146,7 @@ void PatchZ80(void* ref, CpuRegs* cpu)
         case 0x4016: getdpb(ref, cpu); break;
         case 0x401c: dskfmt(ref, cpu); break;
         case 0x401f: drvoff(ref, cpu); break;
+#ifndef TARGET_GNW
         case 0x00e1: tapion(ref, cpu); break;
         case 0x00e4: tapin(ref, cpu);  break;
         case 0x00e7: tapiof(ref, cpu); break;
@@ -147,6 +154,7 @@ void PatchZ80(void* ref, CpuRegs* cpu)
         case 0x00ed: tapout(ref, cpu); break;
         case 0x00f0: tapoof(ref, cpu); break;
         case 0x00f3: stmotr(ref, cpu); break;
+#endif
         }
         break;
 #ifndef TARGET_GNW
@@ -177,7 +185,9 @@ static void phydio(void* ref, CpuRegs* cpu) {
     UInt8 drive;
     UInt16 sector;
     UInt16 address;
+#ifndef TARGET_GNW
     int write;
+#endif
     UInt8 origSlotPri;
     UInt8 origSlotSec;
     UInt8 slotPri;
@@ -191,7 +201,9 @@ static void phydio(void* ref, CpuRegs* cpu) {
     drive   = cpu->AF.B.h;
     sector  = cpu->DE.W;
     address = cpu->HL.W;
+#ifndef TARGET_GNW
     write   = cpu->AF.B.l & C_FLAG;
+#endif
 
     if (!diskPresent(drive)) {
         cpu->AF.W=0x0201;
@@ -491,6 +503,7 @@ static void dskfmt(void* ref, CpuRegs* cpu) {
 static void drvoff(void* ref, CpuRegs* cpu) {
 }
 
+#ifndef TARGET_GNW
 static void tapion(void* ref, CpuRegs* cpu) {
     cpu->AF.B.l|=C_FLAG;
 
@@ -546,3 +559,4 @@ static void casout(void* ref, CpuRegs* cpu) {
     }
         cpu->PC.W = 0x20ED;
 }
+#endif

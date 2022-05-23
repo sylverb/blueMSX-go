@@ -48,8 +48,9 @@ typedef struct {
     int romMapper[4];
 } RomMapperKonami4;
 
-static void saveState(RomMapperKonami4* rm)
+static void saveState(void* rmv)
 {
+    RomMapperKonami4 *rm = (RomMapperKonami4 *)rmv;
     SaveState* state = saveStateOpenForWrite("mapperKonami4");
     char tag[16];
     int i;
@@ -62,8 +63,9 @@ static void saveState(RomMapperKonami4* rm)
     saveStateClose(state);
 }
 
-static void loadState(RomMapperKonami4* rm)
+static void loadState(void* rmv)
 {
+    RomMapperKonami4 *rm = (RomMapperKonami4 *)rmv;
     SaveState* state = saveStateOpenForRead("mapperKonami4");
     char tag[16];
     int i;
@@ -80,8 +82,9 @@ static void loadState(RomMapperKonami4* rm)
     }
 }
 
-static void destroy(RomMapperKonami4* rm)
+static void destroy(void* rmv)
 {
+    RomMapperKonami4 *rm = (RomMapperKonami4 *)rmv;
     slotUnregister(rm->slot, rm->sslot, rm->startPage);
     deviceManagerUnregister(rm->deviceHandle);
 
@@ -91,8 +94,9 @@ static void destroy(RomMapperKonami4* rm)
 #endif
 }
 
-static void write(RomMapperKonami4* rm, UInt16 address, UInt8 value) 
+static void write(void* rmv, UInt16 address, UInt8 value) 
 {
+    RomMapperKonami4 *rm = (RomMapperKonami4 *)rmv;
     int bank;
 
     address += 0x4000;

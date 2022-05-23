@@ -168,12 +168,10 @@ int insertCartridge(Properties* properties, int drive, const char* fname, const 
     }
 #endif
     {
+#ifndef TARGET_GNW
         int size;
-#ifndef MSX_NO_ZIP
         char* buf = romLoad(filename, isZip ? romName : NULL, &size);
         char prettyRomName[256];
-#else
-        char* buf = romLoad(filename, NULL, &size);
 #endif
 
 #ifndef TARGET_GNW
@@ -499,6 +497,7 @@ int insertCassette(Properties* properties, int drive, const char* fname, const c
     return 1;
 }
 
+#ifndef TARGET_GNW
 static int insertDisketteOrCartridge(Properties* properties, int drive, const char* fname, int forceAutostart) 
 {
     int countDsx;
@@ -724,3 +723,4 @@ static int insertDisketteOrCartridge(Properties* properties, int drive, const ch
 
     return success;
 }
+#endif

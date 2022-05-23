@@ -48,8 +48,9 @@ typedef struct {
     int romMapper[4];
 } RomMapperStandard;
 
-static void saveState(RomMapperStandard* rm)
+static void saveState(void* rmv)
 {
+    RomMapperStandard *rm = (RomMapperStandard *)rmv;
     SaveState* state = saveStateOpenForWrite("mapperStandard");
     char tag[16];
     int i;
@@ -62,8 +63,9 @@ static void saveState(RomMapperStandard* rm)
     saveStateClose(state);
 }
 
-static void loadState(RomMapperStandard* rm)
+static void loadState(void* rmv)
 {
+    RomMapperStandard *rm = (RomMapperStandard *)rmv;
     SaveState* state = saveStateOpenForRead("mapperStandard");
     char tag[16];
     int i;
@@ -80,8 +82,9 @@ static void loadState(RomMapperStandard* rm)
     }
 }
 
-static void destroy(RomMapperStandard* rm)
+static void destroy(void* rmv)
 {
+    RomMapperStandard *rm = (RomMapperStandard *)rmv;
     slotUnregister(rm->slot, rm->sslot, rm->startPage);
     deviceManagerUnregister(rm->deviceHandle);
 
@@ -91,8 +94,9 @@ static void destroy(RomMapperStandard* rm)
 #endif
 }
 
-static void write(RomMapperStandard* rm, UInt16 address, UInt8 value) 
+static void write(void* rmv, UInt16 address, UInt8 value) 
 {
+    RomMapperStandard *rm = (RomMapperStandard *)rmv;
     int bank;
 
     address += 0x4000;

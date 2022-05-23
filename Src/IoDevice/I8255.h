@@ -43,8 +43,8 @@ I8255* i8255Create(I8255Read peekA,   I8255Read readA,   I8255Write writeA,
 void i8255Destroy(I8255* i8255); 
 void i8255Reset(I8255* i8255);
 UInt8 i8255Peek(I8255* i8255, UInt16 port);
-UInt8 i8255Read(I8255* i8255, UInt16 port);
-void i8255Write(I8255* i8255, UInt16 port, UInt8 value);
+UInt8 i8255Read(void* i8255v, UInt16 port);
+void i8255Write(void* i8255, UInt16 port, UInt8 value);
 void i8255LoadState(I8255* i8255);
 void i8255SaveState(I8255* i8255);
 

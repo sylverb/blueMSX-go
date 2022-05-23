@@ -55,7 +55,7 @@ static const UInt8 regMask[16] = {
 };
 
 static Int32* ay8910Sync(void* ref, UInt32 count);
-static void updateRegister(AY8910* ay8910, UInt8 address, UInt8 data);
+static void updateRegister(void* ay8910v, UInt8 address, UInt8 data);
 
 struct AY8910 {
     Mixer* mixer;
@@ -367,9 +367,9 @@ void ay8910SetIoPort(AY8910* ay8910, AY8910ReadCb readCb, AY8910ReadCb pollCb, A
     ay8910->ioPortArg     = arg;
 }
 
-void ay8910WriteAddress(AY8910* ay8910, UInt16 ioPort, UInt8 address)
+void ay8910WriteAddress(void* ay8910, UInt16 ioPort, UInt8 address)
 {
-    ay8910->address = address & 0xf;
+    ((AY8910 *)ay8910)->address = address & 0xf;
 }
 
 UInt8 ay8910PeekData(AY8910* ay8910, UInt16 ioPort)
@@ -386,8 +386,9 @@ UInt8 ay8910PeekData(AY8910* ay8910, UInt16 ioPort)
     return value;
 }
 
-UInt8 ay8910ReadData(AY8910* ay8910, UInt16 ioPort)
+UInt8 ay8910ReadData(void* ay8910v, UInt16 ioPort)
 {
+    AY8910 *ay8910 = (AY8910 *)ay8910v;
     UInt8  address = ay8910->address;
 
 //    if (address > 15) printf("TADA!!\n");
@@ -401,8 +402,9 @@ UInt8 ay8910ReadData(AY8910* ay8910, UInt16 ioPort)
     return ay8910->regs[address];
 }
 
-static void updateRegister(AY8910* ay8910, UInt8 regIndex, UInt8 data)
+static void updateRegister(void* ay8910v, UInt8 regIndex, UInt8 data)
 {
+    AY8910 *ay8910 = (AY8910 *)ay8910v;
     UInt32 period;
     int port;
 
@@ -468,7 +470,7 @@ extern int framecounter;
 int   curFramecounter = 0;
 #endif
 
-void ay8910WriteData(AY8910* ay8910, UInt16 ioPort, UInt8 data)
+void ay8910WriteData(void* ay8910, UInt16 ioPort, UInt8 data)
 {
 #if 0
     if (ay8910->address < 2 || ay8910->address == 8) {
@@ -480,7 +482,7 @@ void ay8910WriteData(AY8910* ay8910, UInt16 ioPort, UInt8 data)
         printf("    dw  $%.2x%.2x\n", ay8910->address, data);
     }
 #endif
-    updateRegister(ay8910, ay8910->address, data);
+    updateRegister(ay8910, ((AY8910 *)ay8910)->address, data);
 }
 
 static Int32* ay8910Sync(void* ref, UInt32 count)
@@ -509,7 +511,7 @@ static Int32* ay8910Sync(void* ref, UInt32 count)
  
         /* Calculate envelope volume */
         envVolume = (Int16)((ay8910->envPhase >> 23) & 0x1f);
-        if (((ay8910->envPhase >> 27) & (ay8910->envShape + 1) ^ (~ay8910->envShape >> 1)) & 2) {
+        if ((((ay8910->envPhase >> 27) & (ay8910->envShape + 1)) ^ (~ay8910->envShape >> 1)) & 2) {
             envVolume ^= 0x1f;
         }
 

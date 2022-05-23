@@ -41,19 +41,19 @@ typedef enum { SCC_NONE = 0, SCC_REAL, SCC_COMPATIBLE, SCC_PLUS } SccMode;
 
 /* Constructor and destructor */
 SCC* sccCreate(Mixer* mixer);
-void sccDestroy(SCC* scc);
+void sccDestroy(void* scc);
 void sccReset(SCC* scc);
 void sccSetMode(SCC* scc, SccMode newMode);
 
 /* Register read/write methods */
-UInt8 sccRead(SCC* scc, UInt8 address);
+UInt8 sccRead(void* scc, UInt8 address);
 UInt8 sccPeek(SCC* scc, UInt8 address);
-void sccWrite(SCC* scc, UInt8 address, UInt8 value);
+void sccWrite(void* scc, UInt8 address, UInt8 value);
 
 void sccGetDebugInfo(SCC* scc, DbgDevice* dbgDevice);
 
-void sccLoadState(SCC* scc);
-void sccSaveState(SCC* scc);
+void sccLoadState(void* scc);
+void sccSaveState(void* scc);
 
 #endif
 

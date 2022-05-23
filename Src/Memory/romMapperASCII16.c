@@ -48,8 +48,9 @@ typedef struct {
     int romMapper[4];
 } RomMapperASCII16;
 
-static void destroy(RomMapperASCII16* rm)
+static void destroy(void* rmv)
 {
+    RomMapperASCII16 *rm = (RomMapperASCII16 *)rmv;
     slotUnregister(rm->slot, rm->sslot, rm->startPage);
     deviceManagerUnregister(rm->deviceHandle);
 
@@ -59,8 +60,9 @@ static void destroy(RomMapperASCII16* rm)
 #endif
 }
 
-static void saveState(RomMapperASCII16* rm)
+static void saveState(void* rmv)
 {
+    RomMapperASCII16 *rm = (RomMapperASCII16 *)rmv;
     SaveState* state = saveStateOpenForWrite("mapperASCII16");
     char tag[16];
     int i;
@@ -73,8 +75,9 @@ static void saveState(RomMapperASCII16* rm)
     saveStateClose(state);
 }
 
-static void loadState(RomMapperASCII16* rm)
+static void loadState(void* rmv)
 {
+    RomMapperASCII16 *rm = (RomMapperASCII16 *)rmv;
     SaveState* state = saveStateOpenForRead("mapperASCII16");
     char tag[16];
     int i;
@@ -93,8 +96,9 @@ static void loadState(RomMapperASCII16* rm)
     }
 }
 
-static void write(RomMapperASCII16* rm, UInt16 address, UInt8 value) 
+static void write(void* rmv, UInt16 address, UInt8 value) 
 {
+    RomMapperASCII16 *rm = (RomMapperASCII16 *)rmv;
     int bank;
 
     address += 0x4000;

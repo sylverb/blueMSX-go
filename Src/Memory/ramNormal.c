@@ -55,11 +55,12 @@ typedef struct {
 } RamNormal;
 
 #ifdef TARGET_GNW
-extern char msxRam_global[0x4000*8];
+extern UInt8 msxRam_global[0x4000*8];
 #endif
 
-static void saveState(RamNormal* rm)
+static void saveState(void* rmv)
 {
+    RamNormal *rm = (RamNormal *)rmv;
     SaveState* state = saveStateOpenForWrite("mapperNormalRam");
 
     saveStateSet(state, "pages", rm->pages);
@@ -68,8 +69,9 @@ static void saveState(RamNormal* rm)
     saveStateClose(state);
 }
 
-static void loadState(RamNormal* rm)
+static void loadState(void* rmv)
 {
+    RamNormal *rm = (RamNormal *)rmv;
     SaveState* state = saveStateOpenForRead("mapperNormalRam");
     int i;
 
@@ -84,8 +86,9 @@ static void loadState(RamNormal* rm)
     }
 }
 
-static void destroy(RamNormal* rm)
+static void destroy(void* rmv)
 {
+    RamNormal *rm = (RamNormal *)rmv;
 #ifndef TARGET_GNW
     debugDeviceUnregister(rm->debugHandle);
 #endif

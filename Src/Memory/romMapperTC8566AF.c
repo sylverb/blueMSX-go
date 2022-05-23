@@ -51,8 +51,9 @@ typedef struct {
     int romMapper[4];
 } RomMapperTC8566AF;
 
-static void saveState(RomMapperTC8566AF* rm)
+static void saveState(void* rmv)
 {
+    RomMapperTC8566AF *rm = (RomMapperTC8566AF *)rmv;
     SaveState* state = saveStateOpenForWrite("mapperTC8566AF");
     char tag[16];
     int i;
@@ -67,8 +68,9 @@ static void saveState(RomMapperTC8566AF* rm)
     tc8566afSaveState(rm->fdc);
 }
 
-static void loadState(RomMapperTC8566AF* rm)
+static void loadState(void* rmv)
 {
+    RomMapperTC8566AF *rm = (RomMapperTC8566AF *)rmv;
     SaveState* state = saveStateOpenForRead("mapperTC8566AF");
     char tag[16];
     int i;
@@ -89,8 +91,9 @@ static void loadState(RomMapperTC8566AF* rm)
     tc8566afLoadState(rm->fdc);
 }
 
-static void destroy(RomMapperTC8566AF* rm)
+static void destroy(void* rmv)
 {
+    RomMapperTC8566AF *rm = (RomMapperTC8566AF *)rmv;
     slotUnregister(rm->slot, rm->sslot, rm->startPage);
     deviceManagerUnregister(rm->deviceHandle);
 
@@ -102,8 +105,9 @@ static void destroy(RomMapperTC8566AF* rm)
 #endif
 }
 
-static void reset(RomMapperTC8566AF* rm)
+static void reset(void* rmv)
 {
+    RomMapperTC8566AF *rm = (RomMapperTC8566AF *)rmv;
     int i;
 
     tc8566afReset(rm->fdc);
@@ -117,9 +121,10 @@ static void reset(RomMapperTC8566AF* rm)
     }
 }
 
-static UInt8 read(RomMapperTC8566AF* rm, UInt16 address) 
+static UInt8 read(void* rmv, UInt16 address) 
 {
 //    printf("TC8566AF read %x\n",address);
+    RomMapperTC8566AF *rm = (RomMapperTC8566AF *)rmv;
     address += 0x4000;
     if ((address & 0x3fff) >= 0x3ff0) {
         if (rm->romType == ROM_TC8566AF) {
@@ -189,8 +194,9 @@ static UInt8 peek(RomMapperTC8566AF* rm, UInt16 address)
 }
 #endif
 
-static void write(RomMapperTC8566AF* rm, UInt16 address, UInt8 value) 
+static void write(void* rmv, UInt16 address, UInt8 value) 
 {
+    RomMapperTC8566AF *rm = (RomMapperTC8566AF *)rmv;
     address += 0x4000;
     
     if ((address == 0x6000) || (address == 0x7ff0) || (address == 0x7ffe)) {

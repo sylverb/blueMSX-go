@@ -48,7 +48,6 @@
 
 static UInt32 ca;
 static UInt32 cb;
-static UInt32 cr;
 
 #define CM1 ((COLMASK_R << COLSHIFT_R) | (COLMASK_B << COLSHIFT_B))
 #define CM2 (COLMASK_G << COLSHIFT_G)
@@ -186,6 +185,7 @@ static void RefreshRightBorder(VDP* vdp, int Y, Pixel bgColor, int line512, int 
     }
 }
 
+#ifndef MAX_VIDEO_WIDTH_320
 static void RefreshRightBorder6(VDP* vdp, int Y, Pixel bgColor1, Pixel bgColor2) {
     FrameBuffer* frameBuffer = frameBufferGetDrawFrame();
     Pixel *linePtr;
@@ -208,6 +208,7 @@ static void RefreshRightBorder6(VDP* vdp, int Y, Pixel bgColor1, Pixel bgColor2)
         linePtr[2 * SCREEN_WIDTH - offset + 1] = bgColor2;
     }
 }
+#endif
 
 static void RefreshLineBlank(VDP* vdp, int Y, int X, int X2)
 {
@@ -443,10 +444,6 @@ static void RefreshLine0Plus(VDP* vdp, int Y, int X, int X2)
 
 static void RefreshLine0Mix(VDP* vdp, int Y, int X, int X2)
 {
-    static int     patternBase;
-    static int     pattern;
-    static int     x;
-    static int     y;
     static int     shift;
 
     static int     hScroll;
@@ -461,9 +458,6 @@ static void RefreshLine0Mix(VDP* vdp, int Y, int X, int X2)
 
         hScroll    = vdpHScroll(vdp) % 6;
 
-        y = Y - vdp->firstLine + vdpVScroll(vdp) - vdp->scr0splitLine;
-        x = 0;
-        patternBase = vdp->chrGenBase & ((-1 << 11) | (y & 7));
         shift = 0;
 
         for (i = 0; i < hScroll; i++) {

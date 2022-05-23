@@ -74,8 +74,9 @@ typedef struct {
     Int32 regCHi;
 } MsxPPI;
 
-static void destroy(MsxPPI* ppi)
+static void destroy(void* ppiv)
 {
+    MsxPPI *ppi = (MsxPPI *)ppiv;
     ioPortUnregister(0xa8);
     ioPortUnregister(0xa9);
     ioPortUnregister(0xaa);
@@ -98,8 +99,9 @@ static void destroy(MsxPPI* ppi)
 #endif
 }
 
-static void reset(MsxPPI* ppi) 
+static void reset(void* ppiv) 
 {
+    MsxPPI *ppi = (MsxPPI *)ppiv;
     ppi->row       = 0;
     ppi->regA   = -1;
     ppi->regCHi = -1;
@@ -107,8 +109,9 @@ static void reset(MsxPPI* ppi)
     i8255Reset(ppi->i8255);
 }
 
-static void loadState(MsxPPI* ppi)
+static void loadState(void* ppiv)
 {
+    MsxPPI *ppi = (MsxPPI *)ppiv;
     SaveState* state = saveStateOpenForRead("MsxPPI");
 
     ppi->row    = (UInt8)saveStateGet(state, "row", 0);
@@ -120,8 +123,9 @@ static void loadState(MsxPPI* ppi)
     i8255LoadState(ppi->i8255);
 }
 
-static void saveState(MsxPPI* ppi)
+static void saveState(void* ppiv)
 {
+    MsxPPI *ppi = (MsxPPI *)ppiv;
     SaveState* state = saveStateOpenForWrite("MsxPPI");
     
     saveStateSet(state, "row", ppi->row);
@@ -133,8 +137,9 @@ static void saveState(MsxPPI* ppi)
     i8255SaveState(ppi->i8255);
 }
 
-static void writeA(MsxPPI* ppi, UInt8 value)
+static void writeA(void* ppiv, UInt8 value)
 {
+    MsxPPI *ppi = (MsxPPI *)ppiv;
     if (value != ppi->regA) {
         int i;
 
@@ -147,13 +152,14 @@ static void writeA(MsxPPI* ppi, UInt8 value)
     }
 }
 
-static void writeCLo(MsxPPI* ppi, UInt8 value)
+static void writeCLo(void* ppi, UInt8 value)
 {
-    ppi->row = value;
+    ((MsxPPI *)ppi)->row = value;
 }
 
-static void writeCHi(MsxPPI* ppi, UInt8 value)
+static void writeCHi(void* ppiv, UInt8 value)
 {
+    MsxPPI *ppi = (MsxPPI *)ppiv;
     if (value != ppi->regCHi) {
         ppi->regCHi = value;
 
@@ -165,9 +171,9 @@ static void writeCHi(MsxPPI* ppi, UInt8 value)
     }
 }
 
+#ifndef TARGET_GNW
 static UInt8 peekB(MsxPPI* ppi)
 {
-#ifndef TARGET_GNW
     UInt8 value = getKeyState(ppi->row);
 
     if (ppi->row == 8) {
@@ -179,14 +185,13 @@ static UInt8 peekB(MsxPPI* ppi)
     }
 
     return value;
-#else
-    return getKeyState(ppi->row);
-#endif
 }
+#endif
 
-static UInt8 readB(MsxPPI* ppi)
+static UInt8 readB(void* ppiv)
 {
 #ifndef TARGET_GNW
+    MsxPPI *ppi = (MsxPPI *)ppiv;
     UInt8 value = boardCaptureUInt8(ppi->row, getKeyState(ppi->row));
 
     if (ppi->row == 8) {
@@ -203,7 +208,7 @@ static UInt8 readB(MsxPPI* ppi)
 
     return value;
 #else
-    return getKeyState(ppi->row);
+    return getKeyState(((MsxPPI *)ppiv)->row);
 #endif
 }
 
@@ -244,7 +249,11 @@ void msxPPICreate(int ignoreKeyboard)
     }
     else {
         ppi->i8255 = i8255Create(NULL,  NULL,  writeA,
+#ifndef TARGET_GNW
                                  peekB, readB, NULL,
+#else
+                                 NULL, readB, NULL,
+#endif
                                  NULL,  NULL,  writeCLo,
                                  NULL,  NULL,  writeCHi,
                                  ppi);
@@ -281,8 +290,8 @@ static UInt8 getKeyState(int row)
 	#define ROW10 ~_ROW(EC_NUMPER, EC_NUMCOM, EC_NUMSUB, EC_NUM9,   EC_NUM8,   EC_NUM7,   EC_NUM6,   EC_NUM5   )
 	#define ROW11 ~((inputEventGetState(EC_TORIKE)<<3)|(inputEventGetState(EC_JIKKOU)<<1))
 
-    Properties* pProperties = propGetGlobalProperties();
 #ifndef TARGET_GNW
+    Properties* pProperties = propGetGlobalProperties();
     if (!pProperties->keyboard.enableKeyboardQuirk)
     {
 #endif

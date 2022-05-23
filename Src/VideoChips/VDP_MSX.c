@@ -541,8 +541,9 @@ static void scheduleDrawAreaStart(VDP* vdp)
     boardTimerAdd(vdp->timerVStart, vdp->timeVStart);
 }
 
-static void onHint(VDP* vdp, UInt32 time)
+static void onHint(void *vdpv, UInt32 time)
 {
+    VDP *vdp = (VDP *)vdpv;
     sync(vdp, time);
 
     vdp->timeHintEn = 0;
@@ -558,8 +559,9 @@ int framecounter = 0;
 extern BoardInfo boardInfo;
 #endif
 
-static void onVint(VDP* vdp, UInt32 time)
+static void onVint(void *vdpv, UInt32 time)
 {
+    VDP *vdp = (VDP *)vdpv;
     sync(vdp, time);
 
     vdp->timeVintEn = 0;
@@ -583,23 +585,26 @@ static void onVint(VDP* vdp, UInt32 time)
 
 }
 
-static void onDrawAreaEnd(VDP* vdp, UInt32 time)
+static void onDrawAreaEnd(void *vdpv, UInt32 time)
 {
+    VDP *vdp = (VDP *)vdpv;
     sync(vdp, time);
 
     vdp->timeDrawAreaEndEn = 0;
     vdp->drawArea = 0;
 }
 
-static void onTmsVint(VDP* vdp, UInt32 time)
+static void onTmsVint(void *vdpv, UInt32 time)
 {
+    VDP *vdp = (VDP *)vdpv;
     if (vdp->vdpRegs[1] & 0x20) {
         boardSetInt(INT_IE0);
     }
 }
 
-static void onVStart(VDP* vdp, UInt32 time)
+static void onVStart(void *vdpv, UInt32 time)
 {
+    VDP* vdp = (VDP *)vdpv;
     sync(vdp, time);
 
     vdp->timeVStartEn = 0;
@@ -607,8 +612,9 @@ static void onVStart(VDP* vdp, UInt32 time)
     vdp->vdpStatus[2] &= ~0x40;
 }
 
-static void onDrawAreaStart(VDP* vdp, UInt32 time)
+static void onDrawAreaStart(void *vdpv, UInt32 time)
 {
+    VDP* vdp = (VDP *)vdpv;
     sync(vdp, time);
     
     vdp->timeDrawAreaStartEn = 0;
@@ -626,8 +632,9 @@ int getScreenCompletePercent()
     return 100 * (boardSystemTime() - frameStartTime) / timeDisplay;
 }
 
-static void onDisplay(VDP* vdp, UInt32 time)
+static void onDisplay(void* vdpv, UInt32 time)
 {
+    VDP *vdp = (VDP *)vdpv;
     int isPal = vdpIsVideoPal(vdp); 
     
     sync(vdp, time);
@@ -688,6 +695,7 @@ static void onDisplay(VDP* vdp, UInt32 time)
     }
 }
 
+#ifdef ENABLE_VRAM_DECAY
 static void simulateVramDecay(VDP* vdp) 
 {
     int time = (boardSystemTime() - vdp->screenOffTime) / 1350000;
@@ -717,6 +725,7 @@ static void simulateVramDecay(VDP* vdp)
         }
     }
 }
+#endif
 
 static int updateScreenMode(VDP* vdp) {
     int screenMode;
@@ -800,8 +809,9 @@ static int updateScreenMode(VDP* vdp) {
     return screenMode;
 }
 
-static void onScrModeChange(VDP* vdp, UInt32 time)
+static void onScrModeChange(void *vdpv, UInt32 time)
 {
+    VDP *vdp = (VDP *)vdpv;
     int scanLine = (boardSystemTime() - vdp->frameStartTime) / HPERIOD;
     int screenMode = vdp->screenMode;
     sync(vdp, time);
@@ -1015,6 +1025,7 @@ static void vdpUpdateRegisters(VDP* vdp, UInt8 reg, UInt8 value)
     }
 } 
 
+#ifndef TARGET_GNW
 static UInt8 peek(VDP* vdp, UInt16 ioPort) 
 {
     if (vdp->vdpVersion == VDP_V9938 || vdp->vdpVersion == VDP_V9958) {
@@ -1023,6 +1034,7 @@ static UInt8 peek(VDP* vdp, UInt16 ioPort)
 
 	return vdp->vdpData;
 }
+#endif
 
 static UInt8 readNoTimingCheck(VDP* vdp, UInt16 ioPort) 
 {
@@ -1043,8 +1055,9 @@ static UInt8 readNoTimingCheck(VDP* vdp, UInt16 ioPort)
     return value;
 }
 
-static UInt8 read(VDP* vdp, UInt16 ioPort) 
+static UInt8 read(void *vdpv, UInt16 ioPort) 
 {
+    VDP *vdp = (VDP *)vdpv;
 #ifndef TARGET_GNW
     if (vdp->vdpVersion == VDP_TMS9929A || vdp->vdpVersion == VDP_TMS99x8A) {
         checkVramAccessTimeTms(vdp);
@@ -1054,6 +1067,7 @@ static UInt8 read(VDP* vdp, UInt16 ioPort)
     return readNoTimingCheck(vdp, ioPort);
 }
 
+#ifndef TARGET_GNW
 static UInt8 peekStatus(VDP* vdp, UInt16 ioPort)
 {
     UInt8 vdpStatus;
@@ -1106,9 +1120,11 @@ static UInt8 peekStatus(VDP* vdp, UInt16 ioPort)
 
     return vdpStatus;
 }
+#endif
 
-static UInt8 readStatus(VDP* vdp, UInt16 ioPort)
+static UInt8 readStatus(void *vdpv, UInt16 ioPort)
 {
+    VDP *vdp = (VDP *)vdpv;
     UInt8 vdpStatus;
 
     sync(vdp, boardSystemTime());
@@ -1174,12 +1190,15 @@ static UInt8 readStatus(VDP* vdp, UInt16 ioPort)
     return vdpStatus;
 }
 
+#ifndef TARGET_GNW
 static UInt8 peekVram(VDP* vdp, int address) {
     return vdp->vram[address];
 }
+#endif
                   
-static void write(VDP* vdp, UInt16 ioPort, UInt8 value)
+static void write(void *vdpv, UInt16 ioPort, UInt8 value)
 {
+    VDP *vdp = (VDP *)vdpv;
     sync(vdp, boardSystemTime());
 
 #ifndef TARGET_GNW
@@ -1211,8 +1230,9 @@ static void write(VDP* vdp, UInt16 ioPort, UInt8 value)
     }
 }
 
-static void writeLatch(VDP* vdp, UInt16 ioPort, UInt8 value)
+static void writeLatch(void *vdpv, UInt16 ioPort, UInt8 value)
 {
+    VDP *vdp = (VDP *)vdpv;
 	switch (vdp->vdpVersion) {
 		
 		/* MSX1 VDP: address always updates */
@@ -1398,8 +1418,9 @@ static void updatePalette(VDP* vdp, int palEntry, int r, int g, int b)
     }
 }
 
-static void writePaletteLatch(VDP* vdp, UInt16 ioPort, UInt8 value)
+static void writePaletteLatch(void *vdpv, UInt16 ioPort, UInt8 value)
 {
+    VDP *vdp = (VDP *)vdpv;
     if (vdp->palKey) {
 		int palEntry = vdp->vdpRegs[16];
         sync(vdp, boardSystemTime());
@@ -1417,8 +1438,9 @@ static void writePaletteLatch(VDP* vdp, UInt16 ioPort, UInt8 value)
 	}
 }
 
-static void writeRegister(VDP* vdp, UInt16 ioPort, UInt8 value)
+static void writeRegister(void *vdpv, UInt16 ioPort, UInt8 value)
 {
+    VDP *vdp = (VDP *)vdpv;
     int reg;
 
 	vdp->vdpDataLatch = value;
@@ -1665,8 +1687,9 @@ static void loadState(VDP* vdp)
 
 #else
 
-static void saveState(VDP* vdp)
+static void saveState(void* vdpv)
 {
+    VDP *vdp = (VDP *)vdpv;
     SaveState* state = saveStateOpenForWrite("vdp");
     char tag[32];
     int i;
@@ -1757,10 +1780,10 @@ static void saveState(VDP* vdp)
     vdpCmdSaveState(vdp->cmdEngine);
 }
 
-static void loadState(VDP* vdp)
+static void loadState(void* vdpv)
 {
+    VDP *vdp = (VDP *)vdpv;
     SaveState* state = saveStateOpenForRead("vdp");
-    UInt32 systemTime = boardSystemTime() + 100;
     char tag[32];
     int i;
 
@@ -2090,8 +2113,9 @@ static int dbgWriteRegister(VDP* vdp, char* name, int regIndex, UInt32 value)
 }
 #endif
 
-static void reset(VDP* vdp)
+static void reset(void* vdpv)
 {
+    VDP *vdp = (VDP *)vdpv;
     int i;
 
     RefreshLineReset();
@@ -2173,8 +2197,9 @@ static void reset(VDP* vdp)
     onDisplay(vdp, boardSystemTime());
 }
 
-static void destroy(VDP* vdp) 
+static void destroy(void* vdpv) 
 {
+    VDP *vdp = (VDP *)vdpv;
     int i;
 
     theVdp = NULL;
@@ -2233,30 +2258,30 @@ static void destroy(VDP* vdp)
 #endif
 }
 
-static void videoEnable(VDP* vdp)
+static void videoEnable(void* vdp)
 {
-    vdp->videoEnabled = 1;
+    ((VDP *)vdp)->videoEnabled = 1;
 }
 
-static void videoDisable(VDP* vdp)
+static void videoDisable(void* vdp)
 {
-    vdp->videoEnabled = 0;
+    ((VDP *)vdp)->videoEnabled = 0;
 }
 
 #ifdef TARGET_GNW
 void vdpSetSyncMode(VdpSyncMode sync) {
-/*    if (sync == VDP_SYNC_AUTO) {
-        vdp_global.palMask  = ~0;
-        vdp_global.palValue = 0;
+    if (sync == VDP_SYNC_AUTO) {
+        theVdp->palMask  = ~0;
+        theVdp->palValue = 0;
     }
     else if (sync == VDP_SYNC_50HZ) {
-        vdp_global.palMask  = ~0x02;
-        vdp_global.palValue = 0x02;
+        theVdp->palMask  = ~0x02;
+        theVdp->palValue = 0x02;
     }
     else if (sync == VDP_SYNC_60HZ) {
-        vdp_global.palMask  = ~0x02;
-        vdp_global.palValue = 0x00;
-    }*/
+        theVdp->palMask  = ~0x02;
+        theVdp->palValue = 0x00;
+    }
 }
 #endif
 
@@ -2269,9 +2294,9 @@ void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int
     VideoCallbacks videoCallbacks = { videoEnable, videoDisable };
 #ifndef TARGET_GNW
     char* vdpVersionString;
+    int i;
 #endif
     int vramSize;
-    int i;
 
 #ifndef TARGET_GNW
     VDP* vdp = (VDP*)calloc(1, sizeof(VDP));

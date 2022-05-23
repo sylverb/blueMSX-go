@@ -46,8 +46,9 @@ typedef struct {
     int startPage;
 } RomMapperNormal;
 
-static void destroy(RomMapperNormal* rm)
+static void destroy(void* rmv)
 {
+    RomMapperNormal *rm = (RomMapperNormal *)rmv;
     slotUnregister(rm->slot, rm->sslot, rm->startPage);
     deviceManagerUnregister(rm->deviceHandle);
 

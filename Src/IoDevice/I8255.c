@@ -128,6 +128,7 @@ void i8255SaveState(I8255* i8255)
     saveStateClose(state);
 }
 
+#ifndef TARGET_GNW
 UInt8 i8255Peek(I8255* i8255, UInt16 port)
 {
     UInt8 value;
@@ -181,9 +182,11 @@ UInt8 i8255Peek(I8255* i8255, UInt16 port)
 
     return 0xff;
 }
+#endif
 
-UInt8 i8255Read(I8255* i8255, UInt16 port)
+UInt8 i8255Read(void* i8255v, UInt16 port)
 {
+    I8255 *i8255 = (I8255 *)i8255v;
     UInt8 value;
 
     port &= 0x03;
@@ -238,8 +241,9 @@ UInt8 i8255Read(I8255* i8255, UInt16 port)
     return 0xff;
 }
 
-void i8255Write(I8255* i8255, UInt16 port, UInt8 value)
+void i8255Write(void* i8255v, UInt16 port, UInt8 value)
 {
+    I8255 *i8255 = (I8255 *)i8255v;
     port &= 0x03;
 
     switch (port) {

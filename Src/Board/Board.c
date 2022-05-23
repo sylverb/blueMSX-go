@@ -70,9 +70,11 @@ static int fdcTimingEnable = 1;
 static int fdcActive       = 0;
 static BoardTimer* fdcTimer;
 static BoardTimer* syncTimer;
-static BoardTimer* mixerTimer;
 static BoardTimer* stateTimer;
+#ifndef TARGET_GNW
+static BoardTimer* mixerTimer;
 static BoardTimer* breakpointTimer;
+#endif
 static BoardDeviceInfo* boardDeviceInfo = NULL;
 static Machine* boardMachine;
 #ifdef __LIBRETRO__
@@ -115,7 +117,9 @@ static char saveStateVersion[32] = "blueMSX - state  v 8";
 static BoardTimerCb periodicCb;
 static void*        periodicRef;
 static UInt32       periodicInterval;
+#ifndef TARGET_GNW
 static BoardTimer*  periodicTimer;
+#endif
 
 void boardTimerCleanup();
 
@@ -564,12 +568,14 @@ static void doSync(UInt32 time, int breakpointHit)
     }
 }
 
+#ifndef TARGET_GNW
 static void onMixerSync(void* ref, UInt32 time)
 {
     mixerSync(boardMixer);
 
     boardTimerAdd(mixerTimer, boardSystemTime() + boardFrequency() / 50);
 }
+#endif
 
 static void onStateSync(void* ref, UInt32 time)
 {
@@ -628,6 +634,7 @@ int boardInsertExternalDevices()
         }
     }
 
+#ifndef TARGET_GNW
     if (boardDeviceInfo->tapes[0].inserted) {
         boardChangeCassette(0, boardDeviceInfo->tapes[0].name,
 #ifndef MSX_NO_ZIP
@@ -636,25 +643,28 @@ int boardInsertExternalDevices()
                             NULL);
 #endif
     }
+#endif
     return 1;
 }
 
 int boardRemoveExternalDevices()
 {
      boardChangeDiskette(0, NULL, NULL);
-     boardChangeDiskette(1, NULL, NULL);
 
+#ifndef TARGET_GNW
+     boardChangeDiskette(1, NULL, NULL);
      boardChangeCassette(0, NULL, NULL);
+#endif
 
      return 1;
 }
 
+#ifndef TARGET_GNW
 static void onBreakpointSync(void* ref, UInt32 time) {
     skipSync = 0;
     doSync(time, 1);
 }
 
-#ifndef TARGET_GNW
 int boardRewindOne() {
     UInt32 rewindTime;
     if (stateFrequency <= 0) {
@@ -792,8 +802,10 @@ int boardRun(Machine* machine,
         syncTimer = boardTimerCreate(onSync, NULL);
 #endif
         fdcTimer = boardTimerCreate(onFdcDone, NULL);
+#ifndef TARGET_GNW
         mixerTimer = boardTimerCreate(onMixerSync, NULL);
-        
+#endif
+
         stateFrequency = boardFrequency() / 1000 * reversePeriod;
 
         if (stateFrequency > 0) {
@@ -803,7 +815,9 @@ int boardRun(Machine* machine,
             memZipFileSystemCreate(ramMaxStates);
 #endif
             stateTimer = boardTimerCreate(onStateSync, NULL);
+#ifndef TARGET_GNW
             breakpointTimer = boardTimerCreate(onBreakpointSync, NULL); 
+#endif
             boardTimerAdd(stateTimer, boardSystemTime() + stateFrequency);
         }
         else {
@@ -811,7 +825,9 @@ int boardRun(Machine* machine,
         }
 
 #ifdef __LIBRETRO__
+#ifndef TARGET_GNW
         boardTimerAdd(mixerTimer, boardSystemTime() + boardFrequency() / 50);
+#endif
         return success;
 #else
         boardTimerAdd(syncTimer, boardSystemTime() + 1);
@@ -822,6 +838,7 @@ int boardRun(Machine* machine,
             boardTimerAdd(periodicTimer, boardSystemTime() + periodicInterval);
         }
 #endif
+#ifndef TARGET_GNW
         if (!skipSync) {
             syncToRealClock(0, 0);
         }
@@ -849,6 +866,7 @@ int boardRun(Machine* machine,
             memZipFileSystemDestroy();
 #endif
         }
+#endif
     }
 #ifndef TARGET_GNW
     else {
@@ -1330,6 +1348,7 @@ void boardChangeDiskette(int driveId, char* fileName, const char* fileInZipFile)
     diskChange(driveId ,fileName, fileInZipFile);
 }
 
+#ifndef TARGET_GNW
 void boardChangeCassette(int tapeId, char* name, const char* fileInZipFile)
 {
     if (name && strlen(name) == 0) {
@@ -1360,6 +1379,7 @@ int boardGetCassetteInserted()
 {
     return tapeIsInserted();
 }
+#endif
 
 UInt32 boardCalcRelativeTimeout(UInt32 timerFrequency, UInt32 nextTimeout)
 {
@@ -1610,4 +1630,9 @@ void boardSetVideoAutodetect(int value) {
 
 int  boardGetVideoAutodetect() {
     return videoAutodetect;
+}
+
+UInt32 boardSystemTime() {
+    extern UInt32* boardSysTime;
+    return *boardSysTime;
 }

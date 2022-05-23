@@ -217,8 +217,9 @@ static void rtcUpdateRegs(RTC* rtc)
     rtcSetRegisters(rtc);
 }
 
-static UInt8 rtcReadData(RTC* rtc, UInt16 ioPort)
+static UInt8 rtcReadData(void* rtcv, UInt16 ioPort)
 {
+    RTC *rtc = (RTC *)rtcv;
     int block;
 
     switch (rtc->latch) {
@@ -259,8 +260,9 @@ static UInt8 rtcPeekData(RTC* rtc, UInt16 ioPort)
 }
 #endif
 
-static void rtcWriteData(RTC* rtc, UInt16 ioPort, UInt8 value)
+static void rtcWriteData(void* rtcv, UInt16 ioPort, UInt8 value)
 {
+    RTC *rtc = (RTC *)rtcv;
     int block;
 
     switch (rtc->latch) {
@@ -303,9 +305,9 @@ static void rtcWriteData(RTC* rtc, UInt16 ioPort, UInt8 value)
     }
 }
 
-static void rtcWriteLatch(RTC* rtc, UInt16 ioPort, UInt8 value)
+static void rtcWriteLatch(void* rtc, UInt16 ioPort, UInt8 value)
 {
-    rtc->latch = value & 0x0f;
+    ((RTC*)rtc)->latch = value & 0x0f;
 }
 
 #ifndef TARGET_GNW

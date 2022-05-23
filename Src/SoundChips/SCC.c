@@ -50,7 +50,7 @@
 
 #define OFFSETOF(s, a) ((int)(&((s*)0)->a))
 
-static Int32* sccSync(SCC* scc, UInt32 count);
+static Int32* sccSync(void* scc, UInt32 count);
 
 
 struct SCC
@@ -85,8 +85,9 @@ struct SCC
     Int32  buffer[AUDIO_MONO_BUFFER_SIZE];
 };
 
-void sccLoadState(SCC* scc)
+void sccLoadState(void* sccv)
 {
+    SCC *scc = (SCC *)sccv;
     SaveState* state = saveStateOpenForRead("scc");
     char tag[32];
     int i;
@@ -132,8 +133,9 @@ void sccLoadState(SCC* scc)
     saveStateClose(state);
 }
 
-void sccSaveState(SCC* scc)
+void sccSaveState(void* sccv)
 {
+    SCC *scc = (SCC *)sccv;
     SaveState* state = saveStateOpenForWrite("scc");
     char tag[32];
     int i;
@@ -405,8 +407,9 @@ SCC* sccCreate(Mixer* mixer)
     return scc;
 }
 
-void sccDestroy(SCC* scc)
+void sccDestroy(void* sccv)
 {
+    SCC *scc = (SCC *)sccv;
 //    debugDeviceUnregister(scc->debugHandle);
     mixerUnregisterChannel(scc->mixer, scc->handle);
 #ifndef MSX_NO_MALLOC
@@ -414,8 +417,9 @@ void sccDestroy(SCC* scc)
 #endif
 }
 
-UInt8 sccRead(SCC* scc, UInt8 address)
+UInt8 sccRead(void* sccv, UInt8 address)
 {
+    SCC *scc = (SCC *)sccv;
     if (mixerIsChannelTypeEnable(scc->mixer,MIXER_CHANNEL_SCC)) {
         switch (scc->mode) {
 
@@ -470,6 +474,7 @@ UInt8 sccRead(SCC* scc, UInt8 address)
                 return 0xff;
             }
 
+        case SCC_NONE:
             return 0xff;
         }
     }
@@ -537,8 +542,9 @@ UInt8 sccPeek(SCC* scc, UInt8 address)
 }
 #endif
 
-void sccWrite(SCC* scc, UInt8 address, UInt8 value)
+void sccWrite(void* sccv, UInt8 address, UInt8 value)
 {
+    SCC *scc = (SCC *)sccv;
     if (mixerIsChannelTypeEnable(scc->mixer,MIXER_CHANNEL_SCC)) {
         mixerSync(scc->mixer);
 
@@ -599,6 +605,9 @@ void sccWrite(SCC* scc, UInt8 address, UInt8 value)
                 return;
             }
 
+            return;
+
+        case SCC_NONE:
             return;
         }
     }
@@ -701,8 +710,9 @@ static Int32 filter4(SCC* scc, Int32 in1, Int32 in2, Int32 in3, Int32 in4)
     return (Int32)res;
 }
 
-static Int32* sccSync(SCC* scc, UInt32 count)
+static Int32* sccSync(void* sccv, UInt32 count)
 {
+    SCC *scc = (SCC *)sccv;
     Int32* buffer  = scc->buffer;
     Int32  channel;
     UInt32 index;

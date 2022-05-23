@@ -86,8 +86,9 @@ typedef struct {
     int romMapper[4];
 } RomMapperKoei;
 
-static void saveState(RomMapperKoei* rm)
+static void saveState(void* rmv)
 {
+    RomMapperKoei *rm = (RomMapperKoei *)rmv;
     SaveState* state = saveStateOpenForWrite("mapperKoei");
     char tag[16];
     int i;
@@ -104,8 +105,9 @@ static void saveState(RomMapperKoei* rm)
     saveStateClose(state);
 }
 
-static void loadState(RomMapperKoei* rm)
+static void loadState(void* rmv)
 {
+    RomMapperKoei *rm = (RomMapperKoei *)rmv;
     SaveState* state = saveStateOpenForRead("mapperKoei");
     char tag[16];
     int i;
@@ -134,8 +136,9 @@ static void loadState(RomMapperKoei* rm)
     }
 }
 
-static void destroy(RomMapperKoei* rm)
+static void destroy(void* rmv)
 {
+    RomMapperKoei *rm = (RomMapperKoei *)rmv;
 #ifndef TARGET_GNW
     sramSave(rm->sramFilename, rm->sram, SRAM_PAGES << 13, NULL, 0);
 #endif
@@ -149,8 +152,9 @@ static void destroy(RomMapperKoei* rm)
 #endif
 }
 
-static void write(RomMapperKoei* rm, UInt16 address, UInt8 value) 
+static void write(void* rmv, UInt16 address, UInt8 value) 
 {
+    RomMapperKoei *rm = (RomMapperKoei *)rmv;
     address += 0x4000;
 
     if (address >= 0x6000 && address < 0x8000) {
@@ -162,6 +166,8 @@ static void write(RomMapperKoei* rm, UInt16 address, UInt8 value)
 #ifndef TARGET_GNW
             bankData = rm->sram + ((int)(value & (SRAM_PAGES - 1)) << 13);
             rm->sramEnabled |= (1 << bank);
+#else
+            bankData = NULL;
 #endif
             writeCache = bank != 1;
         }

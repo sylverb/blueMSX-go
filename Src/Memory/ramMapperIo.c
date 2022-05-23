@@ -63,8 +63,9 @@ typedef struct {
 RamMapperIo* mapperIo = NULL;
 
 
-static int ramMapperIoGetMask(RamMapperIo* rm)
+static int ramMapperIoGetMask(void* rmv)
 {
+    RamMapperIo *rm = (RamMapperIo *)rmv;
     int size = 1;
     int i;
 
@@ -77,8 +78,9 @@ static int ramMapperIoGetMask(RamMapperIo* rm)
     return (size / 0x4000) - 1;
 }
 
-static void saveState(RamMapperIo* rm)
+static void saveState(void* rmv)
 {
+    RamMapperIo *rm = (RamMapperIo *)rmv;
     SaveState* state = saveStateOpenForWrite("mapperRamIo");
     saveStateSet(state, "port0", rm->port[0]);
     saveStateSet(state, "port1", rm->port[1]);
@@ -88,8 +90,9 @@ static void saveState(RamMapperIo* rm)
     saveStateClose(state);
 }
 
-static void loadState(RamMapperIo* rm)
+static void loadState(void* rmv)
 {
+    RamMapperIo *rm = (RamMapperIo *)rmv;
     SaveState* state = saveStateOpenForRead("mapperRamIo");
     rm->port[0] = saveStateGet(state, "port0", 3);
     rm->port[1] = saveStateGet(state, "port1", 2);
@@ -101,8 +104,9 @@ static void loadState(RamMapperIo* rm)
     saveStateClose(state);
 }
 
-static void destroy(RamMapperIo* rm) 
+static void destroy(void* rmv) 
 {
+    RamMapperIo *rm = (RamMapperIo *)rmv;
     ioPortUnregister(0xfc);
     ioPortUnregister(0xfd);
     ioPortUnregister(0xfe);
@@ -119,13 +123,14 @@ static void destroy(RamMapperIo* rm)
     mapperIo = NULL;
 }
 
-static UInt8 read(RamMapperIo* rm, UInt16 ioPort)
+static UInt8 read(void* rm, UInt16 ioPort)
 {
-    return rm->port[ioPort & 3] | ~rm->mask;
+    return ((RamMapperIo*)rm)->port[ioPort & 3] | ~((RamMapperIo*)rm)->mask;
 }
 
-static void write(RamMapperIo* rm, UInt16 ioPort, UInt8 value)
+static void write(void* rmv, UInt16 ioPort, UInt8 value)
 {
+    RamMapperIo *rm = (RamMapperIo *)rmv;
     ioPort &= 3;
 
     if (rm->port[ioPort] != value) {

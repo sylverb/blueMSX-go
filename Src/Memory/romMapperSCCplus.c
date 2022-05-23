@@ -61,8 +61,9 @@ typedef struct {
     SCC* scc;
 } RomMapperSCCplus;
 
-static void saveState(RomMapperSCCplus* rm)
+static void saveState(void* rmv)
 {
+    RomMapperSCCplus *rm = (RomMapperSCCplus *)rmv;
     SaveState* state = saveStateOpenForWrite("mapperSCCplus");
     char tag[16];
     int i;
@@ -88,8 +89,9 @@ static void saveState(RomMapperSCCplus* rm)
     sccSaveState(rm->scc);
 }
 
-static void loadState(RomMapperSCCplus* rm)
+static void loadState(void* rmv)
 {
+    RomMapperSCCplus *rm = (RomMapperSCCplus *)rmv;
     SaveState* state = saveStateOpenForRead("mapperSCCplus");
     char tag[16];
     int bank;
@@ -128,7 +130,7 @@ static void loadState(RomMapperSCCplus* rm)
         slotMapPage(rm->slot, rm->sslot, rm->startPage + 2, NULL, 1, 0);
         slotMapPage(rm->slot, rm->sslot, rm->startPage + 3, NULL, 0, 0);
     }
-    else if (rm->sccMode = SCC_COMPATIBLE) {
+    else if (rm->sccMode == SCC_COMPATIBLE) {
         slotMapPage(rm->slot, rm->sslot, rm->startPage + 2, NULL, 0, 0);
         slotMapPage(rm->slot, rm->sslot, rm->startPage + 3, NULL, 1, 0);
     }
@@ -138,8 +140,9 @@ static void loadState(RomMapperSCCplus* rm)
     }
 }
 
-static void destroy(RomMapperSCCplus* rm)
+static void destroy(void* rmv)
 {
+    RomMapperSCCplus *rm = (RomMapperSCCplus *)rmv;
     slotUnregister(rm->slot, rm->sslot, rm->startPage);
     deviceManagerUnregister(rm->deviceHandle);
     sccDestroy(rm->scc);
@@ -149,14 +152,18 @@ static void destroy(RomMapperSCCplus* rm)
 #endif
 }
 
-static void reset(RomMapperSCCplus* rm)
+static void reset(void* rmv)
 {
+    RomMapperSCCplus *rm = (RomMapperSCCplus *)rmv;
     sccReset(rm->scc);
 }
 
-static UInt8 read(RomMapperSCCplus* rm, UInt16 address) 
+static UInt8 read(void* rmv, UInt16 address)
 {
+    RomMapperSCCplus *rm = (RomMapperSCCplus *)rmv;
+#ifndef TARGET_GNW
     int bank;
+#endif
     
     address += 0x4000;
 
@@ -227,8 +234,9 @@ static void updateEnable(RomMapperSCCplus* rm)
     }
 }
 
-static void write(RomMapperSCCplus* rm, UInt16 address, UInt8 value) 
+static void write(void* rmv, UInt16 address, UInt8 value) 
 {
+    RomMapperSCCplus *rm = (RomMapperSCCplus *)rmv;
     int bank;
 
     address += 0x4000;

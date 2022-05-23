@@ -216,16 +216,16 @@ int msxCreate(Machine* machine,
     boardInfo->getRefreshRate   = getRefreshRate;
     boardInfo->getRamPage       = getRamPage;
 
-    boardInfo->run              = r800Execute;
-    boardInfo->stop             = r800StopExecution;
-    boardInfo->setInt           = r800SetInt;
-    boardInfo->clearInt         = r800ClearInt;
-    boardInfo->setCpuTimeout    = r800SetTimeoutAt;
+    boardInfo->run              = (void (*)(void *))r800Execute;
+    boardInfo->stop             = (void (*)(void *))r800StopExecution;
+    boardInfo->setInt           = (void (*)(void *))r800SetInt;
+    boardInfo->clearInt         = (void (*)(void *))r800ClearInt;
+    boardInfo->setCpuTimeout    = (void (*)(void *, unsigned int))r800SetTimeoutAt;
 #ifdef ENABLE_BREAKPOINTS
     boardInfo->setBreakpoint    = r800SetBreakpoint;
     boardInfo->clearBreakpoint  = r800ClearBreakpoint;
 #endif
-    boardInfo->setDataBus       = r800SetDataBus;
+    boardInfo->setDataBus       = (void (*)(void *, unsigned char,  unsigned char,  int))r800SetDataBus;
     
     boardInfo->getTimeTrace     = getTimeTrace;
 

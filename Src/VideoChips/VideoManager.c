@@ -155,7 +155,9 @@ int videoManagerRegister(const char* name, FrameBufferData* frameBuffer,
         videoManagerSetActive(0);
     }
     
+#ifndef TARGET_GNW
     archVideoOutputChange();
+#endif
 
     return videoManager.lastHandle - 1;
 }
@@ -195,7 +197,9 @@ void videoManagerUnregister(int handle)
         frameBufferClearDeinterlace();
     }
 
+#ifndef TARGET_GNW
     archVideoOutputChange();
+#endif
 }
 
 

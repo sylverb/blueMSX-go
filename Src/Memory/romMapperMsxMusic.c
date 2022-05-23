@@ -54,8 +54,9 @@ typedef struct {
     int startPage;
 } MsxMusic;
 
-static void destroy(MsxMusic* rm)
+static void destroy(void* rmv)
 {
+    MsxMusic *rm = (MsxMusic *)rmv;
     ioPortUnregister(0x7c);
     ioPortUnregister(0x7d);
 
@@ -75,29 +76,33 @@ static void destroy(MsxMusic* rm)
 #endif
 }
 
-static void reset(MsxMusic* rm) 
+static void reset(void* rmv) 
 {
+    MsxMusic *rm = (MsxMusic *)rmv;
     if (rm->ym2413 != NULL) {
         ym2413Reset(rm->ym2413);
     }
 }
 
-static void loadState(MsxMusic* rm)
+static void loadState(void* rmv)
 {
+    MsxMusic *rm = (MsxMusic *)rmv;
     if (rm->ym2413 != NULL) {
         ym2413LoadState(rm->ym2413);
     }
 }
 
-static void saveState(MsxMusic* rm)
+static void saveState(void* rmv)
 {
+    MsxMusic *rm = (MsxMusic *)rmv;
     if (rm->ym2413 != NULL) {
         ym2413SaveState(rm->ym2413);
     }
 }
 
-static void write(MsxMusic* rm, UInt16 ioPort, UInt8 data)
+static void write(void* rmv, UInt16 ioPort, UInt8 data)
 {
+    MsxMusic *rm = (MsxMusic *)rmv;
     // System wants to play MSX-Music sound, If MSX-Music
     // was not enabled, disable SCC and enable MSX-MUSIC
     if (!mixerIsChannelTypeEnable(boardGetMixer(),MIXER_CHANNEL_MSXMUSIC)) {

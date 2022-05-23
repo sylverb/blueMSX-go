@@ -51,8 +51,9 @@ typedef struct {
     SCC* scc;
 } RomMapperKonami5;
 
-static void saveState(RomMapperKonami5* rm)
+static void saveState(void* rmv)
 {
+    RomMapperKonami5 *rm = (RomMapperKonami5 *)rmv;
     SaveState* state = saveStateOpenForWrite("mapperKonami5");
     char tag[16];
     int i;
@@ -69,8 +70,9 @@ static void saveState(RomMapperKonami5* rm)
     sccSaveState(rm->scc);
 }
 
-static void loadState(RomMapperKonami5* rm)
+static void loadState(void* rmv)
 {
+    RomMapperKonami5 *rm = (RomMapperKonami5 *)rmv;
     SaveState* state = saveStateOpenForRead("mapperKonami5");
     char tag[16];
     int i;
@@ -98,8 +100,9 @@ static void loadState(RomMapperKonami5* rm)
     }
 }
 
-static void destroy(RomMapperKonami5* rm)
+static void destroy(void* rmv)
 {
+    RomMapperKonami5 *rm = (RomMapperKonami5 *)rmv;
     slotUnregister(rm->slot, rm->sslot, rm->startPage);
     deviceManagerUnregister(rm->deviceHandle);
     sccDestroy(rm->scc);
@@ -110,13 +113,15 @@ static void destroy(RomMapperKonami5* rm)
 #endif
 }
 
-static void reset(RomMapperKonami5* rm)
+static void reset(void* rmv)
 {
+    RomMapperKonami5 *rm = (RomMapperKonami5 *)rmv;
     sccReset(rm->scc);
 }
 
-static UInt8 read(RomMapperKonami5* rm, UInt16 address) 
+static UInt8 read(void* rmv, UInt16 address) 
 {
+    RomMapperKonami5 *rm = (RomMapperKonami5 *)rmv;
     address += 0x4000;
 
     if (address >= 0x9800 && address < 0xa000 && rm->sccEnable) {
@@ -139,8 +144,9 @@ static UInt8 peek(RomMapperKonami5* rm, UInt16 address)
 }
 #endif
 
-static void write(RomMapperKonami5* rm, UInt16 address, UInt8 value) 
+static void write(void* rmv, UInt16 address, UInt8 value) 
 {
+    RomMapperKonami5 *rm = (RomMapperKonami5 *)rmv;
     int change = 0;
     int bank;
 

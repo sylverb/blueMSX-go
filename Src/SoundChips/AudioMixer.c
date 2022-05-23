@@ -471,7 +471,6 @@ void mixerReset(Mixer* mixer)
 
 void mixerSync(Mixer* mixer)
 {
-#ifndef TARGET_GNW
     UInt32 systemTime = boardSystemTime();
     Int16* buffer   = mixer->buffer;
     Int32* chBuff[MAX_CHANNELS];
@@ -484,11 +483,14 @@ void mixerSync(Mixer* mixer)
     mixer->refFrag = (UInt32)(elapsed % (mixerCPUFrequency * (boardFrequency() / 3579545)));
     count          = (UInt32)(elapsed / (mixerCPUFrequency * (boardFrequency() / 3579545)));
 
+    printf("mixerSync count %d\n",count);
+
     if (count == 0 || count > AUDIO_MONO_BUFFER_SIZE) {
         return;
     }
 
     if (!mixer->enable) {
+#ifndef TARGET_GNW
         while (count--) {
 #ifndef MSX_NO_STEREO
             if (mixer->stereo) {
@@ -507,6 +509,7 @@ void mixerSync(Mixer* mixer)
                 mixer->index = 0;
             }
         }
+#endif
         return;
     }
     
@@ -564,11 +567,13 @@ void mixerSync(Mixer* mixer)
             buffer[mixer->index++] = (Int16)left;
             buffer[mixer->index++] = (Int16)right;
 
+#ifndef TARGET_GNW
             if (mixer->index == mixer->fragmentSize) {
                 if (mixer->writeCallback != NULL)
                     mixer->writeCallback(mixer->writeRef, buffer, mixer->fragmentSize);
                 mixer->index = 0;
             }
+#endif
 
             mixer->volIndex++;
         }
@@ -612,11 +617,14 @@ void mixerSync(Mixer* mixer)
 
             buffer[mixer->index++] = (Int16)left;
             
+#ifndef TARGET_GNW
             if (mixer->index == mixer->fragmentSize) {
-                if (mixer->writeCallback != NULL)
+                if (mixer->writeCallback != NULL) {
                     mixer->writeCallback(mixer->writeRef, buffer, mixer->fragmentSize);
+                }
                 mixer->index = 0;
             }
+#endif
 
             mixer->volIndex++;
         }
@@ -670,40 +678,53 @@ void mixerSync(Mixer* mixer)
         }
         mixer->volIndex = 0;
     }
-#else
-    return;
-#endif
 }
 
-#ifdef TARGET_GNW
-void mixerSyncAudioBuffer(Mixer* mixer, Int16 *buffer, UInt32 count)
+//#ifdef TARGET_GNW
+void mixerSyncGNW(Mixer* mixer,UInt32 totalCount)
 {
+    UInt32 systemTime = boardSystemTime();
+    Int16* buffer   = mixer->buffer;
     Int32* chBuff[MAX_CHANNELS];
+    UInt32 missingCount;
     int i;
+    mixer->refTime = systemTime;
+    mixer->refFrag = 0;
 
-    mixer->index = 0;
+    if (totalCount >= mixer->index) {
+        missingCount = totalCount - mixer->index;
+    } else {
+        missingCount = 0;
+    }
+    printf("totalCount = %d missingCount = %d mixer->index = %d\n",totalCount, missingCount, mixer->index);
 
-    if (count == 0 || count > AUDIO_MONO_BUFFER_SIZE) {
+    if (totalCount == 0 || totalCount > AUDIO_MONO_BUFFER_SIZE) {
         return;
     }
 
     if (!mixer->enable) {
-        while (count--) {
+        while (missingCount--) {
             buffer[mixer->index++] = 0;
+        }
+        mixer->writeCallback(mixer->writeRef, buffer, totalCount);
+        if ( mixer->index >= totalCount) {
+            mixer->index = mixer->index - totalCount;
+        } else {
+            mixer->index = 0;
         }
         return;
     }
     
     for (i = 0; i < mixer->channelCount; i++) {
         if (mixer->channels[i].updateCallback != NULL) {
-            chBuff[i] = mixer->channels[i].updateCallback(mixer->channels[i].ref, count);
+            chBuff[i] = mixer->channels[i].updateCallback(mixer->channels[i].ref, missingCount);
         }
         else {
             chBuff[i] = NULL;
         }
     }
 
-    while (count--) {
+    while (missingCount--) {
         Int32 left = 0;
 
         for (i = 0; i < mixer->channelCount; i++) {
@@ -712,6 +733,7 @@ void mixerSyncAudioBuffer(Mixer* mixer, Int16 *buffer, UInt32 count)
             if (chBuff[i] == NULL) {
                 continue;
             }
+
             chanLeft = mixer->channels[i].volumeLeft * *chBuff[i]++;
 
             mixer->channels[i].volCntLeft  += (chanLeft > 0 ? chanLeft : -chanLeft) / 2048;
@@ -728,8 +750,14 @@ void mixerSyncAudioBuffer(Mixer* mixer, Int16 *buffer, UInt32 count)
         if (left  < -32767) left  = -32767;
 
         buffer[mixer->index++] = (Int16)left;
-        
+
         mixer->volIndex++;
+    }
+    mixer->writeCallback(mixer->writeRef, buffer, totalCount);
+    if ( mixer->index >= totalCount) {
+        mixer->index = mixer->index - totalCount;
+    } else {
+        mixer->index = 0;
     }
 
     if (mixer->volIndex >= 441) {
@@ -781,7 +809,7 @@ void mixerSyncAudioBuffer(Mixer* mixer, Int16 *buffer, UInt32 count)
         mixer->volIndex = 0;
     }
 }
-#endif
+//#endif
 
 void mixerSetEnable(Mixer* mixer, int enable)
 {
