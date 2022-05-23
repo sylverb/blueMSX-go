@@ -411,7 +411,6 @@ Int32 mixerRegisterChannel(Mixer* mixer, Int32 audioType, Int32 stereo, MixerUpd
     MixerChannel*  channel = mixer->channels + mixer->channelCount;
     AudioTypeInfo* type    = mixer->audioTypeInfo + audioType;
 
-    printf("register type %d count %d\n",audioType,mixer->channelCount);
     if (mixer->channelCount == MAX_CHANNELS) {
         return 0;
     }
@@ -438,8 +437,6 @@ Int32 mixerRegisterChannel(Mixer* mixer, Int32 audioType, Int32 stereo, MixerUpd
 void mixerUnregisterChannel(Mixer* mixer, Int32 handle) 
 {
     int i;
-
-    printf("unregister count %d\n",mixer->channelCount);
 
     if (mixer->channelCount == 0)
         return;
@@ -482,8 +479,6 @@ void mixerSync(Mixer* mixer)
     mixer->refTime = systemTime;
     mixer->refFrag = (UInt32)(elapsed % (mixerCPUFrequency * (boardFrequency() / 3579545)));
     count          = (UInt32)(elapsed / (mixerCPUFrequency * (boardFrequency() / 3579545)));
-
-    printf("mixerSync count %d\n",count);
 
     if (count == 0 || count > AUDIO_MONO_BUFFER_SIZE) {
         return;
@@ -696,7 +691,6 @@ void mixerSyncGNW(Mixer* mixer,UInt32 totalCount)
     } else {
         missingCount = 0;
     }
-    printf("totalCount = %d missingCount = %d mixer->index = %d\n",totalCount, missingCount, mixer->index);
 
     if (totalCount == 0 || totalCount > AUDIO_MONO_BUFFER_SIZE) {
         return;
