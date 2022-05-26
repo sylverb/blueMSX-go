@@ -44,7 +44,11 @@
 #else
 #define MAX_FDC_COUNT            1
 
-#define MAXDRIVES MAX_FDC_COUNT
+#define MAX_HD_COUNT             1
+#define FIRST_INTERNAL_HD_INDEX  1
+#define MAX_DRIVES_PER_HD        1
+
+#define MAXDRIVES (MAX_FDC_COUNT + MAX_DRIVES_PER_HD * MAX_HD_COUNT)
 #endif
 
 
@@ -75,9 +79,9 @@ int   diskChanged(int driveId);
 int   _diskRead2(int driveId, UInt8* buffer, int sector, int numSectors);
 int   _diskWrite2(int driveId, UInt8* buffer, int sector, int numSectors);
 int   _diskGetTotalSectors(int driveId);
-static int diskGetHdDriveId(int hdId, int driveNo) {
-    return MAX_FDC_COUNT + MAX_DRIVES_PER_HD * hdId + driveNo;
-}
+#endif
+int diskGetHdDriveId(int hdId, int driveNo);
+#ifndef TARGET_GNW
 static int diskGetUsbDriveId(int driveId, int driveNo) { 
     return MAX_FDC_COUNT + MAX_DRIVES_PER_HD * driveId + driveNo;
 }

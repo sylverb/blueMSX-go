@@ -40,7 +40,6 @@
 #include "ArchFile.h"
 #include "MediaDb.h"
 #include "TokenExtract.h"
-#include "Disk.h"
 #ifndef MSX_NO_ZIP
 #include "unzip.h"
 #endif
@@ -156,6 +155,7 @@
 #include "romMapperOpcodeSlotManager.h"
 #include "romMapperDooly.h"
 #include "romMapperMuPack.h"
+#include "Disk.h"
 
 
 // PacketFileSystem.h Need to be included after all other includes
@@ -1070,8 +1070,8 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
 #ifndef TARGET_GNW
     void* jisyoRom   = NULL;
     int jisyoRomSize = 0;
-    int hdId = FIRST_INTERNAL_HD_INDEX;
 #endif
+    int hdId = FIRST_INTERNAL_HD_INDEX;
     UInt8* buf;
     int size;
     int i;
@@ -1489,11 +1489,11 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
         case ROM_STANDARD:
             success &= romMapperStandardCreate(romName, buf, size, slot, subslot, startPage);
             break;
-            
+
         case ROM_MSXDOS2:
             success &= romMapperMsxDos2Create(romName, buf, size, slot, subslot, startPage);
             break;
-            
+
         case ROM_MUPACK:
             success &= romMapperMuPackCreate(romName, buf, size, slot, subslot, startPage);
             break;
@@ -1819,11 +1819,13 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
         case ROM_BUNSETU:
             success &= romMapperBunsetuCreate(romName, buf, size, slot, subslot, startPage, jisyoRom, jisyoRomSize);
             break;
+#endif
 
         case ROM_SUNRISEIDE:
             success &= romMapperSunriseIdeCreate(hdId++, romName, buf, size, slot, subslot, startPage);
             break;
 
+#ifndef TARGET_GNW
         case ROM_BEERIDE:
             success &= romMapperBeerIdeCreate(hdId++, romName, buf, size, slot, subslot, startPage);
             break;

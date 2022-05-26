@@ -38,11 +38,15 @@ void sunriseIdeDestroy(SunriseIde* ide);
 void sunriseIdeReset(SunriseIde* ide);
 
 UInt16 sunriseIdeRead(SunriseIde* ide);
+#ifndef TARGET_GNW
 UInt16 sunriseIdePeek(SunriseIde* ide);
+#endif
 void sunriseIdeWrite(SunriseIde* ide, UInt16 value);
 
 UInt8 sunriseIdeReadRegister(SunriseIde* ide, UInt8 reg);
+#ifndef TARGET_GNW
 UInt8 sunriseIdePeekRegister(SunriseIde* ide, UInt8 reg);
+#endif
 void sunriseIdeWriteRegister(SunriseIde* ide, UInt8 reg, UInt8 value);
 
 void sunriseIdeSaveState(SunriseIde* ide);

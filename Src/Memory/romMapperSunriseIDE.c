@@ -34,6 +34,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 
 typedef struct {
@@ -52,8 +55,9 @@ typedef struct {
 } RomMapperSunriseIde;
 
 
-static void saveState(RomMapperSunriseIde* rm)
+static void saveState(void* rmv)
 {
+    RomMapperSunriseIde *rm = (RomMapperSunriseIde *)rmv;
     SaveState* state = saveStateOpenForWrite("mapperSunriseIde");
 
     saveStateSet(state, "ideEnabled", rm->ideEnabled);
@@ -66,8 +70,9 @@ static void saveState(RomMapperSunriseIde* rm)
     sunriseIdeSaveState(rm->ide);
 }
 
-static void loadState(RomMapperSunriseIde* rm)
+static void loadState(void* rmv)
 {
+    RomMapperSunriseIde *rm = (RomMapperSunriseIde *)rmv;
     SaveState* state = saveStateOpenForRead("mapperSunriseIde");
 
     rm->ideEnabled = saveStateGet(state, "ideEnabled", 0);
@@ -80,19 +85,23 @@ static void loadState(RomMapperSunriseIde* rm)
     sunriseIdeLoadState(rm->ide);
 }
 
-static void destroy(RomMapperSunriseIde* rm)
+static void destroy(void* rmv)
 {
+    RomMapperSunriseIde *rm = (RomMapperSunriseIde *)rmv;
     slotUnregister(rm->slot, rm->sslot, rm->startPage);
     deviceManagerUnregister(rm->deviceHandle);
 
     sunriseIdeDestroy(rm->ide);
 
+#ifndef TARGET_GNW
     free(rm->romData);
     free(rm);
+#endif
 }
 
-static UInt8 read(RomMapperSunriseIde* rm, UInt16 address) 
+static UInt8 read(void* rmv, UInt16 address) 
 {
+    RomMapperSunriseIde *rm = (RomMapperSunriseIde *)rmv;
 	if (rm->ideEnabled && (address & 0x3e00) == 0x3c00) {
 		if ((address & 1) == 0) {
 	        UInt16 value = sunriseIdeRead(rm->ide);
@@ -113,6 +122,7 @@ static UInt8 read(RomMapperSunriseIde* rm, UInt16 address)
     return 0xff;
 }
 
+#ifndef TARGET_GNW
 static UInt8 peek(RomMapperSunriseIde* rm, UInt16 address) 
 {
 	if (rm->ideEnabled && (address & 0x3e00) == 0x3c00) {
@@ -133,9 +143,11 @@ static UInt8 peek(RomMapperSunriseIde* rm, UInt16 address)
 
     return 0xff;
 }
+#endif
 
-static void write(RomMapperSunriseIde* rm, UInt16 address, UInt8 value) 
+static void write(void* rmv, UInt16 address, UInt8 value) 
 {
+    RomMapperSunriseIde *rm = (RomMapperSunriseIde *)rmv;
 	if ((address & 0xbf04) == 0x0104) {
         rm->ideEnabled = value & 1;
             
@@ -161,7 +173,7 @@ static void write(RomMapperSunriseIde* rm, UInt16 address, UInt8 value)
 	}
 }
 
-static void reset(RomMapperSunriseIde* rm) 
+static void reset(void* rm) 
 {
 #if 0
     rm->ideEnabled = 1;
@@ -169,7 +181,7 @@ static void reset(RomMapperSunriseIde* rm)
     rm->readLatch = 0;
     rm->writeLatch = 0;
 #endif
-    sunriseIdeReset(rm->ide);
+    sunriseIdeReset(((RomMapperSunriseIde *)rm)->ide);
 }
 
 
@@ -195,13 +207,20 @@ int romMapperSunriseIdeCreate(int hdId, const char* filename, UInt8* romData,
         size = 0x80000;
     }
 
+#ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperSunriseIde));
-
+#else
+    rm = itc_malloc(sizeof(RomMapperSunriseIde));
+#endif
     rm->deviceHandle = deviceManagerRegister(ROM_SUNRISEIDE, &callbacks, rm);
+#ifndef TARGET_GNW
     slotRegister(slot, sslot, startPage, 8, read, peek, write, destroy, rm);
-
+#else
+    slotRegister(slot, sslot, startPage, 8, read, NULL, write, destroy, rm);
+#endif
     rm->ide = sunriseIdeCreate(hdId);
 
+#ifndef TARGET_GNW
     rm->romData = calloc(1, size);
     if (romData != NULL) {
         memcpy(rm->romData, romData, origSize);
@@ -209,6 +228,10 @@ int romMapperSunriseIdeCreate(int hdId, const char* filename, UInt8* romData,
     else {
         memset(rm->romData, 0xff, size);
     }
+#else
+    rm->romData = romData;
+#endif
+
     rm->romMask = size / 0x4000 - 1;
     rm->slot  = slot;
     rm->sslot = sslot;

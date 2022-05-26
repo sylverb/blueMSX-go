@@ -32,22 +32,34 @@
 #include "Disk.h"
 #include <stdlib.h>
 #include <string.h>
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
-    
 
 struct SunriseIde {
     int softReset;
     int currentDevice;
+#ifndef TARGET_GNW
     HarddiskIde* hdide[2];
+#else
+    HarddiskIde* hdide[1];
+#endif
 };
 
 
 SunriseIde* sunriseIdeCreate(int hdId)
 {
+#ifndef TARGET_GNW
     SunriseIde* ide = malloc(sizeof(SunriseIde));
+#else
+    SunriseIde* ide = itc_malloc(sizeof(SunriseIde));
+#endif
 
     ide->hdide[0] = harddiskIdeCreate(diskGetHdDriveId(hdId, 0));
+#ifndef TARGET_GNW
     ide->hdide[1] = harddiskIdeCreate(diskGetHdDriveId(hdId, 1));
+#endif
 
     sunriseIdeReset(ide);
 
@@ -57,8 +69,10 @@ SunriseIde* sunriseIdeCreate(int hdId)
 void sunriseIdeDestroy(SunriseIde* ide)
 {
     harddiskIdeDestroy(ide->hdide[0]);
+#ifndef TARGET_GNW
     harddiskIdeDestroy(ide->hdide[1]);
     free(ide);
+#endif
 }
 
 void sunriseIdeReset(SunriseIde* ide)
@@ -66,22 +80,36 @@ void sunriseIdeReset(SunriseIde* ide)
     ide->currentDevice = 0;
     ide->softReset = 0;
     harddiskIdeReset(ide->hdide[0]);
+#ifndef TARGET_GNW
     harddiskIdeReset(ide->hdide[1]);
+#endif
 }
 
 UInt16 sunriseIdeRead(SunriseIde* ide)
 {
+#ifndef TARGET_GNW
     return harddiskIdeRead(ide->hdide[ide->currentDevice]);
+#else
+    if (ide->currentDevice == 0) {
+        return harddiskIdeRead(ide->hdide[0]);
+    } else {
+        return 0x7f7f;
+    }
+#endif
 }
 
+#ifndef TARGET_GNW
 UInt16 sunriseIdePeek(SunriseIde* ide)
 {
     return harddiskIdePeek(ide->hdide[ide->currentDevice]);
 }
+#endif
 
 void sunriseIdeWrite(SunriseIde* ide, UInt16 value)
 {
+#ifndef TARGET_GNW
     harddiskIdeWrite(ide->hdide[ide->currentDevice], value);
+#endif
 }
 
 UInt8 sunriseIdeReadRegister(SunriseIde* ide, UInt8 reg)
@@ -100,7 +128,16 @@ UInt8 sunriseIdeReadRegister(SunriseIde* ide, UInt8 reg)
         return sunriseIdeRead(ide) & 0xFF;
     } 
 
+#ifndef TARGET_GNW
     value = harddiskIdeReadRegister(ide->hdide[ide->currentDevice], reg);
+#else
+    if (ide->currentDevice == 0) {
+        value = harddiskIdeReadRegister(ide->hdide[ide->currentDevice], reg);
+    } else {
+        value = 0x7f;
+    }
+#endif
+
     if (reg == 6) {
         value = (value & ~0x10) | (ide->currentDevice << 4);
     }
@@ -108,6 +145,7 @@ UInt8 sunriseIdeReadRegister(SunriseIde* ide, UInt8 reg)
 }
 
 
+#ifndef TARGET_GNW
 UInt8 sunriseIdePeekRegister(SunriseIde* ide, UInt8 reg)
 {
     UInt8 value;
@@ -130,6 +168,7 @@ UInt8 sunriseIdePeekRegister(SunriseIde* ide, UInt8 reg)
     }
     return value;
 }
+#endif
 
 void sunriseIdeWriteRegister(SunriseIde* ide, UInt8 reg, UInt8 value)
 {
@@ -148,14 +187,22 @@ void sunriseIdeWriteRegister(SunriseIde* ide, UInt8 reg, UInt8 value)
     if ((reg == 14) && (value & 0x04)) {
         ide->softReset = 1;
         harddiskIdeReset(ide->hdide[0]);
+#ifndef TARGET_GNW
         harddiskIdeReset(ide->hdide[1]);
+#endif
         return;
     }
 
     if (reg == 6) {
         ide->currentDevice = (value >> 4) & 1;
     }
+#ifndef TARGET_GNW
     harddiskIdeWriteRegister(ide->hdide[ide->currentDevice], reg, value);
+#else
+    if (ide->currentDevice == 0) {
+        harddiskIdeWriteRegister(ide->hdide[ide->currentDevice], reg, value);
+    }
+#endif
 }
 
 void sunriseIdeLoadState(SunriseIde* ide)
@@ -168,7 +215,9 @@ void sunriseIdeLoadState(SunriseIde* ide)
     saveStateClose(state);
 
     harddiskIdeLoadState(ide->hdide[0]);
+#ifndef TARGET_GNW
     harddiskIdeLoadState(ide->hdide[1]);
+#endif
 }
 
 void sunriseIdeSaveState(SunriseIde* ide)
@@ -181,5 +230,7 @@ void sunriseIdeSaveState(SunriseIde* ide)
     saveStateClose(state);
     
     harddiskIdeSaveState(ide->hdide[0]);
+#ifndef TARGET_GNW
     harddiskIdeSaveState(ide->hdide[1]);
+#endif
 }

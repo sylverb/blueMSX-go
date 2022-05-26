@@ -38,12 +38,16 @@ void harddiskIdeDestroy(HarddiskIde* hd);
 void harddiskIdeReset(HarddiskIde* hd);
 
 UInt16 harddiskIdeRead(HarddiskIde* hd);
+#ifndef TARGET_GNW
 UInt16 harddiskIdePeek(HarddiskIde* hd);
+#endif
 void harddiskIdeWrite(HarddiskIde* hd, UInt16 value);
 
 void harddiskIdeWriteRegister(HarddiskIde* hd, UInt8 reg, UInt8 value);
 UInt8 harddiskIdeReadRegister(HarddiskIde* hd, UInt8 reg);
+#ifndef TARGET_GNW
 UInt8 harddiskIdePeekRegister(HarddiskIde* hd, UInt8 reg);
+#endif
 
 void harddiskIdeSaveState(HarddiskIde* hd);
 void harddiskIdeLoadState(HarddiskIde* hd);

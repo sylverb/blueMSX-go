@@ -31,6 +31,9 @@
 #include "Disk.h"
 #include <stdlib.h>
 #include <string.h>
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 #define STATUS_ERR  0x01
 #define STATUS_DRQ  0x08
@@ -55,8 +58,13 @@ struct HarddiskIde {
     UInt32 transferSectorNumber;
 
     int   sectorDataOffset;
+#ifndef TARGET_GNW
     UInt8 sectorData[512 * 256];
-
+#else
+    // On the Game & Watch, we reduce ram footprint at maximum
+    UInt8 sectorData[512];
+    int   sectorNumber;
+#endif
     int diskId;
 };
 
@@ -86,6 +94,7 @@ static void executeCommand(HarddiskIde* hd, UInt8 cmd)
     hd->statusReg &= ~(STATUS_DRQ | STATUS_ERR);
     hd->transferRead = 0;
     hd->transferWrite = 0;
+
     switch (cmd) {
     case 0xef: // Set Feature
         if (hd->featureReg != 0x03) {
@@ -115,6 +124,7 @@ static void executeCommand(HarddiskIde* hd, UInt8 cmd)
 	    hd->devHeadReg      = (UInt8)((sectorCount >> 24) & 0x0f);
         break;
     }
+#ifndef TARGET_GNW
     case 0x30: { // Write Sector
         int sectorNumber = getSectorNumber(hd);
         int numSectors = getNumSectors(hd);
@@ -129,16 +139,26 @@ static void executeCommand(HarddiskIde* hd, UInt8 cmd)
         hd->statusReg |= STATUS_DRQ;
         break;
     }
+#endif
     case 0x20: { // Read Sector
-        int sectorNumber = getSectorNumber(hd);
-        int numSectors = getNumSectors(hd);
+#ifndef TARGET_GNW
         int i;
+        int sectorNumber = getSectorNumber(hd);
+#else
+        hd->sectorNumber = getSectorNumber(hd);
+#endif
+        int numSectors = getNumSectors(hd);
 
+#ifndef TARGET_GNW
         if ((sectorNumber + numSectors) > diskGetSectorsPerTrack(hd->diskId)) {
+#else
+        if ((hd->sectorNumber + numSectors) > diskGetSectorsPerTrack(hd->diskId)) {
+#endif
             setError(hd, 0x14);
             break;
         }
           
+#ifndef TARGET_GNW
         for (i = 0; i < numSectors; i++) {
             if (diskReadSector(hd->diskId, hd->sectorData + i * 512, sectorNumber + i + 1, 0, 0, 0, NULL) != DSKE_OK) {
                 break;
@@ -148,6 +168,11 @@ static void executeCommand(HarddiskIde* hd, UInt8 cmd)
             setError(hd, 0x44);
             break;
         }
+#else
+        if (diskReadSector(hd->diskId, hd->sectorData, hd->sectorNumber, 0, 0, 0, NULL) != DSKE_OK) {
+            setError(hd, 0x44);
+        }
+#endif
 
         hd->transferCount = 512/2 * numSectors;
         hd->sectorDataOffset = 0;
@@ -188,9 +213,17 @@ UInt16 harddiskIdeRead(HarddiskIde* hd)
         hd->transferRead = 0;
         hd->statusReg &= ~STATUS_DRQ;
     }
+#ifdef TARGET_GNW
+    else if (hd->sectorDataOffset == 512) {
+        hd->sectorDataOffset = 0;
+        hd->sectorNumber++;
+        diskReadSector(hd->diskId, hd->sectorData, hd->sectorNumber, 0, 0, 0, NULL);
+    }
+#endif
     return value;
 }
 
+#ifndef TARGET_GNW
 UInt16 harddiskIdePeek(HarddiskIde* hd)
 {
     UInt16 value;
@@ -204,9 +237,11 @@ UInt16 harddiskIdePeek(HarddiskIde* hd)
 
     return value;
 }
+#endif
 
 void harddiskIdeWrite(HarddiskIde* hd, UInt16 value)
 {
+#ifndef TARGET_GNW
     if (!hd->transferWrite || !diskPresent(hd->diskId)) {
         return;
     }
@@ -227,6 +262,7 @@ void harddiskIdeWrite(HarddiskIde* hd, UInt16 value)
         hd->transferWrite = 0;
         hd->statusReg &= ~STATUS_DRQ;
     }
+#endif
 }
 
 UInt8 harddiskIdeReadRegister(HarddiskIde* hd, UInt8 reg)
@@ -263,10 +299,12 @@ UInt8 harddiskIdeReadRegister(HarddiskIde* hd, UInt8 reg)
     return 0x7f;
 }
 
+#ifndef TARGET_GNW
 UInt8 harddiskIdePeekRegister(HarddiskIde* hd, UInt8 reg)
 {
     return harddiskIdeReadRegister(hd, reg);
 }
+#endif
 
 void harddiskIdeWriteRegister(HarddiskIde* hd, UInt8 reg, UInt8 value)
 {
@@ -314,6 +352,12 @@ void harddiskIdeLoadState(HarddiskIde* ide)
     ide->transferWrite          = saveStateGet(state, "transferWrite",          0);
     ide->transferCount          = saveStateGet(state, "transferCount",          0);
     ide->transferSectorNumber   = saveStateGet(state, "transferSectorNumber",   0);
+#ifdef TARGET_GNW
+    ide->sectorNumber           = saveStateGet(state, "sectorNumber",           0);
+    if (ide->sectorNumer >= 0) {
+        diskReadSector(hd->diskId, hd->sectorData, hd->sectorNumber, 0, 0, 0, NULL);
+    }
+#endif
 
     saveStateClose(state);
 }
@@ -334,13 +378,20 @@ void harddiskIdeSaveState(HarddiskIde* ide)
     saveStateSet(state, "transferWrite",          ide->transferWrite);
     saveStateSet(state, "transferCount",          ide->transferCount);
     saveStateSet(state, "transferSectorNumber",   ide->transferSectorNumber);
+#ifdef TARGET_GNW
+    saveStateSet(state, "sectorNumber",           ide->sectorNumber);
+#endif
 
     saveStateClose(state);
 }
 
 HarddiskIde* harddiskIdeCreate(int diskId)
 {
+#ifndef TARGET_GNW
     HarddiskIde* hd = malloc(sizeof(HarddiskIde));
+#else
+    HarddiskIde* hd = ahb_malloc(sizeof(HarddiskIde));
+#endif
 
     hd->diskId = diskId;
     hd->transferRead = 0;
@@ -353,5 +404,7 @@ HarddiskIde* harddiskIdeCreate(int diskId)
 
 void harddiskIdeDestroy(HarddiskIde* hd)
 {
+#ifndef TARGET_GNW
     free(hd);
+#endif
 }

@@ -86,9 +86,7 @@ static UInt32 boardRamSize;
 static UInt32 boardVramSize;
 static int boardRunning = 0;
 
-#ifndef TARGET_GNW
 static HdType hdType[MAX_HD_COUNT];
-#endif
 
 static int     ramMaxStates;
 static int     ramStateCur;
@@ -892,18 +890,16 @@ Mixer* boardGetMixer()
 void boardSetMachine(Machine* machine)
 {
     int i;
-#ifndef TARGET_GNW
     int hdIndex = FIRST_INTERNAL_HD_INDEX;
-#endif
 
     // Update HD info
-#ifndef TARGET_GNW
     for (i = FIRST_INTERNAL_HD_INDEX; i < MAX_HD_COUNT; i++) {
         hdType[i] = HD_NONE;
     }
     for (i = 0; i < machine->slotInfoCount; i++) {
         switch (machine->slotInfo[i].romType) {
         case ROM_SUNRISEIDE:  hdType[hdIndex++] = HD_SUNRISEIDE; break;
+#ifndef TARGET_GNW
         case ROM_BEERIDE:     hdType[hdIndex++] = HD_BEERIDE;    break;
         case ROM_GIDE:        hdType[hdIndex++] = HD_GIDE;       break;
         case ROM_SVI328RSIDE: hdType[hdIndex++] = HD_RSIDE;      break;
@@ -911,9 +907,9 @@ void boardSetMachine(Machine* machine)
         case SRAM_MEGASCSI:   hdType[hdIndex++] = HD_MEGASCSI;   break;
         case SRAM_WAVESCSI:   hdType[hdIndex++] = HD_WAVESCSI;   break;
         case ROM_GOUDASCSI:   hdType[hdIndex++] = HD_GOUDASCSI;  break;
+#endif
         }
     }
-#endif
 
     // Update RAM info
     boardRamSize  = 0;
