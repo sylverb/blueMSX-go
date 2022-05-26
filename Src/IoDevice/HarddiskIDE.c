@@ -354,8 +354,8 @@ void harddiskIdeLoadState(HarddiskIde* ide)
     ide->transferSectorNumber   = saveStateGet(state, "transferSectorNumber",   0);
 #ifdef TARGET_GNW
     ide->sectorNumber           = saveStateGet(state, "sectorNumber",           0);
-    if (ide->sectorNumer >= 0) {
-        diskReadSector(hd->diskId, hd->sectorData, hd->sectorNumber, 0, 0, 0, NULL);
+    if (ide->sectorNumber >= 0) {
+        diskReadSector(ide->diskId, ide->sectorData, ide->sectorNumber, 0, 0, 0, NULL);
     }
 #endif
 
