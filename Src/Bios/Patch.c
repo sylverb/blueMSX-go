@@ -131,7 +131,7 @@ void PatchReset(BoardType boardType) {
     patchBoardType = boardType;
 }
 
-void PatchZ80(void* ref, CpuRegs* cpu)
+void msxPatchZ80(void* ref, CpuRegs* cpu)
 {
     switch (patchBoardType) {
     default:

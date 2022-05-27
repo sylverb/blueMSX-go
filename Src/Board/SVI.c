@@ -63,7 +63,7 @@ static UInt8           psgAYReg15;
 static int             svi328Col80Enabled;
 static UInt8           lastJoystickValue;
 
-extern void PatchZ80(void* ref, CpuRegs* cpu);
+extern void msxPatchZ80(void* ref, CpuRegs* cpu);
 
 static void sviMemWrite(void* ref, UInt16 address, UInt8 value)
 {
@@ -315,7 +315,7 @@ int sviCreate(Machine* machine,
     int success;
     int i;
 
-    r800 = r800Create(CPU_ENABLE_M1, sviMemRead, sviMemWrite, ioPortRead, ioPortWrite, PatchZ80, boardTimerCheckTimeout, NULL, NULL, NULL, NULL, NULL, NULL);
+    r800 = r800Create(CPU_ENABLE_M1, sviMemRead, sviMemWrite, ioPortRead, ioPortWrite,msxPatchZ80, boardTimerCheckTimeout, NULL, NULL, NULL, NULL, NULL, NULL);
 
     boardInfo->cartridgeCount   = 1;
     boardInfo->diskdriveCount   = 2;
