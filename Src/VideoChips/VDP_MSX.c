@@ -386,9 +386,13 @@ struct VDP {
 
     UInt32 screenOffTime;
     
+#ifndef TARGET_GNW
     Pixel paletteFixed[256];
+#else
+    Pixel16 paletteFixedRGB565[256];
+#endif
     Pixel paletteSprite8[16];
-    Pixel  palette0;
+    Pixel palette0;
     Pixel palette[16];
 #ifndef TARGET_GNW
     Pixel yjkColor[32][64][64];
@@ -642,6 +646,7 @@ static void onDisplay(void* vdpv, UInt32 time)
     vdp->timeDisplayEn = 0;
 
     if (vdp->videoEnabled) {
+#ifndef TARGET_GNW
         FrameBuffer* frameBuffer;
         if (canFlipFrameBuffer >= 2) {
             frameBuffer = frameBufferFlipDrawFrame();
@@ -657,6 +662,12 @@ static void onDisplay(void* vdpv, UInt32 time)
         else {
             frameBufferSetInterlace(frameBuffer, INTERLACE_NONE);
         }
+#else
+        if (canFlipFrameBuffer < 2) {
+            canFlipFrameBuffer++;
+        }
+        frameBufferSetLineCount(NULL, 240);
+#endif
     }
 
     refreshRate = isPal ? 50 : 60; // Update global refresh rate
@@ -1299,11 +1310,19 @@ static void initPalette(VDP* vdp)
     }
 #endif
 
+#ifndef TARGET_GNW
     for (i = 0; i < 256; i++) {
         vdp->paletteFixed[i] = videoGetColor(255 * ((i >> 2) & 7) / 7, 
                                            255 * ((i >> 5) & 7) / 7, 
                                            255 * ((i & 3) == 3 ? 7 : 2 * (i & 3)) / 7);
     }
+#else
+    for (i = 0; i < 256; i++) {
+        vdp->paletteFixedRGB565[i] = videoGetColorRGB565(255 * ((i >> 2) & 7) / 7, 
+                                           255 * ((i >> 5) & 7) / 7, 
+                                           255 * ((i & 3) == 3 ? 7 : 2 * (i & 3)) / 7);
+    }
+#endif
 
     vdp->paletteSprite8[0]  = videoGetColor(0 * 255 / 7, 0 * 255 / 7, 0 * 255 / 7);
     vdp->paletteSprite8[1]  = videoGetColor(0 * 255 / 7, 0 * 255 / 7, 2 * 255 / 7);
@@ -2269,6 +2288,10 @@ static void videoDisable(void* vdp)
 }
 
 #ifdef TARGET_GNW
+UInt8 vdpGetScreenMode() {
+    return theVdp->screenMode;
+}
+
 void vdpSetSyncMode(VdpSyncMode sync) {
     if (sync == VDP_SYNC_AUTO) {
         theVdp->palMask  = ~0;

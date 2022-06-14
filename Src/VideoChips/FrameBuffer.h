@@ -95,6 +95,12 @@ void frameBufferSetBlendFrames(int blendFrames);
 #define BKMODE_TRANSPARENT 0x0001
 #define videoGetColor(R, G, B) \
 		((((int)(R) >> 3) << 11) | (((int)(G) >> 3) << 6) | (((int)(B) >> 3) << 1))
+#elif defined(TARGET_GNW) // RRR|GGG|BB
+#define BKMODE_TRANSPARENT 0x0000
+#define videoGetColor(R, G, B) \
+		((((int)(R) >> 5) << 5) | (((int)(G) >> 5) << 2) | ((int)(B) >> 6))
+#define videoGetColorRGB565(R, G, B) \
+		((((int)(R) >> 3) << 11) | (((int)(G) >> 2) << 5) | ((int)(B) >> 3))
 #else // default is ARGB1555
 #define BKMODE_TRANSPARENT 0x8000
 #define videoGetColor(R, G, B) \
@@ -107,6 +113,9 @@ void frameBufferSetBlendFrames(int blendFrames);
 
 // User implementation
 Pixel* frameBufferGetLine(FrameBuffer* frameBuffer, int y);
+#ifdef TARGET_GNW
+Pixel16* frameBufferGetLine16(FrameBuffer* frameBuffer, int y);
+#endif
 int    frameBufferGetDoubleWidth(FrameBuffer* frameBuffer, int y);
 void   frameBufferSetDoubleWidth(FrameBuffer* frameBuffer, int y, int val);
 void   frameBufferSetInterlace(FrameBuffer* frameBuffer, int val);

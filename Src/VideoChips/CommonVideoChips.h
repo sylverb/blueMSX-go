@@ -73,8 +73,13 @@ static Pixel* linePtr5 = NULL;
 static Pixel* linePtr6 = NULL;
 static Pixel* linePtr7 = NULL;
 static Pixel* linePtr8 = NULL;
+#ifndef TARGET_GNW
 static Pixel* linePtr10 = NULL;
 static Pixel* linePtr12 = NULL;
+#else
+static Pixel16* linePtr10 = NULL;
+static Pixel16* linePtr12 = NULL;
+#endif
 static Pixel* linePtrBlank = NULL;
 
 
@@ -128,6 +133,44 @@ Pixel *RefreshBorder(VDP* vdp, int Y, Pixel bgColor, int line512, int borderExtr
 
     return linePtr;
 }
+
+#ifdef TARGET_GNW
+Pixel16 *RefreshBorder16(VDP* vdp, int Y, Pixel16 bgColor)
+{
+    Pixel16 *linePtr;
+    int offset;
+
+    Y -= vdp->displayOffest;
+
+    frameBufferSetScanline(Y);
+
+    linePtr = frameBufferGetLine16(NULL, Y);
+
+    for (offset = (BORDER_WIDTH + vdp->HAdjust) - 1; offset >= 0; offset--) {
+        *linePtr++ = bgColor;
+    }
+
+    return linePtr;
+}
+
+static void RefreshRightBorder16(VDP* vdp, int Y, Pixel16 bgColor) {
+    Pixel16 *linePtr;
+    int offset;
+
+    Y -= vdp->displayOffest;
+
+    if (!displayEnable) {
+        return;
+    }
+    
+    linePtr = frameBufferGetLine16(NULL, Y);
+
+    for(offset = (BORDER_WIDTH - vdp->HAdjust); offset > 0; offset--) {
+        linePtr[SCREEN_WIDTH - offset] = bgColor;
+    }
+}
+
+#endif
 
 Pixel *RefreshBorder6(VDP* vdp, int Y, Pixel bgColor1, Pixel bgColor2, int line512, int borderExtra)
 {
@@ -2345,7 +2388,11 @@ static void RefreshLine8(VDP* vdp, int Y, int X, int X2)
 
     if (X == -1) {
         X++;
+#ifndef TARGET_GNW
         linePtr8 = RefreshBorder(vdp, Y, vdp->paletteFixed[vdp->vdpRegs[7]], 0, 0);
+#else
+        linePtr8 = RefreshBorder(vdp, Y, vdp->vdpRegs[7], 0, 0);
+#endif
         sprLine = getSpritesLine(vdp, Y);
 
         if (linePtr8 == NULL) {
@@ -2381,7 +2428,11 @@ static void RefreshLine8(VDP* vdp, int Y, int X, int X2)
     }
 
     if (!vdp->screenOn || !vdp->drawArea) {
+#ifndef TARGET_GNW
         Pixel bgColor = vdp->paletteFixed[vdp->vdpRegs[7]];
+#else
+        Pixel bgColor = vdp->vdpRegs[7];
+#endif
         while (X < X2) {
             linePtr8[0] = bgColor;
             linePtr8[1] = bgColor;
@@ -2412,7 +2463,11 @@ static void RefreshLine8(VDP* vdp, int Y, int X, int X2)
         }
 
         if (X == 0 && vdpIsEdgeMasked(vdp->vdpRegs)) {
+#ifndef TARGET_GNW
             Pixel bgColor = vdp->paletteFixed[vdp->vdpRegs[7]];
+#else
+            Pixel bgColor = vdp->vdpRegs[7];
+#endif
             linePtr8[0] = bgColor;
             linePtr8[1] = bgColor;
             linePtr8[2] = bgColor;
@@ -2432,39 +2487,119 @@ static void RefreshLine8(VDP* vdp, int Y, int X, int X2)
         while (X < X2) {
             if (scroll & 1) {
                 col = sprLine[0]; linePtr8[0] = col ? vdp->paletteSprite8[col >> 1] : 
-                vdp->paletteFixed[charTable[vdp->vram128]]; UPDATE_TABLE_8();
+#ifndef TARGET_GNW
+                vdp->paletteFixed[charTable[vdp->vram128]];
+#else
+                charTable[vdp->vram128];
+#endif
+                UPDATE_TABLE_8();
                 col = sprLine[1]; linePtr8[1] = col ? vdp->paletteSprite8[col >> 1] : 
-                vdp->paletteFixed[charTable[1]]; UPDATE_TABLE_8();
+#ifndef TARGET_GNW
+                vdp->paletteFixed[charTable[1]];
+#else
+                charTable[1];
+#endif
+                UPDATE_TABLE_8();
                 col = sprLine[2]; linePtr8[2] = col ? vdp->paletteSprite8[col >> 1] : 
-                vdp->paletteFixed[charTable[vdp->vram128|1]]; UPDATE_TABLE_8();
+#ifndef TARGET_GNW
+                vdp->paletteFixed[charTable[vdp->vram128|1]];
+#else
+                charTable[vdp->vram128|1];
+#endif
+                UPDATE_TABLE_8();
                 col = sprLine[3]; linePtr8[3] = col ? vdp->paletteSprite8[col >> 1] : 
-                vdp->paletteFixed[charTable[2]]; UPDATE_TABLE_8();
+#ifndef TARGET_GNW
+                vdp->paletteFixed[charTable[2]];
+#else
+                charTable[2];
+#endif
+                UPDATE_TABLE_8();
                 col = sprLine[4]; linePtr8[4] = col ? vdp->paletteSprite8[col >> 1] : 
-                vdp->paletteFixed[charTable[vdp->vram128|2]]; UPDATE_TABLE_8();
+#ifndef TARGET_GNW
+                vdp->paletteFixed[charTable[vdp->vram128|2]];
+#else
+                charTable[vdp->vram128|2];
+#endif
+                UPDATE_TABLE_8();
                 col = sprLine[5]; linePtr8[5] = col ? vdp->paletteSprite8[col >> 1] : 
-                vdp->paletteFixed[charTable[3]]; UPDATE_TABLE_8();
+#ifndef TARGET_GNW
+                vdp->paletteFixed[charTable[3]];
+#else
+                charTable[3];
+#endif
+                UPDATE_TABLE_8();
                 col = sprLine[6]; linePtr8[6] = col ? vdp->paletteSprite8[col >> 1] : 
-                vdp->paletteFixed[charTable[vdp->vram128|3]]; UPDATE_TABLE_8();
+#ifndef TARGET_GNW
+                vdp->paletteFixed[charTable[vdp->vram128|3]];
+#else
+                charTable[vdp->vram128|3];
+#endif
+                UPDATE_TABLE_8();
                 col = sprLine[7]; linePtr8[7] = col ? vdp->paletteSprite8[col >> 1] : 
-                vdp->paletteFixed[charTable[4]]; UPDATE_TABLE_8();
+#ifndef TARGET_GNW
+                vdp->paletteFixed[charTable[4]];
+#else
+                charTable[4];
+#endif
+                UPDATE_TABLE_8();
             }
             else {
                 col = sprLine[0]; linePtr8[0] = col ? vdp->paletteSprite8[col >> 1] : 
-                vdp->paletteFixed[charTable[0]]; UPDATE_TABLE_8();
+#ifndef TARGET_GNW
+                vdp->paletteFixed[charTable[0]];
+#else
+                charTable[0];
+#endif
+                UPDATE_TABLE_8();
                 col = sprLine[1]; linePtr8[1] = col ? vdp->paletteSprite8[col >> 1] : 
-                vdp->paletteFixed[charTable[vdp->vram128]]; UPDATE_TABLE_8();
+#ifndef TARGET_GNW
+                vdp->paletteFixed[charTable[vdp->vram128]];
+#else
+                charTable[vdp->vram128];
+#endif
+                UPDATE_TABLE_8();
                 col = sprLine[2]; linePtr8[2] = col ? vdp->paletteSprite8[col >> 1] : 
-                vdp->paletteFixed[charTable[1]]; UPDATE_TABLE_8();
+#ifndef TARGET_GNW
+                vdp->paletteFixed[charTable[1]];
+#else
+                charTable[1];
+#endif
+                UPDATE_TABLE_8();
                 col = sprLine[3]; linePtr8[3] = col ? vdp->paletteSprite8[col >> 1] : 
-                vdp->paletteFixed[charTable[vdp->vram128|1]]; UPDATE_TABLE_8();
+#ifndef TARGET_GNW
+                vdp->paletteFixed[charTable[vdp->vram128|1]];
+#else
+                charTable[vdp->vram128|1];
+#endif
+                UPDATE_TABLE_8();
                 col = sprLine[4]; linePtr8[4] = col ? vdp->paletteSprite8[col >> 1] : 
-                vdp->paletteFixed[charTable[2]]; UPDATE_TABLE_8();
+#ifndef TARGET_GNW
+                vdp->paletteFixed[charTable[2]];
+#else
+                charTable[2];
+#endif
+                UPDATE_TABLE_8();
                 col = sprLine[5]; linePtr8[5] = col ? vdp->paletteSprite8[col >> 1] : 
-                vdp->paletteFixed[charTable[vdp->vram128|2]]; UPDATE_TABLE_8();
+#ifndef TARGET_GNW
+                vdp->paletteFixed[charTable[vdp->vram128|2]];
+#else
+                charTable[vdp->vram128|2];
+#endif
+                UPDATE_TABLE_8();
                 col = sprLine[6]; linePtr8[6] = col ? vdp->paletteSprite8[col >> 1] : 
-                vdp->paletteFixed[charTable[3]]; UPDATE_TABLE_8();
+#ifndef TARGET_GNW
+                vdp->paletteFixed[charTable[3]];
+#else
+                charTable[3];
+#endif
+                UPDATE_TABLE_8();
                 col = sprLine[7]; linePtr8[7] = col ? vdp->paletteSprite8[col >> 1] : 
-                vdp->paletteFixed[charTable[vdp->vram128|3]]; UPDATE_TABLE_8();
+#ifndef TARGET_GNW
+                vdp->paletteFixed[charTable[vdp->vram128|3]];
+#else
+                charTable[vdp->vram128|3];
+#endif
+                UPDATE_TABLE_8();
             }
             sprLine += 8; 
 
@@ -2474,7 +2609,11 @@ static void RefreshLine8(VDP* vdp, int Y, int X, int X2)
 
     if (rightBorder) {
 //        colorSpritesLine(vdp, Y, 0);
+#ifndef TARGET_GNW
         RefreshRightBorder(vdp, Y, vdp->paletteFixed[vdp->vdpRegs[7]], 0, 0);
+#else
+        RefreshRightBorder(vdp, Y, vdp->vdpRegs[7], 0, 0);
+#endif
     }
 }
 
@@ -2496,7 +2635,11 @@ static void RefreshLine10(VDP* vdp, int Y, int X, int X2)
 
     if (X == -1) {
         X++;
+#ifndef TARGET_GNW
         linePtr10 = RefreshBorder(vdp, Y, vdp->paletteFixed[vdp->vdpRegs[7]], 0, 0);
+#else
+        linePtr10 = RefreshBorder16(vdp, Y, vdp->paletteFixedRGB565[vdp->vdpRegs[7]]);
+#endif
         sprLine = getSpritesLine(vdp, Y);
 
         if (linePtr10 == NULL) {
@@ -2532,7 +2675,11 @@ rightBorder = X2 == 33;
     }
 
     if (!vdp->screenOn || !vdp->drawArea) {
+#ifndef TARGET_GNW
         Pixel bgColor = vdp->paletteFixed[vdp->vdpRegs[7]];
+#else
+        Pixel16 bgColor = vdp->paletteFixedRGB565[vdp->vdpRegs[7]];
+#endif
         while (X < X2) {
             linePtr10[0] = bgColor;
             linePtr10[1] = bgColor;
@@ -2566,7 +2713,11 @@ rightBorder = X2 == 33;
 
         if (X == 0) {
             if (vdpIsEdgeMasked(vdp->vdpRegs)) {
+#ifndef TARGET_GNW
                 Pixel bgColor = vdp->paletteFixed[vdp->vdpRegs[7]];
+#else
+                Pixel16 bgColor = vdp->paletteFixedRGB565[vdp->vdpRegs[7]];
+#endif
                 linePtr10[0] = bgColor;
                 linePtr10[1] = bgColor;
                 linePtr10[2] = bgColor;
@@ -2729,7 +2880,11 @@ rightBorder = X2 == 33;
 
     if (rightBorder) {
 //        colorSpritesLine(vdp, Y, 0);
+#ifndef TARGET_GNW
         RefreshRightBorder(vdp, Y, vdp->paletteFixed[vdp->vdpRegs[7]], 0, 0);
+#else
+        RefreshRightBorder16(vdp, Y, vdp->paletteFixedRGB565[vdp->vdpRegs[7]]);
+#endif
     }
 }
 
@@ -2751,7 +2906,11 @@ static void RefreshLine12(VDP* vdp, int Y, int X, int X2)
 
     if (X == -1) {
         X++;
+#ifndef TARGET_GNW
         linePtr12 = RefreshBorder(vdp, Y, vdp->paletteFixed[vdp->vdpRegs[7]], 0, 0);
+#else
+        linePtr12 = RefreshBorder16(vdp, Y, vdp->paletteFixedRGB565[vdp->vdpRegs[7]]);
+#endif
         sprLine = getSpritesLine(vdp, Y);
 
         if (linePtr12 == NULL) {
@@ -2787,7 +2946,11 @@ static void RefreshLine12(VDP* vdp, int Y, int X, int X2)
     }
 
     if (!vdp->screenOn || !vdp->drawArea) {
+#ifndef TARGET_GNW
         Pixel bgColor = vdp->paletteFixed[vdp->vdpRegs[7]];
+#else
+        Pixel16 bgColor = vdp->paletteFixedRGB565[vdp->vdpRegs[7]];
+#endif
         while (X < X2) {
             linePtr12[0] = bgColor;
             linePtr12[1] = bgColor;
@@ -2821,7 +2984,11 @@ static void RefreshLine12(VDP* vdp, int Y, int X, int X2)
 
         if (X == 0) {
             if (vdpIsEdgeMasked(vdp->vdpRegs)) {
+#ifndef TARGET_GNW
                 Pixel bgColor = vdp->paletteFixed[vdp->vdpRegs[7]];
+#else
+                Pixel16 bgColor = vdp->paletteFixedRGB565[vdp->vdpRegs[7]];
+#endif
                 linePtr12[0] = bgColor;
                 linePtr12[1] = bgColor;
                 linePtr12[2] = bgColor;
@@ -2984,6 +3151,10 @@ static void RefreshLine12(VDP* vdp, int Y, int X, int X2)
 
     if (rightBorder) {
 //        colorSpritesLine(vdp, Y, 0);
+#ifndef TARGET_GNW
         RefreshRightBorder(vdp, Y, vdp->paletteFixed[vdp->vdpRegs[7]], 0, 0);
+#else
+        RefreshRightBorder16(vdp, Y, vdp->paletteFixedRGB565[vdp->vdpRegs[7]]);
+#endif
     }
 }

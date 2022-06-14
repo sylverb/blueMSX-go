@@ -92,7 +92,15 @@ typedef UInt32 Pixel;
 #define COLMASK_B   0x1f
 
 typedef UInt8 Pixel;
-
+#ifdef TARGET_GNW
+// On the G&W, the YJK modes (MSX2+ Screen 10/11/12)
+// can't be written in a temporary 8 bits framebuffer due
+// to ram limitation. Because of that, the YJK modes are
+// directly written as RGB565 in real framebuffer
+// To be able to perform that, we need to manipulate a 16 bits
+// pixel object that we are calling Pixel16
+typedef UInt16 Pixel16;
+#endif
 #else
 
 #ifdef VIDEO_COLOR_TYPE_RGB565
