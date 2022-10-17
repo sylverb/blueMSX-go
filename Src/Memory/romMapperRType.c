@@ -33,6 +33,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 typedef struct {
     int deviceHandle;
@@ -44,8 +47,9 @@ typedef struct {
     int romMapper[4];
 } RomMapperRType;
 
-static void saveState(RomMapperRType* rm)
+static void saveState(void* rmv)
 {
+    RomMapperRType *rm = (RomMapperRType *)rmv;
     SaveState* state = saveStateOpenForWrite("mapperRType");
     char tag[16];
     int i;
@@ -58,8 +62,9 @@ static void saveState(RomMapperRType* rm)
     saveStateClose(state);
 }
 
-static void loadState(RomMapperRType* rm)
+static void loadState(void* rmv)
 {
+    RomMapperRType *rm = (RomMapperRType *)rmv;
     SaveState* state = saveStateOpenForRead("mapperRType");
     char tag[16];
     int bank = 2;
@@ -78,8 +83,9 @@ static void loadState(RomMapperRType* rm)
     slotMapPage(rm->slot, rm->sslot, rm->startPage + bank + 1, bankData + 0x2000, 1, 0);
 }
 
-static void destroy(RomMapperRType* rm)
+static void destroy(void* rmv)
 {
+    RomMapperRType *rm = (RomMapperRType *)rmv;
     slotUnregister(rm->slot, rm->sslot, rm->startPage);
     deviceManagerUnregister(rm->deviceHandle);
 
@@ -87,9 +93,10 @@ static void destroy(RomMapperRType* rm)
     free(rm);
 }
 
-static void write(RomMapperRType* rm, UInt16 address, UInt8 value) 
+static void write(void* rmv, UInt16 address, UInt8 value) 
 {
     int bank;
+    RomMapperRType *rm = (RomMapperRType *)rmv;
 
     address += 0x4000;
 
@@ -121,13 +128,21 @@ int romMapperRTypeCreate(const char* filename, UInt8* romData,
         return 0;
     }
 
+#ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperRType));
+#else
+    rm = itc_malloc(sizeof(RomMapperRType));
+#endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_RTYPE, &callbacks, rm);
     slotRegister(slot, sslot, startPage, 4, NULL, NULL, write, destroy, rm);
 
+#ifndef MSX_NO_MALLOC
     rm->romData = malloc(size);
     memcpy(rm->romData, romData, size);
+#else
+    rm->romData = romData;
+#endif
     rm->size = size;
     rm->slot  = slot;
     rm->sslot = sslot;

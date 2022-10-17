@@ -623,6 +623,14 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
             success &= romMapperASCII16nfCreate(romName, buf, size, slot, sslot, 2);
             break;
 
+        case ROM_RTYPE:
+            success &= romMapperRTypeCreate(romName, buf, size, slot, sslot, 2);
+            break;
+
+        case ROM_LODERUNNER:
+            success &= romMapperLodeRunnerCreate(romName, buf, size, slot, sslot, 4);
+            break;
+
 #ifndef TARGET_GNW
         case ROM_GAMEMASTER2:
             success &= romMapperGameMaster2Create(romName, buf, size, slot, sslot, 2);
@@ -634,14 +642,6 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
             
         case ROM_HALNOTE:
             success &= romMapperHalnoteCreate(romName, buf, size, slot, sslot, 0);
-            break;
-            
-        case ROM_RTYPE:
-            success &= romMapperRTypeCreate(romName, buf, size, slot, sslot, 2);
-            break;
-
-        case ROM_LODERUNNER:
-            success &= romMapperLodeRunnerCreate(romName, buf, size, slot, sslot, 4);
             break;
             
         case ROM_CROSSBLAIM:

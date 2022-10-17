@@ -33,6 +33,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 
 typedef struct {
@@ -45,8 +48,9 @@ typedef struct {
     int romMapper;
 } RomMapperLodeRunner;
 
-static void saveState(RomMapperLodeRunner* rm)
+static void saveState(void* rmv)
 {
+    RomMapperLodeRunner *rm = (RomMapperLodeRunner *)rmv;
     SaveState* state = saveStateOpenForWrite("mapperLodeRunner");
 
     saveStateSet(state, "romMapper", rm->romMapper);
@@ -54,8 +58,9 @@ static void saveState(RomMapperLodeRunner* rm)
     saveStateClose(state);
 }
 
-static void loadState(RomMapperLodeRunner* rm)
+static void loadState(void* rmv)
 {
+    RomMapperLodeRunner *rm = (RomMapperLodeRunner *)rmv;
     SaveState* state = saveStateOpenForRead("mapperLodeRunner");
     UInt8* bankData;
 
@@ -68,16 +73,18 @@ static void loadState(RomMapperLodeRunner* rm)
     slotMapPage(rm->slot, rm->sslot, rm->startPage + 1, bankData + 0x2000, 1, 0);
 }
 
-static void destroy(RomMapperLodeRunner* rm)
+static void destroy(void* rmv)
 {
+    RomMapperLodeRunner *rm = (RomMapperLodeRunner *)rmv;
     slotUnregister(rm->slot, rm->sslot, rm->startPage);
     deviceManagerUnregister(rm->deviceHandle);
     free(rm->romData);
     free(rm);
 }
 
-static void write(RomMapperLodeRunner* rm, UInt16 address, UInt8 value) 
+static void write(void* rmv, UInt16 address, UInt8 value) 
 {
+    RomMapperLodeRunner *rm = (RomMapperLodeRunner *)rmv;
     value &= (rm->size / 0x4000 - 1);
 
     if (rm->romMapper != value) {
@@ -100,14 +107,22 @@ int romMapperLodeRunnerCreate(const char* filename, UInt8* romData,
         return 0;
     }
 
+#ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperLodeRunner));
+#else
+    rm = itc_malloc(sizeof(RomMapperLodeRunner));
+#endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_LODERUNNER, &callbacks, rm);
     slotRegister(slot, sslot, startPage, 4, NULL, NULL, NULL, destroy, rm);
     slotRegisterWrite0(write, rm);
 
+#ifndef MSX_NO_MALLOC
     rm->romData = malloc(size);
     memcpy(rm->romData, romData, size);
+#else
+    rm->romData = romData;
+#endif
     rm->size = size;
     rm->slot  = slot;
     rm->sslot = sslot;
