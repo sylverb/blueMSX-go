@@ -1,3 +1,8 @@
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include <stdint.h>
 #include "ArchTimer.h"
 
@@ -78,3 +83,4 @@ UInt32 archGetSystemUpTime(UInt32 frequency)
 }
 #endif
 
+#endif

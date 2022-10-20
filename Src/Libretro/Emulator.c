@@ -25,6 +25,11 @@
 **
 ******************************************************************************
 */
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "Emulator.h"
 #include "MsxTypes.h"
 #include "Debugger.h"
@@ -436,3 +441,4 @@ void RefreshScreen(int screenMode) {
 
 }
 
+#endif

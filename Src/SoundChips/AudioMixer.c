@@ -25,6 +25,11 @@
 **
 ******************************************************************************
 */
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "AudioMixer.h"
 #include "Board.h"
 #include "ArchTimer.h"
@@ -809,3 +814,4 @@ void mixerSetEnable(Mixer* mixer, int enable)
 {
     mixer->enable = enable;
 }
+#endif

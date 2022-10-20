@@ -25,6 +25,11 @@
 **
 ******************************************************************************
 */
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "IoPort.h"
 #include "Board.h"
 #include <stdlib.h>
@@ -161,4 +166,5 @@ void  ioPortWrite(void* ref, UInt16 port, UInt8 value)
     }
 }
 
+#endif
 

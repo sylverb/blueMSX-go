@@ -25,6 +25,11 @@
 **
 ******************************************************************************
 */
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "LaunchFile.h"
 #include "IsFileExtension.h"
 #ifndef MSX_NO_ZIP
@@ -723,4 +728,5 @@ static int insertDisketteOrCartridge(Properties* properties, int drive, const ch
 
     return success;
 }
+#endif
 #endif

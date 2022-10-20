@@ -25,6 +25,11 @@
 **
 ******************************************************************************
 */
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "SCC.h"
 #include "Board.h"
 #include "SaveState.h"
@@ -772,3 +777,4 @@ static Int32* sccSync(void* sccv, UInt32 count)
     return scc->buffer;
 }
 
+#endif

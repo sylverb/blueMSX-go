@@ -25,6 +25,11 @@
 **
 ******************************************************************************
 */
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -303,3 +308,4 @@ int msxCreate(Machine* machine,
 
     return success;
 }
+#endif

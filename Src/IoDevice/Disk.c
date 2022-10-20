@@ -25,6 +25,11 @@
 **
 ******************************************************************************
 */
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "Disk.h"
 #include "DirAsDisk.h"
 #ifndef MSX_NO_ZIP
@@ -917,4 +922,5 @@ int _diskWrite2(int driveId, UInt8* buffer, int sector, int numSectors)
     memcpy(ramImageBuffer[driveId] + sector * 512, buffer, length);
     return 1;
 }
+#endif
 #endif

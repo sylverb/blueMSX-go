@@ -25,6 +25,11 @@
 **
 ******************************************************************************
 */
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "MegaromCartridge.h"
 #include "MediaDb.h"
 #include "RomLoader.h"
@@ -848,3 +853,4 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
     return success;
 }
 
+#endif

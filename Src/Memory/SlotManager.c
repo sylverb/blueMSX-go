@@ -25,6 +25,11 @@
 **
 ******************************************************************************
 */
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "SlotManager.h"
 #include "SaveState.h"
 #include "Led.h"
@@ -480,3 +485,4 @@ void slotLoadState()
         slotMapRamPage(psl, ssl, 2 * page + 1);
     }
 }
+#endif

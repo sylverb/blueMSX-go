@@ -25,6 +25,11 @@
 **
 ******************************************************************************
 */
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "TC8566AF.h"
 #include "Board.h"
 #include "SaveState.h"
@@ -731,3 +736,4 @@ void tc8566afSaveState(TC8566AF* tc)
 
     saveStateClose(state);
 }
+#endif

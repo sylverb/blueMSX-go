@@ -25,6 +25,11 @@
 **
 ******************************************************************************
 */
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "romMapperASCII16.h"
 #include "MediaDb.h"
 #include "SlotManager.h"
@@ -167,3 +172,4 @@ int romMapperASCII16Create(const char* filename, UInt8* romData,
     return 1;
 }
 
+#endif

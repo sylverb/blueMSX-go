@@ -25,6 +25,11 @@
 **
 ******************************************************************************
 */
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "MsxPPI.h"
 #include "MediaDb.h"
 #include "DeviceManager.h"
@@ -351,3 +356,4 @@ static UInt8 getKeyState(int row)
     }
 #endif
 }
+#endif

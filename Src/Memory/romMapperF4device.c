@@ -25,6 +25,11 @@
 **
 ******************************************************************************
 */
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "romMapperF4device.h"
 #include "MediaDb.h"
 #include "DeviceManager.h"
@@ -137,3 +142,4 @@ int romMapperF4deviceCreate(int inverted)
 
     return 1;
 }
+#endif

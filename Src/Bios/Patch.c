@@ -25,6 +25,11 @@
 **
 ******************************************************************************
 */
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "R800.h"
 #include "Board.h"
 #include "Casette.h"
@@ -559,4 +564,5 @@ static void casout(void* ref, CpuRegs* cpu) {
     }
         cpu->PC.W = 0x20ED;
 }
+#endif
 #endif

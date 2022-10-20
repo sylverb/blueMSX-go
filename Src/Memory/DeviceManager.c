@@ -25,6 +25,11 @@
 **
 ******************************************************************************
 */
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "DeviceManager.h"
 #include <stdlib.h>
 #include <string.h>
@@ -153,3 +158,4 @@ void deviceManagerUnregister(int handle)
     }
 #endif
 }
+#endif

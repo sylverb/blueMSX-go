@@ -25,6 +25,11 @@
 **
 ******************************************************************************
 */
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "RomLoader.h"
 #ifndef TARGET_GNW
 #include "ziphelper.h"
@@ -102,3 +107,4 @@ error:
 #endif
 }
 
+#endif

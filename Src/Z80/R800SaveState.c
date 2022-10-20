@@ -29,6 +29,11 @@
 **
 ******************************************************************************
 */
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "R800SaveState.h"
 #include "SaveState.h"
 #include <stdio.h>
@@ -137,3 +142,4 @@ void r800SaveState(R800* r800)
 
     saveStateClose(state);
 }
+#endif

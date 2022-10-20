@@ -25,6 +25,11 @@
 **
 ******************************************************************************
 */
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "AY8910.h"
 #include "IoPort.h"
 #include "SaveState.h"
@@ -593,3 +598,4 @@ static Int32* ay8910Sync(void* ref, UInt32 count)
 
     return ay8910->buffer;
 }
+#endif

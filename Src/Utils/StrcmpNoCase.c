@@ -25,6 +25,11 @@
 **
 ******************************************************************************
 */
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "StrcmpNoCase.h"
 #include "ctype.h"
 #include <string.h>
@@ -43,3 +48,4 @@ int strcmpnocase(const char* str1, const char* str2) {
 
     return strcmp(s1, s2);
 }
+#endif

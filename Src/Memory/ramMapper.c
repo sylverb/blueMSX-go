@@ -25,6 +25,11 @@
 **
 ******************************************************************************
 */
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "ramMapper.h"
 #include "romMapperDRAM.h"
 #include "ramMapperIo.h"
@@ -246,3 +251,4 @@ int ramMapperCreate(int size, int slot, int sslot, int startPage, UInt8** ramPtr
     return 1;
 }
 
+#endif
