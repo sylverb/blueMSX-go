@@ -38,6 +38,7 @@
 #include "Led.h"
 #include "FdcAudio.h"
 #else
+#include "main_msx.h"
 #include "gw_malloc.h"
 #endif
 #include <stdlib.h>
@@ -590,6 +591,8 @@ void tc8566afReset(TC8566AF* tc)
     ledSetFdd2(0); /* 10:10 2004/10/09 FDD LED PATCH */ 
 
     fdcAudioReset(tc->fdcAudio);
+#else
+    msxLedSetFdd1(0);
 #endif
 }
 
@@ -649,6 +652,8 @@ void tc8566afWriteRegister(TC8566AF* tc, UInt8 reg, UInt8 value)
 
         ledSetFdd1((value & 0x10) && diskEnabled(0)); /* 10:10 2004/10/09 FDD LED PATCH */ 
         ledSetFdd2((value & 0x20) && diskEnabled(1)); /* 10:10 2004/10/09 FDD LED PATCH */ 
+#else
+        msxLedSetFdd1((value & 0x10) && diskEnabled(0));
 #endif
 
         tc->drive = value & 0x03;
