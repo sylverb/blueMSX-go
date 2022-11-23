@@ -391,9 +391,8 @@ struct VDP {
 
     UInt32 screenOffTime;
     
-#ifndef TARGET_GNW
     Pixel paletteFixed[256];
-#else
+#ifdef TARGET_GNW
     Pixel16 paletteFixedRGB565[256];
 #endif
     Pixel paletteSprite8[16];
@@ -1315,19 +1314,16 @@ static void initPalette(VDP* vdp)
     }
 #endif
 
-#ifndef TARGET_GNW
     for (i = 0; i < 256; i++) {
         vdp->paletteFixed[i] = videoGetColor(255 * ((i >> 2) & 7) / 7, 
                                            255 * ((i >> 5) & 7) / 7, 
                                            255 * ((i & 3) == 3 ? 7 : 2 * (i & 3)) / 7);
-    }
-#else
-    for (i = 0; i < 256; i++) {
+#ifdef TARGET_GNW
         vdp->paletteFixedRGB565[i] = videoGetColorRGB565(255 * ((i >> 2) & 7) / 7, 
                                            255 * ((i >> 5) & 7) / 7, 
                                            255 * ((i & 3) == 3 ? 7 : 2 * (i & 3)) / 7);
-    }
 #endif
+    }
 
     vdp->paletteSprite8[0]  = videoGetColor(0 * 255 / 7, 0 * 255 / 7, 0 * 255 / 7);
     vdp->paletteSprite8[1]  = videoGetColor(0 * 255 / 7, 0 * 255 / 7, 2 * 255 / 7);
