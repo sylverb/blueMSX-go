@@ -394,6 +394,8 @@ struct VDP {
     Pixel paletteFixed[256];
 #ifdef TARGET_GNW
     Pixel16 paletteFixedRGB565[256];
+    Pixel16 palette0RGB565;
+    Pixel16 paletteRGB565[16];
 #endif
     Pixel paletteSprite8[16];
     Pixel palette0;
@@ -1410,14 +1412,23 @@ static void updateOutputMode(VDP* vdp)
     }
     else if (mode == 1 && transparency) {
         vdp->palette[0] = videoGetTransparentColor();
+#ifdef TARGET_GNW
+        vdp->paletteRGB565[0] = videoGetTransparentColor();
+#endif
         videoManagerSetMode(vdp->videoHandle, VIDEO_MIX, vdpDaDevice.videoModeMask);
     }
     else {
         if (vdp->BGColor == 0 || !transparency) {
             vdp->palette[0] = vdp->palette0;
+#ifdef TARGET_GNW
+            vdp->paletteRGB565[0] = vdp->palette0RGB565;
+#endif
         }
         else {
             vdp->palette[0] = vdp->palette[vdp->BGColor];
+#ifdef TARGET_GNW
+            vdp->paletteRGB565[0] = vdp->paletteRGB565[vdp->BGColor];
+#endif
         }
         videoManagerSetMode(vdp->videoHandle, VIDEO_INTERNAL, vdpDaDevice.videoModeMask);
     }
@@ -1426,12 +1437,21 @@ static void updateOutputMode(VDP* vdp)
 static void updatePalette(VDP* vdp, int palEntry, int r, int g, int b)
 {
     Pixel color = videoGetColor(r, g, b);
+#ifdef TARGET_GNW
+    Pixel16 colorRGB565 = videoGetColorRGB565(r, g, b);
+#endif
     if (palEntry == 0) {
         vdp->palette0 = color;
+#ifdef TARGET_GNW
+        vdp->palette0RGB565 = colorRGB565;
+#endif
         updateOutputMode(vdp);
     }
     else {
         vdp->palette[palEntry] = color;
+#ifdef TARGET_GNW
+        vdp->paletteRGB565[palEntry] = colorRGB565;
+#endif
         if (palEntry == vdp->BGColor) {
             updateOutputMode(vdp);
         }
@@ -1791,6 +1811,15 @@ static void saveState(void* vdpv)
         saveStateSet(state, tag,         vdp->palette[i]);
     }
 
+#ifdef TARGET_GNW
+    saveStateSet(state, "palette0RGB565",      vdp->palette0RGB565);
+
+    for (i = 0; i < sizeof(vdp->paletteRGB565) / sizeof(vdp->paletteRGB565[0]); i++) {
+        sprintf(tag, "paletteRGB565No%d", i);
+        saveStateSet(state, tag,         vdp->paletteRGB565[i]);
+    }
+#endif
+
     saveStateSet(state, "vramAccMask",         vdp->vramAccMask);
 
     saveStateSetBuffer(state, "vram", vdp->vram, VRAM_SIZE);
@@ -1883,6 +1912,15 @@ static void loadState(void* vdpv)
         sprintf(tag, "paletteNo%d", i);
         vdp->palette[i] = saveStateGet(state, tag,         0);
     }
+
+#ifdef TARGET_GNW
+    vdp->palette0RGB565 = saveStateGet(state, "palette0RGB565",         0);;
+
+    for (i = 0; i < sizeof(vdp->paletteRGB565) / sizeof(vdp->paletteRGB565[0]); i++) {
+        sprintf(tag, "paletteRGB565No%d", i);
+        vdp->paletteRGB565[i] = saveStateGet(state, tag,         0);
+    }
+#endif
 
     vdp->vramAccMask = saveStateGet(state, "vramAccMask",         0);
 
