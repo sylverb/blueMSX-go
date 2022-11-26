@@ -25,6 +25,11 @@
 **
 ******************************************************************************
 */
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "JoystickPort.h"
 #include "ArchInput.h"
 #include "Language.h"
@@ -54,7 +59,15 @@ void joystickPortUpdateBoardInfo()
 
     switch (boardType) {
     case BOARD_MSX:
+#ifdef TARGET_GNW
+    case BOARD_MSX_FORTE_II:
+    case BOARD_MSX_S3527:
+    case BOARD_MSX_S1985:
+    case BOARD_MSX_T9769B:
+    case BOARD_MSX_T9769C:
+#endif
         for (i = 0; i < 2; i++) {
+#ifndef TARGET_GNW
             joystickConfig.typeEnabled[i][JOYSTICK_PORT_NONE] = 1;
             joystickConfig.typeEnabled[i][JOYSTICK_PORT_JOYSTICK] = 1;
             joystickConfig.typeEnabled[i][JOYSTICK_PORT_MOUSE] = 1;
@@ -63,6 +76,10 @@ void joystickPortUpdateBoardInfo()
             joystickConfig.typeEnabled[i][JOYSTICK_PORT_MAGICKEYDONGLE] = 1;
             joystickConfig.typeEnabled[i][JOYSTICK_PORT_ASCIILASER] = 1;
             joystickConfig.typeEnabled[i][JOYSTICK_PORT_ARKANOID_PAD] = 1;
+#else
+            joystickConfig.typeEnabled[i][JOYSTICK_PORT_NONE] = 0;
+            joystickConfig.typeEnabled[i][JOYSTICK_PORT_JOYSTICK] = 0;
+#endif
             joystickConfig.defaultType[i] = JOYSTICK_PORT_JOYSTICK;
         }
         //DINK: added line below
@@ -70,6 +87,7 @@ void joystickPortUpdateBoardInfo()
         joystickConfig.keyboardEnabled = 1;
         break;
 
+#ifndef TARGET_GNW
     case BOARD_SG1000:
     case BOARD_SVI:
         for (i = 0; i < 2; i++) {
@@ -100,6 +118,11 @@ void joystickPortUpdateBoardInfo()
         joystickConfig.defaultType[0] = JOYSTICK_PORT_JOYSTICK;
         joystickConfig.keyboardEnabled = 1;
         break;
+#else
+    case BOARD_UNKNOWN:
+    case BOARD_MASK:
+        break;
+#endif
     }
 
     for (i = 0; i < JOYSTICK_MAX_PORTS; i++) {
@@ -123,13 +146,18 @@ int joystickPortTypeEnabled(int port, JoystickPortType type)
 
 void joystickPortSetType(int port, JoystickPortType type) 
 {
+#ifndef TARGET_GNW
     AmEnableMode mode;
+#endif
+    printf("joystickPortSetType port %d type %d\n",port,type);
     if (updateHandler != NULL && inputType[port] != type) {
+        printf("updateHandler\n");
         updateHandler(updateHandlerRef, port, type);
     }
 
     inputType[port] = type;
 
+#ifndef TARGET_GNW
     mode = AM_DISABLE;
 
     if (inputType[0] == JOYSTICK_PORT_MOUSE || 
@@ -151,6 +179,7 @@ void joystickPortSetType(int port, JoystickPortType type)
     }
 
     archMouseEmuEnable(mode);
+#endif
 }
 
 JoystickPortType joystickPortGetType(int port)
@@ -179,6 +208,7 @@ int joystickPortGetTypeCount()
     return JOYSTICK_PORT_MAX_COUNT;
 }
 
+#ifndef TARGET_GNW
 char* joystickPortGetDescription(JoystickPortType type, int translate) 
 {
     if (translate) {
@@ -218,10 +248,12 @@ char* joystickPortGetDescription(JoystickPortType type, int translate)
     return "unknown";
 }
 
+#ifndef TARGET_GNW
 char* joystickPortTypeToName(int port, int translate)
 {
     return joystickPortGetDescription(inputType[port], translate);
 }
+#endif
 
 JoystickPortType joystickPortNameToType(int port, char* name, int translate)
 {
@@ -253,3 +285,6 @@ JoystickPortType joystickPortNameToType(int port, char* name, int translate)
 
     return JOYSTICK_PORT_NONE;
 }
+#endif
+
+#endif

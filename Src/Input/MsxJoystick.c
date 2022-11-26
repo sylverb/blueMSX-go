@@ -25,8 +25,16 @@
 **
 ******************************************************************************
 */
+#ifdef TARGET_GNW
+#include "build/config.h"
+#endif
+
+#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "MsxJoystick.h"
 #include "InputEvent.h"
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 #include <stdlib.h>
 
@@ -34,6 +42,11 @@ struct MsxJoystick {
     MsxJoystickDevice joyDevice;
     int controller;
 };
+
+#ifdef TARGET_GNW
+static uint8_t mem_index = 0;
+static MsxJoystick msxJoystick_global[2];
+#endif
 
 static UInt8 read(MsxJoystick* joystick) {
     UInt8 state;
@@ -60,15 +73,25 @@ static UInt8 read(MsxJoystick* joystick) {
 
 void destroy(MsxJoystick* joystick)
 {
+#ifndef TARGET_GNW
     free(joystick);
+#endif
 }
 
 MsxJoystickDevice* msxJoystickCreate(int controller)
 {
+#ifndef TARGET_GNW
     MsxJoystick* joystick = (MsxJoystick*)calloc(1, sizeof(MsxJoystick));
-    joystick->joyDevice.read    = read;
-    joystick->joyDevice.destroy = destroy;
+#else
+    MsxJoystick* joystick = &msxJoystick_global[mem_index];
+    mem_index++;
+#endif
+
+    joystick->joyDevice.read    = (UInt8 (*)(void*))read;
+    joystick->joyDevice.destroy = (void  (*)(void*))destroy;
     joystick->controller        = controller;
     
     return (MsxJoystickDevice*)joystick;
 }
+
+#endif

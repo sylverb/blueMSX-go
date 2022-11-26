@@ -940,9 +940,7 @@ void boardSetMachine(Machine* machine)
     boardType = machine->board.type;
     PatchReset(boardType);
 
-#ifndef TARGET_GNW
     joystickPortUpdateBoardInfo();
-#endif
 }
 
 void boardDestroy()

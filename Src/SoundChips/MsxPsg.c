@@ -40,10 +40,10 @@
 #include "Switches.h"
 #include "Casette.h"
 
-#ifndef TARGET_GNW
-#include "DAC.h"
 #include "MsxJoystickDevice.h"
 #include "MsxJoystick.h"
+#ifndef TARGET_GNW
+#include "DAC.h"
 #include "MsxGunstick.h"
 #include "MsxAsciiLaser.h"
 #include "MsxMouse.h"
@@ -68,13 +68,12 @@ struct MsxPsg {
 #endif
     UInt8 registers[2];
     UInt8 readValue[2];
-#ifndef TARGET_GNW
     MsxJoystickDevice* devFun[2];
+#ifndef TARGET_GNW
     DAC*   dac;
 #endif
 };
 
-#ifndef TARGET_GNW
 static void joystickPortHandler(MsxPsg* msxPsg, int port, JoystickPortType type)
 {
     if (port >= msxPsg->maxPorts) {
@@ -90,6 +89,7 @@ static void joystickPortHandler(MsxPsg* msxPsg, int port, JoystickPortType type)
     case JOYSTICK_PORT_NONE:
         msxPsg->devFun[port] = NULL;
         break;
+#ifndef TARGET_GNW
 #ifndef EXCLUDE_JOYSTICK_PORT_GUNSTICK
     case JOYSTICK_PORT_GUNSTICK:
         msxPsg->devFun[port] = msxGunstickCreate();
@@ -125,9 +125,13 @@ static void joystickPortHandler(MsxPsg* msxPsg, int port, JoystickPortType type)
         msxPsg->devFun[port] = msxArkanoidPadCreate();
         break;
 #endif
+#else // TARGET_GNW
+    case JOYSTICK_PORT_JOYSTICK:
+        msxPsg->devFun[port] = msxJoystickCreate(port);
+        break;
+#endif
     }
 }
-#endif
 
 #ifndef TARGET_GNW
 static UInt8 peek(MsxPsg* msxPsg, UInt16 address)
@@ -157,10 +161,12 @@ static UInt8 read(void* msxPsgv, UInt16 address)
 	    UInt8 state = 0x3f;
 #ifndef TARGET_GNW
         int renshaSpeed = switchGetRensha();
+#endif
         if (msxPsg->devFun[msxPsg->currentPort] != NULL &&
             msxPsg->devFun[msxPsg->currentPort]->read != NULL) {
             state = msxPsg->devFun[msxPsg->currentPort]->read(msxPsg->devFun[msxPsg->currentPort]);
         }
+#ifndef TARGET_GNW
         state = boardCaptureUInt8(16 + msxPsg->currentPort, state);
         if (renshaSpeed) {
             state &= ~((((UInt64)renshaSpeed * boardSystemTime() / boardFrequency()) & 1) << 4);
@@ -197,7 +203,6 @@ static void write(void* msxPsgv, UInt16 address, UInt8 value)
     MsxPsg *msxPsg = (MsxPsg *)msxPsgv;
     if (address & 1) {
         /* r15 */
-#ifndef TARGET_GNW
         if (msxPsg->devFun[0] != NULL && msxPsg->devFun[0]->write != NULL) {
 	        UInt8 val = ((value >> 0) & 0x03) | ((value >> 2) & 0x04);
 	        msxPsg->devFun[0]->write(msxPsg->devFun[0], val);
@@ -206,7 +211,6 @@ static void write(void* msxPsgv, UInt16 address, UInt8 value)
 	        UInt8 val = ((value >> 2) & 0x03) | ((value >> 3) & 0x04);
 	        msxPsg->devFun[1]->write(msxPsg->devFun[1], val);
         }
-#endif
 
 	    msxPsg->currentPort = (value >> 6) & 0x01;
 
@@ -227,14 +231,12 @@ static void saveState(void* msxPsgv)
     saveStateSet(state, "registers1", msxPsg->registers[1]);
     saveStateClose(state);
 
-#ifndef TARGET_GNW
     if (msxPsg->devFun[0] != NULL && msxPsg->devFun[0]->saveState != NULL) {
 	    msxPsg->devFun[0]->saveState(msxPsg->devFun[0]);
     }
     if (msxPsg->devFun[1] != NULL && msxPsg->devFun[1]->saveState != NULL) {
 	    msxPsg->devFun[1]->saveState(msxPsg->devFun[1]);
     }
-#endif
 
     ay8910SaveState(msxPsg->ay8910);
 }
@@ -249,14 +251,12 @@ static void loadState(void* msxPsgv)
     msxPsg->registers[1] = (UInt8) saveStateGet(state, "registers1", 0);
     saveStateClose(state);
 
-#ifndef TARGET_GNW
     if (msxPsg->devFun[0] != NULL && msxPsg->devFun[0]->loadState != NULL) {
 	    msxPsg->devFun[0]->loadState(msxPsg->devFun[0]);
     }
     if (msxPsg->devFun[1] != NULL && msxPsg->devFun[1]->loadState != NULL) {
 	    msxPsg->devFun[1]->loadState(msxPsg->devFun[1]);
     }
-#endif
 
     ay8910LoadState(msxPsg->ay8910);
 }
@@ -270,14 +270,12 @@ static void reset(void* msxPsgv)
     msxPsg->readValue[0] = 0;
     msxPsg->readValue[1] = 0;
 
-#ifndef TARGET_GNW
     if (msxPsg->devFun[0] != NULL && msxPsg->devFun[0]->reset != NULL) {
 	    msxPsg->devFun[0]->reset(msxPsg->devFun[0]);
     }
     if (msxPsg->devFun[1] != NULL && msxPsg->devFun[1]->reset != NULL) {
 	    msxPsg->devFun[1]->reset(msxPsg->devFun[1]);
     }
-#endif
 
     ay8910Reset(msxPsg->ay8910);
 }
@@ -294,13 +292,13 @@ static void destroy(void* msxPsgv)
     deviceManagerUnregister(msxPsg->deviceHandle);
 #ifndef TARGET_GNW
     dacDestroy(msxPsg->dac);
+#endif
     if (msxPsg->devFun[0] != NULL && msxPsg->devFun[0]->destroy != NULL) {
 	    msxPsg->devFun[0]->destroy(msxPsg->devFun[0]);
     }
     if (msxPsg->devFun[1] != NULL && msxPsg->devFun[1]->destroy != NULL) {
 	    msxPsg->devFun[1]->destroy(msxPsg->devFun[1]);
     }
-#endif
 #ifndef MSX_NO_MALLOC
     free(msxPsg);
 #endif
@@ -336,9 +334,7 @@ MsxPsg* msxPsgCreate(PsgType type, int stereo, int* pan, int maxPorts)
     ay8910SetIoPort(msxPsg->ay8910, read, NULL, write, msxPsg);
 #endif
 
-#ifndef TARGET_GNW
-    joystickPortUpdateHandlerRegister(joystickPortHandler, msxPsg);
-#endif
+    joystickPortUpdateHandlerRegister((JoystickPortUpdateHandler)joystickPortHandler, msxPsg);
 
     msxPsg->deviceHandle = deviceManagerRegister(ROM_UNKNOWN, &callbacks, msxPsg);
 
