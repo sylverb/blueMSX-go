@@ -84,12 +84,13 @@ typedef UInt32 Pixel;
 
 #elif PIXEL_WIDTH==8
 
-#define COLSHIFT_R  10
-#define COLMASK_R   0x1f
-#define COLSHIFT_G  5
-#define COLMASK_G   0x1f
+// RRRGGGBB
+#define COLSHIFT_R  5
+#define COLMASK_R   0x07
+#define COLSHIFT_G  2
+#define COLMASK_G   0x07
 #define COLSHIFT_B  0
-#define COLMASK_B   0x1f
+#define COLMASK_B   0x03
 
 typedef UInt8 Pixel;
 #ifdef TARGET_GNW
