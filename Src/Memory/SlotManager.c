@@ -37,6 +37,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#if GAME_GENIE == 1
+static void update_cheat_info();
+#endif
+#ifdef TARGET_GNW
+#include "rom_manager.h"
+#include "odroid_settings.h"
+#endif
 
 typedef struct {
     UInt8* pageData;
@@ -288,6 +295,9 @@ void slotManagerCreate()
             }
         }
     }
+#if GAME_GENIE == 1
+    update_cheat_info();
+#endif
 
     initialized = 1;
 }
@@ -331,6 +341,35 @@ UInt8 slotPeek(void* ref, UInt16 address)
     return 0xff;
 }
 
+#if GAME_GENIE == 1
+typedef struct
+{
+  unsigned int addr;   // Address to apply cheat to
+  unsigned int data;   // Data to write to Addr
+  unsigned char size;  // Size of Data in bytes (1/2/4)
+} McfEntry;
+
+McfEntry cheats[MAX_GAME_GENIE_CODES];
+static int mcf_count = 0;
+
+static void update_cheat_info() {
+    uint8_t count = 0;
+    unsigned int Addr,Data;
+
+    for(int i=0; i<MAX_GAME_GENIE_CODES && i<ACTIVE_FILE->game_genie_count; i++) {
+        if (odroid_settings_ActiveGameGenieCodes_is_enabled(ACTIVE_FILE->id, i)) {
+            mcf_count++;
+            if(sscanf(ACTIVE_FILE->game_genie_codes[i],"%u,%u",&Addr,&Data)==2) {
+                cheats[count].addr = Addr;
+                cheats[count].data = Data;
+                cheats[count].size = Data>0xFFFF? 4:Data>0xFF? 2:1;
+                count++;
+            }
+        }
+    }
+}
+#endif
+
 UInt8 slotRead(void* ref, UInt16 address)
 {
     Slot* slotInfo;
@@ -349,6 +388,25 @@ UInt8 slotRead(void* ref, UInt16 address)
     }
 
     if (ramslot[address >> 13].readEnable) {
+#if GAME_GENIE == 1
+    for (int i=0; i<mcf_count; i++) {
+        switch (cheats[i].size) {
+            case 1:
+                if (cheats[i].addr == address) {
+                    return cheats[i].data&0xFF;
+                }
+                break;
+            default:
+                if (cheats[i].addr == address) {
+                    return cheats[i].data&0xFF;
+                } else if (cheats[i].addr+1 == address) {
+                    return (cheats[i].data&0xFF00) >> 8;
+                }
+                break;
+        }
+    }
+#endif
+
         return ramslot[address >> 13].pageData[address & 0x1fff];
     }
 
