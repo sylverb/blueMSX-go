@@ -350,19 +350,30 @@ typedef struct
 } McfEntry;
 
 McfEntry cheats[MAX_GAME_GENIE_CODES];
-static int mcf_count = 0;
+static uint8_t mcf_count;
+static int32_t mcf_lower_address;
+static int32_t mcf_upper_address;
 
 static void update_cheat_info() {
     uint8_t count = 0;
-    unsigned int Addr,Data;
+    unsigned int addr,data, size;
+    mcf_count = 0;
+    mcf_lower_address = -1;
+    mcf_upper_address = -1;
 
     for(int i=0; i<MAX_GAME_GENIE_CODES && i<ACTIVE_FILE->game_genie_count; i++) {
         if (odroid_settings_ActiveGameGenieCodes_is_enabled(ACTIVE_FILE->id, i)) {
             mcf_count++;
-            if(sscanf(ACTIVE_FILE->game_genie_codes[i],"%u,%u",&Addr,&Data)==2) {
-                cheats[count].addr = Addr;
-                cheats[count].data = Data;
-                cheats[count].size = Data>0xFFFF? 4:Data>0xFF? 2:1;
+            if(sscanf(ACTIVE_FILE->game_genie_codes[i],"%u,%u,%u",&addr,&data,&size)==3) {
+                cheats[count].addr = addr;
+                cheats[count].data = data;
+                cheats[count].size = size;
+                if ((mcf_lower_address == -1) || (addr < mcf_lower_address)) {
+                    mcf_lower_address = addr;
+                }
+                if ((mcf_upper_address == -1) || ((addr+size-1) > mcf_upper_address)) {
+                    mcf_upper_address = addr+size-1;
+                }
                 count++;
             }
         }
@@ -389,22 +400,36 @@ UInt8 slotRead(void* ref, UInt16 address)
 
     if (ramslot[address >> 13].readEnable) {
 #if GAME_GENIE == 1
-    for (int i=0; i<mcf_count; i++) {
-        switch (cheats[i].size) {
-            case 1:
-                if (cheats[i].addr == address) {
-                    return cheats[i].data&0xFF;
+        if ((address >= mcf_lower_address) && (address <= mcf_upper_address)) {
+            for (int i=0; i<mcf_count; i++) {
+                switch (cheats[i].size) {
+                    case 1:
+                        if (cheats[i].addr == address) {
+                            return cheats[i].data&0xFF;
+                        }
+                        break;
+                    case 2:
+                        if (cheats[i].addr == address) {
+                            return cheats[i].data&0xFF;
+                        } else if (cheats[i].addr+1 == address) {
+                            return (cheats[i].data&0xFF00) >> 8;
+                        }
+                        break;
+                    default:
+                    case 4:
+                        if (cheats[i].addr == address) {
+                            return cheats[i].data&0xFF;
+                        } else if (cheats[i].addr+1 == address) {
+                            return (cheats[i].data&0xFF00) >> 8;
+                        } else if (cheats[i].addr+2 == address) {
+                            return (cheats[i].data&0xFF0000) >> 16;
+                        } else if (cheats[i].addr+3 == address) {
+                            return (cheats[i].data&0xFF000000) >> 24;
+                        }
+                        break;
                 }
-                break;
-            default:
-                if (cheats[i].addr == address) {
-                    return cheats[i].data&0xFF;
-                } else if (cheats[i].addr+1 == address) {
-                    return (cheats[i].data&0xFF00) >> 8;
-                }
-                break;
+            }
         }
-    }
 #endif
 
         return ramslot[address >> 13].pageData[address & 0x1fff];
