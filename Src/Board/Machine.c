@@ -1891,6 +1891,11 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
     }
 
 #ifndef TARGET_GNW
+    // Avoid glitches like in SMURF castle / random sprite
+    if ( ( ram != NULL ) && ((machine->board.type == BOARD_COLECO)||(machine->board.type == BOARD_COLECOADAM)) ) {
+        memset (ram, 0xff, ramSize);
+    }
+
     if (jisyoRom != NULL) {
         free(jisyoRom);
     }
