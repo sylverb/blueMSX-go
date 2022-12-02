@@ -37,9 +37,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#if GAME_GENIE == 1
-static void update_cheat_info();
-#endif
 #ifdef TARGET_GNW
 #include "rom_manager.h"
 #include "odroid_settings.h"
@@ -295,8 +292,8 @@ void slotManagerCreate()
             }
         }
     }
-#if GAME_GENIE == 1
-    update_cheat_info();
+#if CHEAT_CODES == 1
+    msxUpdateCheatInfo();
 #endif
 
     initialized = 1;
@@ -341,7 +338,7 @@ UInt8 slotPeek(void* ref, UInt16 address)
     return 0xff;
 }
 
-#if GAME_GENIE == 1
+#if CHEAT_CODES == 1
 typedef struct
 {
   unsigned int addr;   // Address to apply cheat to
@@ -349,19 +346,19 @@ typedef struct
   unsigned char size;  // Size of Data in bytes (1/2/4)
 } McfEntry;
 
-McfEntry cheats[MAX_GAME_GENIE_CODES];
+McfEntry cheats[MAX_CHEAT_CODES];
 static uint8_t mcf_count;
 static int32_t mcf_lower_address;
 static int32_t mcf_upper_address;
 
-static void update_cheat_info() {
+void msxUpdateCheatInfo() {
     uint8_t count = 0;
     unsigned int addr,data, size;
     mcf_count = 0;
     mcf_lower_address = -1;
     mcf_upper_address = -1;
 
-    for(int i=0; i<MAX_GAME_GENIE_CODES && i<ACTIVE_FILE->game_genie_count; i++) {
+    for(int i=0; i<MAX_CHEAT_CODES && i<ACTIVE_FILE->game_genie_count; i++) {
         if (odroid_settings_ActiveGameGenieCodes_is_enabled(ACTIVE_FILE->id, i)) {
             mcf_count++;
             if(sscanf(ACTIVE_FILE->game_genie_codes[i],"%u,%u,%u",&addr,&data,&size)==3) {
@@ -399,7 +396,7 @@ UInt8 slotRead(void* ref, UInt16 address)
     }
 
     if (ramslot[address >> 13].readEnable) {
-#if GAME_GENIE == 1
+#if CHEAT_CODES == 1
         if ((address >= mcf_lower_address) && (address <= mcf_upper_address)) {
             for (int i=0; i<mcf_count; i++) {
                 switch (cheats[i].size) {
