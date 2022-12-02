@@ -358,10 +358,10 @@ void msxUpdateCheatInfo() {
     mcf_lower_address = -1;
     mcf_upper_address = -1;
 
-    for(int i=0; i<MAX_CHEAT_CODES && i<ACTIVE_FILE->game_genie_count; i++) {
+    for(int i=0; i<MAX_CHEAT_CODES && i<ACTIVE_FILE->cheat_count; i++) {
         if (odroid_settings_ActiveGameGenieCodes_is_enabled(ACTIVE_FILE->id, i)) {
             mcf_count++;
-            if(sscanf(ACTIVE_FILE->game_genie_codes[i],"%u,%u,%u",&addr,&data,&size)==3) {
+            if(sscanf(ACTIVE_FILE->cheat_codes[i],"%u,%u,%u",&addr,&data,&size)==3) {
                 cheats[count].addr = addr;
                 cheats[count].data = data;
                 cheats[count].size = size;
