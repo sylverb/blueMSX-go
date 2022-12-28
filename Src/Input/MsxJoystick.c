@@ -75,6 +75,9 @@ void destroy(MsxJoystick* joystick)
 {
 #ifndef TARGET_GNW
     free(joystick);
+#else
+    if (mem_index > 0)
+        mem_index--;
 #endif
 }
 

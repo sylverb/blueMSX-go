@@ -149,9 +149,7 @@ void joystickPortSetType(int port, JoystickPortType type)
 #ifndef TARGET_GNW
     AmEnableMode mode;
 #endif
-    printf("joystickPortSetType port %d type %d\n",port,type);
     if (updateHandler != NULL && inputType[port] != type) {
-        printf("updateHandler\n");
         updateHandler(updateHandlerRef, port, type);
     }
 
