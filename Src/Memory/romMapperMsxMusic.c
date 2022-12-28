@@ -75,7 +75,7 @@ static void destroy(void* rmv)
     debugDeviceUnregister(rm->debugHandle);
 #endif
 
-#ifdef MSX_NO_MALLOC
+#ifndef MSX_NO_MALLOC
     free(rm->romData);
     free(rm);
 #endif
