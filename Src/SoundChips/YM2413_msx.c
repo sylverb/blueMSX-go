@@ -138,8 +138,8 @@ YM_2413* ym2413Create(Mixer* mixer)
 void ym2413Destroy(YM_2413* ym2413) 
 {
     mixerUnregisterChannel(ym2413->mixer, ym2413->handle);
-    OPLL_delete(ym2413->ym2413);
 #ifndef MSX_NO_MALLOC
+    OPLL_delete(ym2413->ym2413);
     free(ym2413);
 #endif
 }

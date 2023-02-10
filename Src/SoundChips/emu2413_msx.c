@@ -226,7 +226,10 @@ static double kl_table[16] = {dB2(0.000),  dB2(9.000),  dB2(12.000), dB2(13.875)
                               dB2(16.875), dB2(17.625), dB2(18.000), dB2(18.750), dB2(19.125), dB2(19.500),
                               dB2(19.875), dB2(20.250), dB2(20.625), dB2(21.000)};
 
+#ifndef TARGET_GNW
+// We can't afford this 128kB buffer on the G&W
 static uint32_t tll_table[8 * 16][1 << TL_BITS][4];
+#endif
 static int32_t rks_table[8 * 2][2];
 
 static OPLL_PATCH null_patch = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -390,6 +393,7 @@ static void makeSinTable(void) {
     halfsin_table[x] = 0xfff;
 }
 
+#ifndef TARGET_GNW
 static void makeTllTable(void) {
 
   int32_t tmp;
@@ -413,6 +417,7 @@ static void makeTllTable(void) {
     }
   }
 }
+#endif
 
 static void makeRksTable(void) {
   int fnum8, block;
@@ -433,7 +438,9 @@ static void makeDefaultPatch() {
 static uint8_t table_initialized = 0;
 
 static void initializeTables() {
+#ifndef TARGET_GNW
   makeTllTable();
+#endif
   makeRksTable();
   makeSinTable();
   makeDefaultPatch();
@@ -544,11 +551,29 @@ static void commit_slot_update(OPLL_SLOT *slot) {
   }
 
   if (slot->update_requests & UPDATE_TLL) {
+#ifndef TARGET_GNW
     if ((slot->type & 1) == 0) {
       slot->tll = tll_table[slot->blk_fnum >> 5][slot->patch->TL][slot->patch->KL];
     } else {
       slot->tll = tll_table[slot->blk_fnum >> 5][slot->volume][slot->patch->KL];
     }
+#else
+    uint16_t tl;
+    if ((slot->type & 1) == 0) {
+      tl = slot->patch->TL;
+    } else {
+      tl = slot->volume;
+    }
+    if (slot->patch->KL == 0) {
+      slot->tll = TL2EG(tl);
+    } else {
+      int32_t tmp = (int32_t)(kl_table[slot->blk_fnum&0xf] - dB2(3.000) * (7 - (slot->blk_fnum>>4)));
+      if (tmp <= 0)
+        slot->tll = TL2EG(tl);
+      else
+        slot->tll = (uint32_t)((tmp >> (3 - slot->patch->KL)) / EG_STEP) + TL2EG(tl);
+    }
+  #endif
   }
 
   if (slot->update_requests & UPDATE_RKS) {
@@ -1135,15 +1160,15 @@ OPLL *OPLL_new(uint32_t clk, uint32_t rate) {
   return opll;
 }
 
-void OPLL_delete(OPLL *opll) {
 #ifndef MSX_NO_MALLOC
+void OPLL_delete(OPLL *opll) {
   if (opll->conv) {
     OPLL_RateConv_delete(opll->conv);
     opll->conv = NULL;
   }
   free(opll);
-#endif
 }
+#endif
 
 static void reset_rate_conversion_params(OPLL *opll) {
   const double f_out = opll->rate;
@@ -1225,8 +1250,10 @@ void OPLL_forceRefresh(OPLL *opll) {
 }
 
 void OPLL_setRate(OPLL *opll, uint32_t rate) {
-  opll->rate = rate;
-  reset_rate_conversion_params(opll);
+  if ( rate != opll->rate) {
+    opll->rate = rate;
+    reset_rate_conversion_params(opll);
+  }
 }
 
 void OPLL_setQuality(OPLL *opll, uint8_t q) {}
