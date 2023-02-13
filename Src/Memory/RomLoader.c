@@ -35,6 +35,7 @@
 #include "ziphelper.h"
 #else
 #include "rom_manager.h"
+#include "main_msx.h"
 #endif
 #include <stdlib.h>
 #include <string.h>
@@ -90,6 +91,7 @@ error:
       fflush(stdout);
     return NULL;
 #else
+    uint8_t *rom_data;
     retro_emulator_file_t *rom_file;
 
     rom_system_t *rom_system = (rom_system_t *)rom_manager_system(&rom_mgr, "MSX_BIOS");
@@ -102,8 +104,14 @@ error:
         printf("%s rom not found\n",fileName);
         return NULL;
     }
-    *size = rom_file->size;
-    return (UInt8*)rom_file->address;
+
+    // Decompress rom if needed
+    *size = msx_getromdata(&rom_data,
+                           (uint8_t *)rom_file->address,
+                           rom_file->size,
+                           rom_file->ext);
+
+    return (UInt8*)rom_data;
 #endif
 }
 
