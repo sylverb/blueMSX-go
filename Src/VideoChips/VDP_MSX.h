@@ -61,7 +61,7 @@ void vdpForceSync();
 // is slower and will not allow full speed performances for screen 10/11/12.
 // Note for later : use undocumented 128kB of intflash 1 (.extflash_emu_data) to store
 // this table and store the data that were here (lang and rom data) in external flash.
-#if (INTFLASH_BANK == 1)
+#if (INTFLASH_BANK == 1) && (MSX_USE_BANK_2 == 1)
 __attribute__((section (".flash2"))) extern Pixel16 msxYjkColor[32][64][64];
 #else
 __attribute__((section (".extflash_data"))) extern Pixel16 msxYjkColor[32][64][64];
