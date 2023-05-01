@@ -33,7 +33,7 @@
 #include "VDP_MSX.h"
 
 #ifdef TARGET_GNW
-#if (INTFLASH_BANK == 1)
+#if (INTFLASH_BANK == 1) && (MSX_USE_BANK_2 == 1)
 __attribute__((section (".flash2"))) Pixel16 msxYjkColor[32][64][64]=
 #else
 __attribute__((section (".extflash_data"))) Pixel16 msxYjkColor[32][64][64]=
