@@ -270,7 +270,7 @@ DSKE diskReadSector(int driveId, UInt8* buffer, int sector, int side, int track,
 #endif
     {
         if ((drives[driveId] != NULL)) {
-#ifndef TARGET_GNW
+#if !defined(TARGET_GNW) || defined (LINUX_EMU)
             if (0 == fseek(drives[driveId], offset, SEEK_SET)) {
                 UInt8 success = fread(buffer, 1, secSize, drives[driveId]) == secSize;
                 int sectornum = sector - 1 + diskGetSectorsPerTrack(driveId) * (track * diskGetSides(driveId) + side);
@@ -659,7 +659,7 @@ static char *makeErrorsFileName(const char *fileName)
 
 UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
 {
-#ifndef TARGET_GNW
+#if !defined(TARGET_GNW) || defined(LINUX_EMU)
     struct stat s;
     int rv;
     char *fname;
@@ -739,7 +739,7 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
     }
 #endif
 
-#ifdef TARGET_GNW
+#if defined(TARGET_GNW) && !defined(LINUX_EMU)
     retro_emulator_file_t *rom_file;
 
     rom_system_t *rom_system = (rom_system_t *)rom_manager_system(&rom_mgr, "MSX");
@@ -764,7 +764,11 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
         return 0;
     }
 
+#ifdef LINUX_EMU
+    fname = NULL;
+#else
     fname = makeErrorsFileName(fileName);
+#endif
     if( fname != NULL ) {
         FILE *f = fopen(fname, "rb");
         if( f != NULL ) {

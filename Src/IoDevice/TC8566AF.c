@@ -591,7 +591,7 @@ void tc8566afReset(TC8566AF* tc)
     ledSetFdd2(0); /* 10:10 2004/10/09 FDD LED PATCH */ 
 
     fdcAudioReset(tc->fdcAudio);
-#else
+#elif !defined (LINUX_EMU)
     msxLedSetFdd1(0);
 #endif
 }
@@ -652,7 +652,7 @@ void tc8566afWriteRegister(TC8566AF* tc, UInt8 reg, UInt8 value)
 
         ledSetFdd1((value & 0x10) && diskEnabled(0)); /* 10:10 2004/10/09 FDD LED PATCH */ 
         ledSetFdd2((value & 0x20) && diskEnabled(1)); /* 10:10 2004/10/09 FDD LED PATCH */ 
-#else
+#elif !defined (LINUX_EMU)
         msxLedSetFdd1((value & 0x10) && diskEnabled(0));
 #endif
 

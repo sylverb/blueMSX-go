@@ -46,7 +46,7 @@
 
 UInt8* romLoad(const char *fileName, const char *fileInZipFile, int* size)
 {
-#ifndef TARGET_GNW
+#if !defined(TARGET_GNW) || defined (LINUX_EMU)
     UInt8* buf = NULL;
     FILE *file;
 
@@ -54,6 +54,7 @@ UInt8* romLoad(const char *fileName, const char *fileInZipFile, int* size)
         goto error;
     }
 
+#ifndef LINUX_EMU
     if (fileInZipFile != NULL && strlen(fileInZipFile) == 0) {
         fileInZipFile = NULL;
     }
@@ -64,6 +65,7 @@ UInt8* romLoad(const char *fileName, const char *fileInZipFile, int* size)
            goto error;
         return buf;
     }
+#endif
 
     file = fopen(fileName, "rb");
     if (file == NULL) {
@@ -87,6 +89,9 @@ UInt8* romLoad(const char *fileName, const char *fileInZipFile, int* size)
     return buf;
 
 error:
+#ifdef LINUX_EMU
+    printf("!!!!!!! %s file not found\n",fileName);
+#endif
     if (fileName && fileName[0])
       fflush(stdout);
     return NULL;
