@@ -1458,11 +1458,11 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
 #endif
 
         switch (machine->slotInfo[i].romType) {
-#ifndef TARGET_GNW
         case ROM_0x4000:
             success &= romMapperNormalCreate(romName, buf, size, slot, subslot, startPage);
             break;
 
+#ifndef TARGET_GNW
         case ROM_0xC000:
             success &= romMapperNormalCreate(romName, buf, size, slot, subslot, startPage);
             break;
