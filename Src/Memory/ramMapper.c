@@ -214,7 +214,7 @@ int ramMapperCreate(int size, int slot, int sslot, int startPage, UInt8** ramPtr
 #else
     rm = itc_malloc(sizeof(RamMapper));
     if (pages > 8) {
-        printf("Tried to allocate more than 8 pages of RAM : %d",pages);
+        printf("Tried to allocate more than 8 pages of RAM : %d\n",pages);
         return 0; // No more than 128kB of ram supported
     }
     rm->ramData  = msxRam_global;
