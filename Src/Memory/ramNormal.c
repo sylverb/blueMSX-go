@@ -59,10 +59,6 @@ typedef struct {
     UInt8 *ramData;
 } RamNormal;
 
-#ifdef TARGET_GNW
-extern UInt8 msxRam_global[0x4000*8];
-#endif
-
 static void saveState(void* rmv)
 {
     RamNormal *rm = (RamNormal *)rmv;
@@ -159,7 +155,7 @@ int ramNormalCreate(int size, int slot, int sslot, int startPage, UInt8** ramPtr
 #ifndef TARGET_GNW
     rm->ramData = malloc(size);
 #else
-    rm->ramData = msxRam_global;
+    rm->ramData = (UInt8 *)ram_malloc(size);
 #endif
 
     memset(rm->ramData, 0xff, size);

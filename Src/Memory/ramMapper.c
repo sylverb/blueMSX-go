@@ -65,11 +65,6 @@ typedef struct {
     int size;
 } RamMapper;
 
-#ifdef TARGET_GNW
-// 128kB of RAM maximum
-UInt8 msxRam_global[0x4000*8];
-#endif
-
 static void writeIo(void* rmv, UInt16 page, UInt8 value);
 
 static void saveState(void* rmv)
@@ -213,11 +208,7 @@ int ramMapperCreate(int size, int slot, int sslot, int startPage, UInt8** ramPtr
     rm->ramData  = malloc(size);
 #else
     rm = itc_malloc(sizeof(RamMapper));
-    if (pages > 8) {
-        printf("Tried to allocate more than 8 pages of RAM : %d\n",pages);
-        return 0; // No more than 128kB of ram supported
-    }
-    rm->ramData  = msxRam_global;
+    rm->ramData = (UInt8 *)ram_malloc(size);
 #endif
 
     rm->size     = size;
