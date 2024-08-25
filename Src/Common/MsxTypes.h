@@ -31,6 +31,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include <stdint.h>
 
 #ifdef __GNUC__
 #define __int64 long long
@@ -59,15 +60,15 @@ typedef float DoubleT;
 
 /* So far, only support for MSVC types
  */
-typedef unsigned char    UInt8;
+typedef uint8_t          UInt8;
 #ifndef __CARBON__
-typedef unsigned short   UInt16;
-typedef unsigned int     UInt32;
+typedef uint16_t         UInt16;
+typedef uint32_t         UInt32;
 typedef unsigned __int64 UInt64;
 #endif
-typedef signed   char    Int8;
-typedef signed   short   Int16;
-typedef signed   int     Int32;
+typedef int8_t           Int8;
+typedef int16_t          Int16;
+typedef int32_t          Int32;
 
 // Define color stuff
 
