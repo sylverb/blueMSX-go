@@ -335,6 +335,8 @@ RTC* rtcCreate(int enable, char* cmosName)
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, NULL, NULL };
     RTC* rtc = (RTC*)calloc(1, sizeof(RTC));
 #else
+    struct tm* tm;
+    time_t t;
     RTC* rtc = (RTC*)itc_calloc(1, sizeof(RTC));
 #endif
 
@@ -354,7 +356,7 @@ RTC* rtcCreate(int enable, char* cmosName)
             fread(rtc->registers, 1, sizeof(rtc->registers), file);
             fclose(file);
         }
-
+#endif
         t = time(NULL);
         tm = localtime(&t);
 
@@ -367,23 +369,8 @@ RTC* rtcCreate(int enable, char* cmosName)
         rtc->months   = tm->tm_mon;
         rtc->years    = tm->tm_year - 80;
         rtc->leapYear = tm->tm_year % 4;
+#if !defined(TARGET_GNW) || defined (LINUX_EMU)
     }
-#else
-    struct tm* tm;
-    time_t t;
-
-    t = GW_GetUnixTime();
-    tm = localtime(&t);
-
-    rtc->fraction = 0;
-    rtc->seconds  = tm->tm_sec;
-    rtc->minutes  = tm->tm_min;
-    rtc->hours    = tm->tm_hour;
-    rtc->dayWeek  = tm->tm_wday;
-    rtc->days     = tm->tm_mday - 1;
-    rtc->months   = tm->tm_mon;
-    rtc->years    = tm->tm_year - 80;
-    rtc->leapYear = tm->tm_year % 4;
 #endif
 
     if (enable) {
