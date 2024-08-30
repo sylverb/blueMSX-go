@@ -225,7 +225,7 @@ int msxCreate(Machine* machine,
     boardInfo->stop             = (void (*)(void *))r800StopExecution;
     boardInfo->setInt           = (void (*)(void *))r800SetInt;
     boardInfo->clearInt         = (void (*)(void *))r800ClearInt;
-    boardInfo->setCpuTimeout    = (void (*)(void *, unsigned int))r800SetTimeoutAt;
+    boardInfo->setCpuTimeout    = (void (*)(void *, UInt32))r800SetTimeoutAt;
 #ifdef ENABLE_BREAKPOINTS
     boardInfo->setBreakpoint    = r800SetBreakpoint;
     boardInfo->clearBreakpoint  = r800ClearBreakpoint;

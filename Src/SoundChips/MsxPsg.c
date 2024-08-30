@@ -321,7 +321,7 @@ MsxPsg* msxPsgCreate(PsgType type, int stereo, int* pan, int maxPorts)
     MsxPsg* msxPsg = (MsxPsg*)itc_calloc(1, sizeof(MsxPsg));
 #endif
 
-    msxPsg->ay8910 = ay8910Create(boardGetMixer(), AY8910_MSX, type, stereo, pan);
+    msxPsg->ay8910 = ay8910Create(boardGetMixer(), AY8910_MSX, type, stereo, (Int32 *)pan);
     msxPsg->maxPorts = maxPorts;
 
 #ifndef TARGET_GNW
