@@ -2508,6 +2508,3 @@ void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int
 #endif
     }
 }
-
-
-#endif

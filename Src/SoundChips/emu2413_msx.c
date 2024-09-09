@@ -1562,4 +1562,3 @@ uint32_t OPLL_toggleMask(OPLL *opll, uint32_t mask) {
   } else
     return 0;
 }
-#endif

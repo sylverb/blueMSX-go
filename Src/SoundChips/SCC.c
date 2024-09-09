@@ -776,5 +776,3 @@ static Int32* sccSync(void* sccv, UInt32 count)
 
     return scc->buffer;
 }
-
-#endif

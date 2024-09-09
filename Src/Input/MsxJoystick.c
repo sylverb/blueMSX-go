@@ -25,11 +25,7 @@
 **
 ******************************************************************************
 */
-#ifdef TARGET_GNW
-#include "build/config.h"
-#endif
 
-#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "MsxJoystick.h"
 #include "InputEvent.h"
 #ifdef TARGET_GNW
@@ -96,5 +92,3 @@ MsxJoystickDevice* msxJoystickCreate(int controller)
     
     return (MsxJoystickDevice*)joystick;
 }
-
-#endif

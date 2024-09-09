@@ -251,4 +251,3 @@ void ramMapperIoRemove(int handle)
 
     rm->mask = ramMapperIoGetMask(rm);
 }
-#endif

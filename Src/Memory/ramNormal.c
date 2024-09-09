@@ -181,4 +181,3 @@ int ramNormalCreate(int size, int slot, int sslot, int startPage, UInt8** ramPtr
 
     return 1;
 }
-#endif

@@ -164,5 +164,3 @@ int romMapperKonami4nfCreate(const char* filename, UInt8* romData,
 
     return 1;
 }
-
-#endif

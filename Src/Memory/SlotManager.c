@@ -565,4 +565,3 @@ void slotLoadState()
         slotMapRamPage(psl, ssl, 2 * page + 1);
     }
 }
-#endif

@@ -852,5 +852,3 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
     printf("cartridgeInsert success %d\n",success);
     return success;
 }
-
-#endif

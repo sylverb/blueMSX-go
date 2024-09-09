@@ -223,4 +223,3 @@ void videoManagerSaveState()
     saveStateSet(state, "ActiveFrameBuffer",  videoManagerGetActive());
     saveStateClose(state);
 }
-#endif

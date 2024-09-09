@@ -255,5 +255,3 @@ int romMapperSunriseIdeCreate(int hdId, const char* filename, UInt8* romData,
 
     return 1;
 }
-
-#endif

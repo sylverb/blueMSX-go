@@ -1390,4 +1390,3 @@ void vdpCmdSaveState(VdpCmdState* vdpCmd)
     
     saveStateClose(state);
 }
-#endif

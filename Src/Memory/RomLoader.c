@@ -119,5 +119,3 @@ error:
     return (UInt8*)rom_data;
 #endif
 }
-
-#endif

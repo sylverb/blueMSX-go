@@ -308,4 +308,3 @@ int msxCreate(Machine* machine,
 
     return success;
 }
-#endif

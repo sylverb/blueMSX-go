@@ -152,4 +152,3 @@ void deviceManagerUnregister(int handle)
     }
 #endif
 }
-#endif

@@ -1925,5 +1925,3 @@ void machineSetDirectory(const char* dir)
 {
     strcpy(machinesDir, dir);
 }
-
-#endif

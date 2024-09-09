@@ -98,4 +98,3 @@ char* extractTokens(char* szLine, int argNo) {
 
     return argBuf;
 }
-#endif

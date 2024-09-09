@@ -340,4 +340,3 @@ MsxPsg* msxPsgCreate(PsgType type, int stereo, int* pan, int maxPorts)
 
     return msxPsg;
 }
-#endif

@@ -1635,4 +1635,3 @@ UInt32 boardSystemTime() {
     extern UInt32* boardSysTime;
     return *boardSysTime;
 }
-#endif

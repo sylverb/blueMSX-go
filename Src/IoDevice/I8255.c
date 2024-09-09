@@ -25,11 +25,7 @@
 **
 ******************************************************************************
 */
-#ifdef TARGET_GNW
-#include "build/config.h"
-#endif
 
-#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "I8255.h"
 #include "SaveState.h"
 #include <stdlib.h>
@@ -809,5 +805,4 @@ void i8255Write(I8255* i8255, UInt16 port, UInt8 value)
         return;
     }
 }
-#endif
 #endif

@@ -48,4 +48,3 @@ int strcmpnocase(const char* str1, const char* str2) {
 
     return strcmp(s1, s2);
 }
-#endif

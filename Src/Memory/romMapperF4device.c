@@ -142,4 +142,3 @@ int romMapperF4deviceCreate(int inverted)
 
     return 1;
 }
-#endif

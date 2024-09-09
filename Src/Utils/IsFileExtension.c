@@ -45,4 +45,3 @@ int isFileExtension(const char* fileName, char* extension) {
 
     return 0 == strcmpnocase(fileName + flen - elen, extension);
 }
-#endif

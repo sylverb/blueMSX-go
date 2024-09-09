@@ -598,4 +598,3 @@ static Int32* ay8910Sync(void* ref, UInt32 count)
 
     return ay8910->buffer;
 }
-#endif

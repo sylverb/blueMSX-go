@@ -25,11 +25,7 @@
 **
 ******************************************************************************
 */
-#ifdef TARGET_GNW
-#include "build/config.h"
-#endif
 
-#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "SunriseIDE.h"
 #include "HarddiskIDE.h"
 #include "Board.h"
@@ -239,4 +235,3 @@ void sunriseIdeSaveState(SunriseIde* ide)
     harddiskIdeSaveState(ide->hdide[1]);
 #endif
 }
-#endif

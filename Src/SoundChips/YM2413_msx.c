@@ -143,4 +143,3 @@ void ym2413Destroy(YM_2413* ym2413)
     free(ym2413);
 #endif
 }
-#endif

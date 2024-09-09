@@ -165,6 +165,3 @@ void  ioPortWrite(void* ref, UInt16 port, UInt8 value)
         ioUnused[1].write(ioUnused[1].ref, port, value);
     }
 }
-
-#endif
-

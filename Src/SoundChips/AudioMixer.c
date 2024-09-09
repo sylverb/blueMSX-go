@@ -814,4 +814,3 @@ void mixerSetEnable(Mixer* mixer, int enable)
 {
     mixer->enable = enable;
 }
-#endif

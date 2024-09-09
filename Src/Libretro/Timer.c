@@ -82,5 +82,3 @@ UInt32 archGetSystemUpTime(UInt32 frequency)
     return tv.tv_sec * frequency + tv.tv_usec / (1000000 / frequency);
 }
 #endif
-
-#endif
