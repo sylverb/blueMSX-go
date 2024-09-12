@@ -11,11 +11,6 @@
 **
 ******************************************************************************
 */
-#ifdef TARGET_GNW
-#include "build/config.h"
-#endif
-
-#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include "V9938.h"
 #include <string.h>
 #include <stdlib.h>

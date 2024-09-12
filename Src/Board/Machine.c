@@ -25,11 +25,6 @@
 **
 ******************************************************************************
 */
-#ifdef TARGET_GNW
-#include "build/config.h"
-#endif
-
-#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #if defined(__linux__) || defined(EMSCRIPTEN)
 #define _GNU_SOURCE
 #endif

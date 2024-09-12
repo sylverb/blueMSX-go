@@ -33,9 +33,6 @@
 #ifndef TARGET_GNW
 #include "DebugDeviceManager.h"
 #else
-#ifndef LINUX_EMU
-extern time_t GW_GetUnixTime(void);
-#endif
 #include "gw_malloc.h"
 #endif
 #include "Language.h"

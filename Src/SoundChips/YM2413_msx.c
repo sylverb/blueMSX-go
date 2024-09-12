@@ -25,11 +25,6 @@
 **
 ******************************************************************************
 */
-#ifdef TARGET_GNW
-#include "build/config.h"
-#endif
-
-#if !defined(TARGET_GNW) || (defined(TARGET_GNW) &&  defined(ENABLE_EMULATOR_MSX))
 #include <string.h>
 #include "YM2413_msx.h"
 #include "emu2413_msx.h"
