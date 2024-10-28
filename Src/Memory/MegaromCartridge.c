@@ -149,7 +149,7 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
     const char* romName = cartZip != NULL ? cartZip : cart;
     int success = 1;
     UInt8* buf;
-    int size;
+    int size = 0;
     int slot  = cartridgeInfo.cart[cartNo].slot;
     int sslot = cartridgeInfo.cart[cartNo].sslot;
 

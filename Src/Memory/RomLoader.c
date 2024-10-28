@@ -43,7 +43,7 @@
 // PacketFileSystem.h Need to be included after all other includes
 #include "PacketFileSystem.h"
 
-UInt8* romLoad(const char *fileName, const char *fileInZipFile, int* size)
+UInt8* romLoad(const char *fileName, const char *fileInZipFile, int *size)
 {
 #if !defined(TARGET_GNW) || defined (LINUX_EMU)
     UInt8* buf = NULL;
@@ -95,7 +95,10 @@ error:
       fflush(stdout);
     return NULL;
 #elif SD_CARD == 1
-    return (UInt8*)store_file_in_flash(fileName, size, false);
+    uint32_t size_u32 = (uint32_t)*size;
+    uint8_t *data_pointer = store_file_in_flash(fileName, &size_u32, false);
+    *size = (int)size_u32;
+    return data_pointer;
 #else
     uint8_t *rom_data;
     retro_emulator_file_t *rom_file;
