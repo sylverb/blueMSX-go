@@ -486,7 +486,7 @@ static void tc8566afCommandPhaseWrite(TC8566AF* tc, UInt8 value)
 	}
 }
 
-#ifndef TARGET_GNW
+#if !defined(TARGET_GNW) || SD_CARD == 1
 static void tc8566afExecutionPhaseWrite(TC8566AF* tc, UInt8 value)
 {
     int rv;
@@ -502,9 +502,9 @@ static void tc8566afExecutionPhaseWrite(TC8566AF* tc, UInt8 value)
                 if (!rv) {
                     tc->status1 |= ST1_NW;
                 }
-
+#ifndef TARGET_GNW
                 fdcAudioSetReadWrite(tc->fdcAudio);
-
+#endif
                 boardSetFdcActive();
 
                 tc->phase       = PHASE_RESULT;
@@ -666,7 +666,7 @@ void tc8566afWriteRegister(TC8566AF* tc, UInt8 reg, UInt8 value)
             break;
             
 		case PHASE_DATATRANSFER:
-#ifndef TARGET_GNW
+#if !defined(TARGET_GNW) || SD_CARD == 1
             tc8566afExecutionPhaseWrite(tc, value);
 #endif
             tc->dataTransferTime = boardSystemTime();

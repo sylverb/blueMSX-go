@@ -33,8 +33,11 @@
 #include "SlotManager.h"
 #include "Led.h"
 #include <string.h>
+#ifdef TARGET_GNW
+#include "main_msx.h"
+#endif
 
-#ifndef TARGET_GNW
+#if !defined(TARGET_GNW) || SD_CARD == 1
  typedef struct {
     int sectors;
     UInt8 heads;
@@ -85,17 +88,19 @@ static const UInt8 bootSector[] = {
 static int patchEnabled = 0;
 static int patchBoardType = 0;
 
-#ifndef TARGET_GNW
+#if !defined(TARGET_GNW) || SD_CARD == 1
 void PatchDiskSetBusy(int driveId, int busy)
 {
     if (driveId < MAXDRIVES && patchEnabled) {
+#ifndef TARGET_GNW
         if (driveId == 0) ledSetFdd1(busy);
         if (driveId == 1) ledSetFdd2(busy);
+#else
+        if (driveId == 0) msxLedSetFdd1(busy);
+#endif
     }
 }
-#endif
 
-#ifndef TARGET_GNW
 static const FormatInfo formatInfo[8] = {
     { 720,  1, 112, 9, 2, 2 },
     { 1440, 2, 112, 9, 3, 2 },
@@ -185,7 +190,7 @@ static void phydio(void* ref, CpuRegs* cpu) {
     UInt8 drive;
     UInt16 sector;
     UInt16 address;
-#ifndef TARGET_GNW
+#if !defined(TARGET_GNW) || SD_CARD == 1
     int write;
 #endif
     UInt8 origSlotPri;
@@ -201,7 +206,7 @@ static void phydio(void* ref, CpuRegs* cpu) {
     drive   = cpu->AF.B.h;
     sector  = cpu->DE.W;
     address = cpu->HL.W;
-#ifndef TARGET_GNW
+#if !defined(TARGET_GNW) || SD_CARD == 1
     write   = cpu->AF.B.l & C_FLAG;
 #endif
 
@@ -224,7 +229,7 @@ static void phydio(void* ref, CpuRegs* cpu) {
     slotWrite(ref, 0xffff, slotSec);
 
     while (cpu->BC.B.h) {
-#ifndef TARGET_GNW
+#if !defined(TARGET_GNW) || SD_CARD == 1
         PatchDiskSetBusy(drive, 1);
 
         if (write) {
@@ -274,7 +279,7 @@ static void dskchg(void* ref, CpuRegs* cpu) {
         return;
     }
 
-#ifndef TARGET_GNW
+#if !defined(TARGET_GNW) || SD_CARD == 1
     PatchDiskSetBusy(drive, 1);
 #endif
     if (diskRead(drive, buffer, 1) != DSKE_OK) {
@@ -362,7 +367,7 @@ static void getdpb(void* ref, CpuRegs* cpu) {
 }
 
 static void dskfmt(void* ref, CpuRegs* cpu) {
-#ifndef TARGET_GNW
+#if !defined(TARGET_GNW) || SD_CARD == 1
     UInt8 buffer[512];
     UInt8 index;
     int j;

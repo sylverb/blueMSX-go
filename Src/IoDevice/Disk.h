@@ -66,7 +66,7 @@ UInt8 diskReadOnly(int driveId);
 UInt8 diskPresent(int driveId);
 DSKE  diskRead(int driveId, UInt8* buffer, int sector);
 DSKE  diskReadSector(int driveId, UInt8* buffer, int sector, int side, int track, int density, int *sectorSize);
-#ifndef TARGET_GNW
+#if !defined(TARGET_GNW) || SD_CARD == 1
 UInt8 diskWrite(int driveId, UInt8* buffer, int sector);
 UInt8 diskWriteSector(int driveId, UInt8 *buffer, int sector, int side, int track, int density);
 #endif

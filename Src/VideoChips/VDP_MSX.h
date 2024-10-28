@@ -61,7 +61,9 @@ void vdpForceSync();
 // is slower and will not allow full speed performances for screen 10/11/12.
 // Note for later : use undocumented 128kB of intflash 1 (.extflash_emu_data) to store
 // this table and store the data that were here (lang and rom data) in external flash.
-#ifdef LINUX_EMU
+#if SD_CARD == 1
+extern Pixel16 msxYjkColor[1][1][1];
+#elif defined(LINUX_EMU)
 extern Pixel16 msxYjkColor[32][64][64];
 #else
 #if (INTFLASH_BANK == 1)

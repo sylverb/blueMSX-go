@@ -36,8 +36,10 @@
 #include <stdio.h>
 #ifdef TARGET_GNW
 #include "gw_malloc.h"
-#include "lzma.h"
 #include "rom_manager.h"
+#ifndef GNW_DISABLE_COMPRESSION
+#include "lzma.h"
+#endif
 #endif
 #include <sys/stat.h>
 
@@ -56,16 +58,20 @@ static int   drivesIsCdrom[MAXDRIVES];
 static FILE* drives[MAXDRIVES];
 #else
 static int   drivesEnabled[MAXDRIVES] = { 1 };
+#if SD_CARD == 0
 static char* drives[MAXDRIVES];
+#else
+static FILE* drives[MAXDRIVES];
+#endif
 #endif
 static int   RdOnly[MAXDRIVES];
-#ifdef TARGET_GNW
+#if defined(TARGET_GNW) && !defined(GNW_DISABLE_COMPRESSION)
 static int   compressed[MAXDRIVES];
 static int   cachedSide[MAXDRIVES];
 static int   cachedTrack[MAXDRIVES];
 static char  *ramTrackBuffer[MAXDRIVES];
 #endif
-#ifndef TARGET_GNW
+#if !defined(TARGET_GNW) || SD_CARD == 1
 static char* ramImageBuffer[MAXDRIVES];
 static int   ramImageSize[MAXDRIVES];
 #endif
@@ -203,7 +209,7 @@ DSKE diskRead(int driveId, UInt8* buffer, int sector)
     if (!diskPresent(driveId))
         return DSKE_NO_DATA;
 
-#ifndef TARGET_GNW
+#if !defined(TARGET_GNW) || SD_CARD == 1
     if (ramImageBuffer[driveId] != NULL) {
         int offset = sector * sectorSize[driveId];
 
@@ -218,7 +224,7 @@ DSKE diskRead(int driveId, UInt8* buffer, int sector)
 #endif
     {
         if ((drives[driveId] != NULL)) {
-#ifndef TARGET_GNW
+#if !defined(TARGET_GNW) || SD_CARD == 1
             if (0 == fseek(drives[driveId], sector * sectorSize[driveId], SEEK_SET)) {
                 UInt8 success = fread(buffer, 1, sectorSize[driveId], drives[driveId]) == sectorSize[driveId];
                 return success? diskReadError(driveId, sector) : DSKE_NO_DATA;
@@ -251,7 +257,7 @@ DSKE diskReadSector(int driveId, UInt8* buffer, int sector, int side, int track,
         *sectorSize = secSize;
     }
 
-#ifndef TARGET_GNW
+#if !defined(TARGET_GNW) || SD_CARD == 1
     if (ramImageBuffer[driveId] != NULL) {
         int sectornum;
         if (ramImageSize[driveId] < offset + secSize) {
@@ -266,13 +272,13 @@ DSKE diskReadSector(int driveId, UInt8* buffer, int sector, int side, int track,
 #endif
     {
         if ((drives[driveId] != NULL)) {
-#if !defined(TARGET_GNW) || defined (LINUX_EMU)
+#if !defined(TARGET_GNW) || defined (LINUX_EMU) || SD_CARD == 1
             if (0 == fseek(drives[driveId], offset, SEEK_SET)) {
                 UInt8 success = fread(buffer, 1, secSize, drives[driveId]) == secSize;
                 int sectornum = sector - 1 + diskGetSectorsPerTrack(driveId) * (track * diskGetSides(driveId) + side);
                 return success? diskReadError(driveId, sectornum) : DSKE_NO_DATA;
             }
-#else
+#elif !defined(GNW_DISABLE_COMPRESSION)
             if (compressed[driveId]) {
                 if (diskType[driveId] == IDEHD_DISK) {
                     UInt32 lzmaDataOffset;
@@ -340,7 +346,7 @@ static void diskUpdateInfo(int driveId)
     int secSize;
     DSKE rv;
 
-#ifdef TARGET_GNW
+#if defined(TARGET_GNW) && SD_CARD == 0
     compressed[driveId]      = 0;
     cachedSide[driveId]      = -1;
     cachedTrack[driveId]     = -1;
@@ -369,7 +375,7 @@ static void diskUpdateInfo(int driveId)
     }
 
     // Compressed 360KB or 720KB MSX dsk image
-#ifdef TARGET_GNW
+#if defined(TARGET_GNW) && !defined(GNW_DISABLE_COMPRESSION)
     if (memcmp(buf,"lzma",4)==0) {
         compressed[driveId] = 1;
         int data_offset = buf[4]+(buf[5]<<8)+(buf[6]<<16)+(buf[7]<<24);
@@ -560,7 +566,7 @@ static void diskUpdateInfo(int driveId)
     }
 }
 
-#ifndef TARGET_GNW
+#if !defined(TARGET_GNW) || SD_CARD == 1
 UInt8 diskWrite(int driveId, UInt8 *buffer, int sector)
 {
     if (!diskPresent(driveId)) {
@@ -631,11 +637,14 @@ UInt8 diskWriteSector(int driveId, UInt8 *buffer, int sector, int side, int trac
     }
     return 0;
 }
+#endif
 
+#ifndef TARGET_GNW
 void diskSetInfo(int driveId, char* fileName, const char* fileInZipFile)
 {
     drivesIsCdrom[driveId] = fileName && strcmp(fileName, DISK_CDROM) == 0;
 }
+#endif
 
 static char *makeErrorsFileName(const char *fileName)
 {
@@ -647,19 +656,18 @@ static char *makeErrorsFileName(const char *fileName)
         strcpy(p, ".der");
         return fname;
     }else{
-        free(p);
+        free(fname);
         return NULL;
     }
 }
-#endif
 
 UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
 {
 #if !defined(TARGET_GNW) || defined(LINUX_EMU)
     struct stat s;
     int rv;
-    char *fname;
 #endif
+    char *fname;
 
     if (driveId >= MAXDRIVES)
         return 0;
@@ -670,7 +678,7 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
 
     /* Close previous disk image */
     if(drives[driveId] != NULL) { 
-#ifndef MSX_NO_FILESYSTEM
+#if !defined(TARGET_GNW) || SD_CARD == 1
         fclose(drives[driveId]);
 #endif
         drives[driveId] = NULL; 
@@ -735,7 +743,7 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
     }
 #endif
 
-#if defined(TARGET_GNW) && !defined(LINUX_EMU)
+#if defined(TARGET_GNW) && !defined(LINUX_EMU) && SD_CARD == 0
     retro_emulator_file_t *rom_file;
 
     rom_system_t *rom_system = (rom_system_t *)rom_manager_system(&rom_mgr, "MSX");
@@ -760,11 +768,7 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
         return 0;
     }
 
-#ifdef LINUX_EMU
-    fname = NULL;
-#else
     fname = makeErrorsFileName(fileName);
-#endif
     if( fname != NULL ) {
         FILE *f = fopen(fname, "rb");
         if( f != NULL ) {

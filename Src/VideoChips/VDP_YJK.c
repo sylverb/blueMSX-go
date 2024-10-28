@@ -28,6 +28,9 @@
 #include "VDP_MSX.h"
 
 #ifdef TARGET_GNW
+#if SD_CARD == 1
+Pixel16 msxYjkColor[1][1][1];
+#else
 #ifdef LINUX_EMU
 Pixel16 msxYjkColor[32][64][64]=
 #else
@@ -2119,3 +2122,4 @@ __attribute__((section (".extflash_data"))) Pixel16 msxYjkColor[32][64][64]=
 },
 };
 #endif
+#endif // SD_CARD == 1

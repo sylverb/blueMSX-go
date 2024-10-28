@@ -29,7 +29,11 @@
 #ifndef TARGET_GNW
 #include "ziphelper.h"
 #else
+#if SD_CARD == 1
+#include "gw_flash_alloc.h"
+#else
 #include "rom_manager.h"
+#endif
 #include "main_msx.h"
 #endif
 #include <stdlib.h>
@@ -90,6 +94,8 @@ error:
     if (fileName && fileName[0])
       fflush(stdout);
     return NULL;
+#elif SD_CARD == 1
+    return (UInt8*)store_file_in_flash(fileName, size, false);
 #else
     uint8_t *rom_data;
     retro_emulator_file_t *rom_file;
