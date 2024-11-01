@@ -319,7 +319,7 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
 #ifndef TARGET_GNW
             buf = romLoad("Machines/Shared Roms/SUNRISEIDE.rom", cartZip, &size);
 #else
-            buf = romLoad("SUNRISEIDE.rom", cartZip, &size);
+            buf = romLoad("/bios/msx/SUNRISEIDE.rom", cartZip, &size);
 #endif
             if (buf != 0) {
                 success &= romMapperSunriseIdeCreate(cartNo, romName, buf, size, slot, sslot, 0);
