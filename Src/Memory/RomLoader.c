@@ -96,7 +96,7 @@ error:
     return NULL;
 #elif SD_CARD == 1
     uint32_t size_u32 = (uint32_t)*size;
-    uint8_t *data_pointer = store_file_in_flash(fileName, &size_u32, false);
+    uint8_t *data_pointer = store_file_in_flash(fileName, &size_u32, false, NULL);
     *size = (int)size_u32;
     return data_pointer;
 #else
