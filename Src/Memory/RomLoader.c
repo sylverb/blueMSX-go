@@ -30,7 +30,7 @@
 #include "ziphelper.h"
 #else
 #if SD_CARD == 1
-#include "gw_flash_alloc.h"
+#include "odroid_overlay.h"
 #else
 #include "rom_manager.h"
 #endif
@@ -96,7 +96,7 @@ error:
     return NULL;
 #elif SD_CARD == 1
     uint32_t size_u32 = (uint32_t)*size;
-    uint8_t *data_pointer = store_file_in_flash(fileName, &size_u32, false, NULL);
+    uint8_t *data_pointer = odroid_overlay_cache_file_in_flash(fileName, &size_u32, false);
     *size = (int)size_u32;
     return data_pointer;
 #else
