@@ -354,7 +354,7 @@ void msxUpdateCheatInfo() {
     mcf_upper_address = -1;
 
     for(int i=0; i<MAX_CHEAT_CODES && i<ACTIVE_FILE->cheat_count; i++) {
-        if (odroid_settings_ActiveGameGenieCodes_is_enabled(ACTIVE_FILE->id, i)) {
+        if (odroid_settings_ActiveGameGenieCodes_is_enabled(ACTIVE_FILE->path, i)) {
             mcf_count++;
             if(sscanf(ACTIVE_FILE->cheat_codes[i],"%u,%u,%u",&addr,&data,&size)==3) {
                 cheats[count].addr = addr;
