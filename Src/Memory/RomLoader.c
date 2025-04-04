@@ -30,6 +30,8 @@
 #include "ziphelper.h"
 #else
 #if SD_CARD == 1
+#include "gw_malloc.h"
+#include "rg_storage.h"
 #include "odroid_overlay.h"
 #else
 #include "rom_manager.h"
@@ -95,10 +97,20 @@ error:
       fflush(stdout);
     return NULL;
 #elif SD_CARD == 1
-    uint32_t size_u32 = (uint32_t)*size;
-    uint8_t *data_pointer = odroid_overlay_cache_file_in_flash(fileName, &size_u32, false);
-    *size = (int)size_u32;
-    return data_pointer;
+    rg_stat_t stat = rg_storage_stat(fileName);
+    *size = (uint32_t)stat.size;
+    // Store in flash if file is larger than 128KB or is a bios file
+    if ((*size > 128*1024) || (strncmp(fileName, "/bios/", 6) == 0)) {
+        uint8_t *data_pointer = odroid_overlay_cache_file_in_flash(fileName, (uint32_t *)size, false);
+        return data_pointer;
+    } else {
+        // Store in ram if file is 128KB or smaller
+        uint8_t *data_pointer = ram_malloc(*size);
+        if (data_pointer) {
+            odroid_overlay_cache_file_in_ram(fileName, data_pointer);
+        }
+        return data_pointer;
+    }
 #else
     uint8_t *rom_data;
     retro_emulator_file_t *rom_file;
