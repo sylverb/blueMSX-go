@@ -98,18 +98,22 @@ error:
     return NULL;
 #elif SD_CARD == 1
     rg_stat_t stat = rg_storage_stat(fileName);
-    *size = (uint32_t)stat.size;
-    // Store in flash if file is larger than 128KB or is a bios file
-    if ((*size > 128*1024) || (strncmp(fileName, "/bios/", 6) == 0)) {
-        uint8_t *data_pointer = odroid_overlay_cache_file_in_flash(fileName, (uint32_t *)size, false);
-        return data_pointer;
-    } else {
-        // Store in ram if file is 128KB or smaller
-        uint8_t *data_pointer = ram_malloc(*size);
-        if (data_pointer) {
-            odroid_overlay_cache_file_in_ram(fileName, data_pointer);
+    if (stat.exists) {
+        *size = (uint32_t)stat.size;
+        // Store in flash if file is larger than 128KB or is a bios file
+        if ((*size > 128*1024) || (strncmp(fileName, "/bios/", 6) == 0)) {
+            uint8_t *data_pointer = odroid_overlay_cache_file_in_flash(fileName, (uint32_t *)size, false);
+            return data_pointer;
+        } else {
+            // Store in ram if file is 128KB or smaller
+            uint8_t *data_pointer = ram_malloc(*size);
+            if (data_pointer) {
+                odroid_overlay_cache_file_in_ram(fileName, data_pointer);
+            }
+            return data_pointer;
         }
-        return data_pointer;
+    } else {
+        return NULL;
     }
 #else
     uint8_t *rom_data;

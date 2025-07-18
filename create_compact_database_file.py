@@ -313,7 +313,15 @@ def extract_rom_data(xml_file):
 
                 for disk in dump.findall('disk'):
                     hash = disk.find('hash').text
-                    mapper = ROM_UNKNOWN
+                    type = disk.find('type')
+                    if type is not None:
+                        mapper = getMapperValue(type.text)
+                    else:
+                        type = elem.find('type')
+                        if type is not None:
+                            mapper = getMapperValue(type.text)
+                        else:
+                            mapper = ROM_UNKNOWN
                     controls = 127
                     ctrl = 0 # Does the game require to press ctrl at boot ?
                     controls_elem = disk.find('controls')
