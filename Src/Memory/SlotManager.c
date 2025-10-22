@@ -393,6 +393,7 @@ UInt8 slotPeek(void* ref, UInt16 address)
     Slot* slotInfo;
     int psl;
     int ssl;
+    int i;
 
     if (!initialized) {
         return 0xff;
@@ -407,7 +408,7 @@ UInt8 slotPeek(void* ref, UInt16 address)
 
     if (ramslot[address >> 13].readEnable) {
         // Check for cheat codes
-        for (int i = 0; i < cheats_count; i++) {
+        for (i = 0; i < cheats_count; i++) {
             if (cheats[i].size == 1) {
                 if (cheats[i].addr == address) {
                     return cheats[i].data & 0xFF;
@@ -475,6 +476,7 @@ UInt8 slotReadCheat(void* ref, UInt16 address)
     Slot* slotInfo;
     int psl;
     int ssl;
+    int i;
 
     if (!initialized) {
         return 0xff;
@@ -489,7 +491,7 @@ UInt8 slotReadCheat(void* ref, UInt16 address)
 
     if (ramslot[address >> 13].readEnable) {
         if ((address >= cheats_lower_address) && (address <= cheats_upper_address)) {
-            for (int i = 0; i < cheats_count; i++) {
+            for (i = 0; i < cheats_count; i++) {
                 if (cheats[i].size == 1) {
                     if (cheats[i].addr == address) {
                         return cheats[i].data & 0xFF;
