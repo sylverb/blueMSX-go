@@ -64,12 +64,35 @@ typedef struct {
     void*         ref;
 } Slot;
 
+
+typedef struct
+{
+  unsigned int addr;   // Address to apply cheat to
+  unsigned int data;   // Data to write to Addr
+  unsigned char size;  // Size of Data in bytes (1/2/4)
+} CheatCode;
+
+#ifndef TARGET_GNW
+#define MAX_CHEAT_CODES 255
+static CheatCode* cheats = NULL;
+#else
+static CheatCode cheats[MAX_CHEAT_CODES];
+#endif
+
+static uint16_t cheats_count = 0;
+static int32_t cheats_lower_address;
+static int32_t cheats_upper_address;
+
+static R800* current_r800 = NULL;
+
 static RamSlotState     ramslot[8];
 static PrimarySlotState pslot[4];
 static Slot             slotTable[4][4][8];
 static Slot             slotAddr0;
 static UInt8            emptyRAM[0x2000];
 static Int32            initialized;
+
+static UInt8 slotReadCheat(void* ref, UInt16 address);
 
 void slotMapRamPage(int slot, int sslot, int page)
 {
@@ -287,16 +310,82 @@ void slotManagerCreate()
             }
         }
     }
-#if CHEAT_CODES == 1
-    msxUpdateCheatInfo();
-#endif
 
     initialized = 1;
 }
 
 void slotManagerDestroy() 
 {
+#ifndef TARGET_GNW
+    if (cheats != NULL) {
+        free(cheats);
+        cheats = NULL;
+    }
+#endif
+    cheats_count = 0;
     initialized = 0;
+}
+
+void slotManagerAddCheat(int addr, int data, int size)
+{
+    // Validation des paramètres
+    if (size != 1 && size != 2 && size != 4) {
+        return; // Taille invalide
+    }
+
+    if (addr < 0 || addr > 0xFFFF) {
+        return; // Adresse invalide
+    }
+
+#ifndef TARGET_GNW
+    if (cheats == NULL) {
+        cheats = malloc(MAX_CHEAT_CODES * sizeof(CheatCode));
+        if (cheats == NULL) {
+            return;
+        }
+    }
+#endif
+
+    if (cheats_count >= MAX_CHEAT_CODES) {
+        return;
+    }
+
+    if ((cheats_lower_address == -1) || (addr < cheats_lower_address)) {
+        cheats_lower_address = addr;
+    }
+    if ((cheats_upper_address == -1) || ((addr+size-1) > cheats_upper_address)) {
+        cheats_upper_address = addr+size-1;
+    }
+
+    cheats[cheats_count].addr = (UInt32)addr;
+    cheats[cheats_count].data = (UInt32)data;
+    cheats[cheats_count].size = (UInt8)size;
+    cheats_count++;
+
+    if (cheats_count == 1) {
+        current_r800->readMemory = slotReadCheat;
+    }
+}
+
+void slotManagerResetCheat()
+{
+    cheats_count = 0;
+    cheats_lower_address = -1;
+    cheats_upper_address = -1;
+
+#ifndef TARGET_GNW
+    if (cheats != NULL) {
+        free(cheats);
+        cheats = NULL;
+    }
+#endif
+
+    current_r800->readMemory = slotRead;
+}
+
+void slotManagerSetR800(R800* r800)
+{
+    current_r800 = r800;
 }
 
 UInt8 slotPeek(void* ref, UInt16 address)
@@ -317,6 +406,20 @@ UInt8 slotPeek(void* ref, UInt16 address)
     }
 
     if (ramslot[address >> 13].readEnable) {
+        // Check for cheat codes
+        for (int i = 0; i < cheats_count; i++) {
+            if (cheats[i].size == 1) {
+                if (cheats[i].addr == address) {
+                    return cheats[i].data & 0xFF;
+                }
+            } else {
+                if (cheats[i].addr == address) {
+                    return cheats[i].data & 0xFF;
+                } else if (cheats[i].addr + 1 == address) {
+                    return (cheats[i].data & 0xFF00) >> 8;
+                }
+            }
+        }
         return ramslot[address >> 13].pageData[address & 0x1fff];
     }
 
@@ -332,46 +435,6 @@ UInt8 slotPeek(void* ref, UInt16 address)
 
     return 0xff;
 }
-
-#if CHEAT_CODES == 1
-typedef struct
-{
-  unsigned int addr;   // Address to apply cheat to
-  unsigned int data;   // Data to write to Addr
-  unsigned char size;  // Size of Data in bytes (1/2/4)
-} McfEntry;
-
-McfEntry cheats[MAX_CHEAT_CODES];
-static uint8_t mcf_count;
-static int32_t mcf_lower_address;
-static int32_t mcf_upper_address;
-
-void msxUpdateCheatInfo() {
-    uint8_t count = 0;
-    unsigned int addr,data, size;
-    mcf_count = 0;
-    mcf_lower_address = -1;
-    mcf_upper_address = -1;
-
-    for(int i=0; i<MAX_CHEAT_CODES && i<ACTIVE_FILE->cheat_count; i++) {
-        if (odroid_settings_ActiveGameGenieCodes_is_enabled(ACTIVE_FILE->path, i)) {
-            mcf_count++;
-            if(sscanf(ACTIVE_FILE->cheat_codes[i],"%u,%u,%u",&addr,&data,&size)==3) {
-                cheats[count].addr = addr;
-                cheats[count].data = data;
-                cheats[count].size = size;
-                if ((mcf_lower_address == -1) || (addr < mcf_lower_address)) {
-                    mcf_lower_address = addr;
-                }
-                if ((mcf_upper_address == -1) || ((addr+size-1) > mcf_upper_address)) {
-                    mcf_upper_address = addr+size-1;
-                }
-                count++;
-            }
-        }
-    }
-}
-#endif
 
 UInt8 slotRead(void* ref, UInt16 address)
 {
@@ -390,40 +453,56 @@ UInt8 slotRead(void* ref, UInt16 address)
         }
     }
 
+    if (ramslot[address >> 13].readEnable)
+        return ramslot[address >> 13].pageData[address & 0x1fff];
+
+    psl = pslot[address >> 14].state;
+    ssl = pslot[psl].subslotted ? pslot[address >> 14].substate : 0;
+
+    slotInfo = &slotTable[psl][ssl][address >> 13];
+
+    if (slotInfo->read != NULL) {
+        address -= slotInfo->startpage << 13;
+        return slotInfo->read(slotInfo->ref, address);
+    }
+
+    return 0xff;
+}
+
+
+UInt8 slotReadCheat(void* ref, UInt16 address)
+{
+    Slot* slotInfo;
+    int psl;
+    int ssl;
+
+    if (!initialized) {
+        return 0xff;
+    }
+
+    if (address == 0xffff) {
+        UInt8 sslReg = pslot[3].state;
+        if (pslot[sslReg].subslotted) {
+            return ~pslot[sslReg].sslReg;
+        }
+    }
+
     if (ramslot[address >> 13].readEnable) {
-#if CHEAT_CODES == 1
-        if ((address >= mcf_lower_address) && (address <= mcf_upper_address)) {
-            for (int i=0; i<mcf_count; i++) {
-                switch (cheats[i].size) {
-                    case 1:
-                        if (cheats[i].addr == address) {
-                            return cheats[i].data&0xFF;
-                        }
-                        break;
-                    case 2:
-                        if (cheats[i].addr == address) {
-                            return cheats[i].data&0xFF;
-                        } else if (cheats[i].addr+1 == address) {
-                            return (cheats[i].data&0xFF00) >> 8;
-                        }
-                        break;
-                    default:
-                    case 4:
-                        if (cheats[i].addr == address) {
-                            return cheats[i].data&0xFF;
-                        } else if (cheats[i].addr+1 == address) {
-                            return (cheats[i].data&0xFF00) >> 8;
-                        } else if (cheats[i].addr+2 == address) {
-                            return (cheats[i].data&0xFF0000) >> 16;
-                        } else if (cheats[i].addr+3 == address) {
-                            return (cheats[i].data&0xFF000000) >> 24;
-                        }
-                        break;
+        if ((address >= cheats_lower_address) && (address <= cheats_upper_address)) {
+            for (int i = 0; i < cheats_count; i++) {
+                if (cheats[i].size == 1) {
+                    if (cheats[i].addr == address) {
+                        return cheats[i].data & 0xFF;
+                    }
+                } else {
+                    if (cheats[i].addr == address) {
+                        return cheats[i].data & 0xFF;
+                    } else if (cheats[i].addr + 1 == address) {
+                        return (cheats[i].data & 0xFF00) >> 8;
+                    }
                 }
             }
         }
-#endif
-
         return ramslot[address >> 13].pageData[address & 0x1fff];
     }
 

@@ -29,20 +29,21 @@
 #define SLOT_MANAGER_H
 
 #include "MsxTypes.h"
+#include "R800.h"
 
 
 typedef UInt8 (*SlotRead)(void*, UInt16);
 typedef void  (*SlotWrite)(void*, UInt16, UInt8);
 typedef void  (*SlotEject)(void*);
 
-#if CHEAT_CODES == 1
-void msxUpdateCheatInfo();
-#endif
-
 void slotManagerCreate();
 void slotManagerDestroy();
 
 void slotManagerReset();
+
+void slotManagerAddCheat(int addr, int data, int size);
+void slotManagerResetCheat();
+void slotManagerSetR800(R800* r800);
 
 void slotLoadState();
 void slotSaveState();
