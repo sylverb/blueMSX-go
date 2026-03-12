@@ -1110,7 +1110,7 @@ void boardSaveState(const char* stateFile, int screenshot)
 #endif
 
     // Call board dependent save state
-    boardInfo.saveState(stateFile);
+    boardInfo.saveState();
 
 #ifndef TARGET_GNW
     if (screenshot) {
