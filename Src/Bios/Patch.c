@@ -37,7 +37,6 @@
 #include "main_msx.h"
 #endif
 
-#if !defined(TARGET_GNW) || SD_CARD == 1
  typedef struct {
     int sectors;
     UInt8 heads;
@@ -83,12 +82,10 @@ static const UInt8 bootSector[] = {
     0xD2, 0x00, 0x32, 0x26, 0x40, 0x94, 0x61, 0x19,
     0x20, 0xE6, 0x80, 0x6D, 0x8A, 0x00, 0x00, 0x00
 };
-#endif
 
 static int patchEnabled = 0;
 static int patchBoardType = 0;
 
-#if !defined(TARGET_GNW) || SD_CARD == 1
 void PatchDiskSetBusy(int driveId, int busy)
 {
     if (driveId < MAXDRIVES && patchEnabled) {
@@ -111,7 +108,6 @@ static const FormatInfo formatInfo[8] = {
     { 320,  1, 64,  8, 1, 1 },
     { 640,  2, 112, 8, 1, 2 }
 };
-#endif
 
 static void phydio(void* ref, CpuRegs* cpu);
 static void dskchg(void* ref, CpuRegs* cpu);
@@ -279,9 +275,8 @@ static void dskchg(void* ref, CpuRegs* cpu) {
         return;
     }
 
-#if !defined(TARGET_GNW) || SD_CARD == 1
     PatchDiskSetBusy(drive, 1);
-#endif
+
     if (diskRead(drive, buffer, 1) != DSKE_OK) {
         cpu->AF.W = 0x0a01;
         return;

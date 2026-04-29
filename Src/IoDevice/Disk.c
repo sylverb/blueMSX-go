@@ -36,6 +36,7 @@
 #include <stdio.h>
 #ifdef TARGET_GNW
 #include "gw_malloc.h"
+#include "odroid_overlay.h"
 #include "rom_manager.h"
 #ifndef GNW_DISABLE_COMPRESSION
 #include "lzma.h"
@@ -58,11 +59,7 @@ static int   drivesIsCdrom[MAXDRIVES];
 static FILE* drives[MAXDRIVES];
 #else
 static int   drivesEnabled[MAXDRIVES] = { 1 };
-#if SD_CARD == 0
-static char* drives[MAXDRIVES];
-#else
 static FILE* drives[MAXDRIVES];
-#endif
 #endif
 static int   RdOnly[MAXDRIVES];
 #if defined(TARGET_GNW) && !defined(GNW_DISABLE_COMPRESSION)
@@ -71,10 +68,8 @@ static int   cachedSide[MAXDRIVES];
 static int   cachedTrack[MAXDRIVES];
 static char  *ramTrackBuffer[MAXDRIVES];
 #endif
-#if !defined(TARGET_GNW) || SD_CARD == 1
 static char* ramImageBuffer[MAXDRIVES];
 static int   ramImageSize[MAXDRIVES];
-#endif
 static int   sectorsPerTrack[MAXDRIVES];
 static int   sectorSize[MAXDRIVES];
 static int   fileSize[MAXDRIVES];
@@ -209,7 +204,6 @@ DSKE diskRead(int driveId, UInt8* buffer, int sector)
     if (!diskPresent(driveId))
         return DSKE_NO_DATA;
 
-#if !defined(TARGET_GNW) || SD_CARD == 1
     if (ramImageBuffer[driveId] != NULL) {
         int offset = sector * sectorSize[driveId];
 
@@ -221,17 +215,12 @@ DSKE diskRead(int driveId, UInt8* buffer, int sector)
         return DSKE_OK;
     }
     else
-#endif
     {
         if ((drives[driveId] != NULL)) {
-#if !defined(TARGET_GNW) || SD_CARD == 1
             if (0 == fseek(drives[driveId], sector * sectorSize[driveId], SEEK_SET)) {
                 UInt8 success = fread(buffer, 1, sectorSize[driveId], drives[driveId]) == sectorSize[driveId];
                 return success? diskReadError(driveId, sector) : DSKE_NO_DATA;
             }
-#else
-            memcpy(buffer,drives[driveId] + (sector * sectorSize[driveId]),sectorSize[driveId]);
-#endif
         }
     }
     return DSKE_NO_DATA;
@@ -257,7 +246,6 @@ DSKE diskReadSector(int driveId, UInt8* buffer, int sector, int side, int track,
         *sectorSize = secSize;
     }
 
-#if !defined(TARGET_GNW) || SD_CARD == 1
     if (ramImageBuffer[driveId] != NULL) {
         int sectornum;
         if (ramImageSize[driveId] < offset + secSize) {
@@ -269,17 +257,17 @@ DSKE diskReadSector(int driveId, UInt8* buffer, int sector, int side, int track,
         return diskReadError(driveId, sectornum);
     }
     else
-#endif
     {
         if ((drives[driveId] != NULL)) {
-#if !defined(TARGET_GNW) || defined (LINUX_EMU) || SD_CARD == 1
+#ifdef GNW_DISABLE_COMPRESSION
             if (0 == fseek(drives[driveId], offset, SEEK_SET)) {
                 UInt8 success = fread(buffer, 1, secSize, drives[driveId]) == secSize;
                 int sectornum = sector - 1 + diskGetSectorsPerTrack(driveId) * (track * diskGetSides(driveId) + side);
                 return success? diskReadError(driveId, sectornum) : DSKE_NO_DATA;
             }
-#elif !defined(GNW_DISABLE_COMPRESSION)
-            if (compressed[driveId]) {
+#else
+// TODO : Implement compression with fread
+/*            if (compressed[driveId]) {
                 if (diskType[driveId] == IDEHD_DISK) {
                     UInt32 lzmaDataOffset;
                     // Get offset for current sector
@@ -318,6 +306,7 @@ DSKE diskReadSector(int driveId, UInt8* buffer, int sector, int side, int track,
                 int sectornum = sector - 1 + diskGetSectorsPerTrack(driveId) * (track * diskGetSides(driveId) + side);
                 return diskReadError(driveId, sectornum);
             }
+*/
 #endif
         }
     }
@@ -346,7 +335,7 @@ static void diskUpdateInfo(int driveId)
     int secSize;
     DSKE rv;
 
-#if defined(TARGET_GNW) && SD_CARD == 0
+#if defined(TARGET_GNW) && !defined(GNW_DISABLE_COMPRESSION)
     compressed[driveId]      = 0;
     cachedSide[driveId]      = -1;
     cachedTrack[driveId]     = -1;
@@ -743,21 +732,11 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
     }
 #endif
 
-#if defined(TARGET_GNW) && !defined(LINUX_EMU) && SD_CARD == 0
-    retro_emulator_file_t *rom_file;
-
-    rom_system_t *rom_system = (rom_system_t *)rom_manager_system(&rom_mgr, "MSX");
-    rom_file = (retro_emulator_file_t *)rom_manager_get_file((const rom_system_t *)rom_system,fileName);
-    if (rom_file == NULL) {
-        return 0;
-    }
-    drives[driveId] = (char *)rom_file->address;
-    RdOnly[driveId] = 1;
-    compressed[driveId] = 0;
-    fileSize[driveId] = rom_file->size;
-#else
     drives[driveId] = fopen(fileName, "r+b");
     RdOnly[driveId] = 0;
+#if !defined(GNW_DISABLE_COMPRESSION)
+    compressed[driveId] = 0;
+#endif
 
     if (drives[driveId] == NULL) {
         drives[driveId] = fopen(fileName, "rb");
@@ -790,7 +769,6 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
 
     fseek(drives[driveId],0,SEEK_END);
     fileSize[driveId] = ftell(drives[driveId]);
-#endif
 
     diskUpdateInfo(driveId);
 

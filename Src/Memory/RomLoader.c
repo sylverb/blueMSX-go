@@ -29,13 +29,9 @@
 #ifndef TARGET_GNW
 #include "ziphelper.h"
 #else
-#if SD_CARD == 1
+#include "odroid_overlay.h"
 #include "gw_malloc.h"
 #include "rg_storage.h"
-#include "odroid_overlay.h"
-#else
-#include "rom_manager.h"
-#endif
 #include "main_msx.h"
 #endif
 #include <stdlib.h>
@@ -96,7 +92,7 @@ error:
     if (fileName && fileName[0])
       fflush(stdout);
     return NULL;
-#elif SD_CARD == 1
+#else
     rg_stat_t stat = rg_storage_stat(fileName);
     if (stat.exists) {
         *size = (uint32_t)stat.size;
@@ -115,27 +111,5 @@ error:
     } else {
         return NULL;
     }
-#else
-    uint8_t *rom_data;
-    retro_emulator_file_t *rom_file;
-
-    rom_system_t *rom_system = (rom_system_t *)rom_manager_system(&rom_mgr, "MSX_BIOS");
-    rom_file = (retro_emulator_file_t *)rom_manager_get_file((const rom_system_t *)rom_system,fileName);
-    if (rom_file == NULL) {
-        rom_system = (rom_system_t *)rom_manager_system(&rom_mgr, "MSX");
-        rom_file = (retro_emulator_file_t *)rom_manager_get_file((const rom_system_t *)rom_system,fileName);
-    }
-    if (rom_file == NULL) {
-        printf("%s rom not found\n",fileName);
-        return NULL;
-    }
-
-    // Decompress rom if needed
-    *size = msx_getromdata(&rom_data,
-                           (uint8_t *)rom_file->address,
-                           rom_file->size,
-                           rom_file->ext);
-
-    return (UInt8*)rom_data;
 #endif
 }
