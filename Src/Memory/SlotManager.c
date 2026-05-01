@@ -76,7 +76,9 @@ typedef struct
 #define MAX_CHEAT_CODES 255
 static CheatCode* cheats = NULL;
 #else
+#if CHEAT_CODES == 1
 static CheatCode cheats[MAX_CHEAT_CODES];
+#endif
 #endif
 
 static uint16_t cheats_count = 0;
@@ -346,6 +348,7 @@ void slotManagerAddCheat(int addr, int data, int size)
     }
 #endif
 
+#if CHEAT_CODES == 1
     if (cheats_count >= MAX_CHEAT_CODES) {
         return;
     }
@@ -365,6 +368,7 @@ void slotManagerAddCheat(int addr, int data, int size)
     if (cheats_count == 1) {
         current_r800->readMemory = slotReadCheat;
     }
+#endif
 }
 
 void slotManagerResetCheat()
@@ -407,6 +411,7 @@ UInt8 slotPeek(void* ref, UInt16 address)
     }
 
     if (ramslot[address >> 13].readEnable) {
+#if CHEAT_CODES == 1
         // Check for cheat codes
         for (i = 0; i < cheats_count; i++) {
             if (cheats[i].size == 1) {
@@ -421,6 +426,7 @@ UInt8 slotPeek(void* ref, UInt16 address)
                 }
             }
         }
+#endif
         return ramslot[address >> 13].pageData[address & 0x1fff];
     }
 
@@ -490,6 +496,7 @@ UInt8 slotReadCheat(void* ref, UInt16 address)
     }
 
     if (ramslot[address >> 13].readEnable) {
+#if CHEAT_CODES == 1
         if ((address >= cheats_lower_address) && (address <= cheats_upper_address)) {
             for (i = 0; i < cheats_count; i++) {
                 if (cheats[i].size == 1) {
@@ -505,6 +512,7 @@ UInt8 slotReadCheat(void* ref, UInt16 address)
                 }
             }
         }
+#endif
         return ramslot[address >> 13].pageData[address & 0x1fff];
     }
 
