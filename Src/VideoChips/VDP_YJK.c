@@ -28,7 +28,7 @@
 #include "VDP_MSX.h"
 
 #ifdef TARGET_GNW
-#if SD_CARD == 1
+#if SD_CARD == 1 || SD_CARD == 0
 Pixel16 msxYjkColor[1][1][1];
 #else
 #ifdef LINUX_EMU
