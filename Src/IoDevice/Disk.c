@@ -67,6 +67,8 @@ static int   compressed[MAXDRIVES];
 static int   cachedSide[MAXDRIVES];
 static int   cachedTrack[MAXDRIVES];
 static char  *ramTrackBuffer[MAXDRIVES];
+static char  *lzmaCompBuffer[MAXDRIVES];
+static int   compressedContainerSize[MAXDRIVES];
 #endif
 static char* ramImageBuffer[MAXDRIVES];
 static int   ramImageSize[MAXDRIVES];
@@ -199,6 +201,62 @@ static DSKE diskReadError(int driveId, int sector)
     }
 }
 
+#if defined(TARGET_GNW) && !defined(GNW_DISABLE_COMPRESSION)
+static int diskReadU32At(FILE* file, long offset, UInt32* value)
+{
+    UInt8 raw[4];
+    if (0 != fseek(file, offset, SEEK_SET)) {
+        return 0;
+    }
+    if (fread(raw, 1, sizeof(raw), file) != sizeof(raw)) {
+        return 0;
+    }
+    *value = (UInt32)raw[0] |
+             ((UInt32)raw[1] << 8) |
+             ((UInt32)raw[2] << 16) |
+             ((UInt32)raw[3] << 24);
+    return 1;
+}
+
+static int diskReadCompressedBlock(FILE* file, int driveId, UInt32 index, UInt32* dataOffset, size_t* dataSize)
+{
+    UInt32 firstDataOffset;
+    UInt32 entryCount;
+    UInt32 blockOffset;
+    UInt32 blockEnd;
+    UInt32 containerSize = (UInt32)compressedContainerSize[driveId];
+
+    if (!diskReadU32At(file, 4, &firstDataOffset) || firstDataOffset < 8u || firstDataOffset > containerSize) {
+        return 0;
+    }
+
+    entryCount = (firstDataOffset - 4u) / 4u;
+    if (index >= entryCount) {
+        return 0;
+    }
+
+    if (!diskReadU32At(file, 4 + (long)index * 4, &blockOffset)) {
+        return 0;
+    }
+
+    if ((index + 1u) < entryCount) {
+        if (!diskReadU32At(file, 4 + (long)(index + 1u) * 4, &blockEnd)) {
+            return 0;
+        }
+    } else {
+        blockEnd = containerSize;
+    }
+
+    if (blockEnd <= blockOffset || blockEnd > containerSize) {
+        return 0;
+    }
+
+    *dataOffset = blockOffset;
+    *dataSize = (size_t)(blockEnd - blockOffset);
+    return 1;
+}
+#endif
+
 DSKE diskRead(int driveId, UInt8* buffer, int sector)
 {
     if (!diskPresent(driveId))
@@ -266,47 +324,76 @@ DSKE diskReadSector(int driveId, UInt8* buffer, int sector, int side, int track,
                 return success? diskReadError(driveId, sectornum) : DSKE_NO_DATA;
             }
 #else
-// TODO : Implement compression with fread
-/*            if (compressed[driveId]) {
+            if (compressed[driveId]) {
                 if (diskType[driveId] == IDEHD_DISK) {
                     UInt32 lzmaDataOffset;
-                    // Get offset for current sector
-                    offset = 4+sector*4;
-                    lzmaDataOffset = (*(drives[driveId]+offset))        +
-                                        (*(drives[driveId]+offset+1) <<8)  +
-                                        (*(drives[driveId]+offset+2) <<16) +
-                                        (*(drives[driveId]+offset+3) <<24);
+                    size_t lzmaDataSize;
+                    UInt8 *compBuffer;
+                    if (!diskReadCompressedBlock(drives[driveId], driveId, (UInt32)sector, &lzmaDataOffset, &lzmaDataSize)) {
+                        return DSKE_NO_DATA;
+                    }
+
+                    if (lzmaCompBuffer[driveId] == NULL) {
+                        lzmaCompBuffer[driveId] = itc_malloc(8*1024); // 9*512 = 4608 bytes should be enough
+                    }
+                    compBuffer = (UInt8 *)lzmaCompBuffer[driveId];
+                    if (compBuffer == NULL || lzmaDataSize > 8*1024) {
+                        return DSKE_NO_DATA;
+                    }
+
+                    if (0 != fseek(drives[driveId], lzmaDataOffset, SEEK_SET) ||
+                        fread(compBuffer, 1, lzmaDataSize, drives[driveId]) != lzmaDataSize) {
+                        return DSKE_NO_DATA;
+                    }
+
                     lzma_inflate(
                             (uint8_t *)buffer,
                             secSize, // Sector size
-                            (const uint8_t *)(drives[driveId] + lzmaDataOffset),
-                            secSize*3);
+                            (const uint8_t *)compBuffer,
+                            lzmaDataSize);
                     return DSKE_OK;
                 } else {
                     // if we access a new track, update cache
                     if ((cachedSide[driveId] != side) || (cachedTrack[driveId] != track)) {
                         UInt32 lzmaDataOffset;
-                        // Get offset for current track/sector
-                        offset = 4+sides[driveId]*track*4+side*4;
-                        lzmaDataOffset = (*(drives[driveId]+offset))        +
-                                        (*(drives[driveId]+offset+1) <<8)  +
-                                        (*(drives[driveId]+offset+2) <<16) +
-                                        (*(drives[driveId]+offset+3) <<24);
+                        UInt32 trackIndex;
+                        size_t lzmaDataSize;
+                        UInt8 *compBuffer;
+                        trackIndex = (UInt32)(sides[driveId] * track + side);
+                        if (!diskReadCompressedBlock(drives[driveId], driveId, trackIndex, &lzmaDataOffset, &lzmaDataSize)) {
+                            return DSKE_NO_DATA;
+                        }
+                        if (lzmaCompBuffer[driveId] == NULL) {
+                            lzmaCompBuffer[driveId] = itc_malloc(8*1024);
+                        }
+                        compBuffer = (UInt8 *)lzmaCompBuffer[driveId];
+                        if (compBuffer == NULL || lzmaDataSize > 8*1024) {
+                            return DSKE_NO_DATA;
+                        }
+
+                        if (0 != fseek(drives[driveId], lzmaDataOffset, SEEK_SET) ||
+                            fread(compBuffer, 1, lzmaDataSize, drives[driveId]) != lzmaDataSize) {
+                            return DSKE_NO_DATA;
+                        }
+
                         lzma_inflate(
                                 (uint8_t *)ramTrackBuffer[driveId],
                                 secSize*9, // Track size
-                                (const uint8_t *)(drives[driveId] + lzmaDataOffset),
-                                secSize*9*3);
+                                (const uint8_t *)compBuffer,
+                                lzmaDataSize);
+                        cachedSide[driveId] = side;
+                        cachedTrack[driveId] = track;
                     }
                     memcpy(buffer, &ramTrackBuffer[driveId][((sector-1)*secSize)], secSize);
                     return DSKE_OK;
                 }
             } else {
-                memcpy(buffer,drives[driveId] + offset,secSize);
-                int sectornum = sector - 1 + diskGetSectorsPerTrack(driveId) * (track * diskGetSides(driveId) + side);
-                return diskReadError(driveId, sectornum);
+                if (0 == fseek(drives[driveId], offset, SEEK_SET)) {
+                    UInt8 success = fread(buffer, 1, secSize, drives[driveId]) == secSize;
+                    int sectornum = sector - 1 + diskGetSectorsPerTrack(driveId) * (track * diskGetSides(driveId) + side);
+                    return success ? diskReadError(driveId, sectornum) : DSKE_NO_DATA;
+                }
             }
-*/
 #endif
         }
     }
@@ -339,6 +426,7 @@ static void diskUpdateInfo(int driveId)
     compressed[driveId]      = 0;
     cachedSide[driveId]      = -1;
     cachedTrack[driveId]     = -1;
+    compressedContainerSize[driveId] = fileSize[driveId];
 #endif
     sectorsPerTrack[driveId] = 9;
     sides[driveId]           = 2;
@@ -347,6 +435,38 @@ static void diskUpdateInfo(int driveId)
     sectorSize[driveId]      = 512;
     diskType[driveId]        = MSX_DISK;
     maxSector[driveId]       = MAXSECTOR;
+
+    // Detect compressed .cdk image from file header before any sector read.
+#if defined(TARGET_GNW) && !defined(GNW_DISABLE_COMPRESSION)
+    if (drives[driveId] != NULL) {
+        UInt8 hdr[8];
+        if (0 == fseek(drives[driveId], 0, SEEK_SET) &&
+            fread(hdr, 1, sizeof(hdr), drives[driveId]) == sizeof(hdr) &&
+            memcmp(hdr, "lzma", 4) == 0) {
+            UInt32 data_offset = (UInt32)hdr[4] |
+                                 ((UInt32)hdr[5] << 8) |
+                                 ((UInt32)hdr[6] << 16) |
+                                 ((UInt32)hdr[7] << 24);
+            UInt32 entries = (data_offset >= 4) ? (data_offset - 4) / 4 : 0;
+
+            compressed[driveId] = 1;
+            compressedContainerSize[driveId] = fileSize[driveId];
+
+            // Keep fileSize as logical uncompressed size so the standard disk
+            // detection path below behaves like for plain .dsk.
+            if (entries > 0) {
+                fileSize[driveId] = entries * 512;
+                if (fileSize[driveId] <= 2 * 1024 * 1024) {
+                    fileSize[driveId] *= 9; // track-based .cdk: entries are tracks
+                }
+            }
+
+            if (fileSize[driveId] <= 2 * 1024 * 1024 && ramTrackBuffer[driveId] == NULL) {
+                ramTrackBuffer[driveId] = itc_malloc(512 * 9); // one track buffer
+            }
+        }
+    }
+#endif
 
     if (fileSize[driveId] > 2 * 1024 * 1024) {
         // HD image
@@ -362,31 +482,6 @@ static void diskUpdateInfo(int driveId)
     if (rv != DSKE_OK) {
         return;
     }
-
-    // Compressed 360KB or 720KB MSX dsk image
-#if defined(TARGET_GNW) && !defined(GNW_DISABLE_COMPRESSION)
-    if (memcmp(buf,"lzma",4)==0) {
-        compressed[driveId] = 1;
-        int data_offset = buf[4]+(buf[5]<<8)+(buf[6]<<16)+(buf[7]<<24);
-        if (data_offset <= 0x144) { // 360kB
-            sides[driveId] = 1;
-            if (ramTrackBuffer[driveId] == NULL) {
-                ramTrackBuffer[driveId] = itc_malloc(512*9); // 512 bytes by sector and 9 sectors by track
-            }
-        } else if (data_offset <= 0x288) { // 720kB
-            sides[driveId] = 2;
-            if (ramTrackBuffer[driveId] == NULL) {
-                ramTrackBuffer[driveId] = itc_malloc(512*9); // 512 bytes by sector and 9 sectors by track
-            }
-        } else { // IDE HDD
-            // update fileSize with size of uncompressed file
-            fileSize[driveId] = (data_offset-4)*sectorSize[driveId]/sizeof(uint32_t);
-            diskHdUpdateInfo(driveId);
-            // We don't allocate buffer as data will be copied directly to dest buffer
-        }
-        return;
-    }
-#endif
 
     switch (fileSize[driveId]) {
         case 163840:

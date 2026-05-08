@@ -101,12 +101,31 @@ error:
             uint8_t *data_pointer = odroid_overlay_cache_file_in_flash(fileName, (uint32_t *)size, false);
             return data_pointer;
         } else {
+#ifndef GNW_DISABLE_COMPRESSION
+#if SD_CARD == 1
+#error "Roms compression is not supported on SD Card"
+#else
+            uint32_t src_size = *size;
+            uint8_t *src;
+            uint8_t *rom_data;
+            rg_frogfs_get_file_data(fileName, &src, &src_size);
+
+            // Decompress rom if needed
+            *size = msx_getromdata(&rom_data,
+                (uint8_t *)src,
+                src_size,
+                rg_extension(fileName));
+
+            return (UInt8*)rom_data;
+#endif
+#else
             // Store in ram if file is 128KB or smaller
             uint8_t *data_pointer = ram_malloc(*size);
             if (data_pointer) {
                 odroid_overlay_cache_file_in_ram(fileName, data_pointer);
             }
             return data_pointer;
+#endif
         }
     } else {
         return NULL;
