@@ -32,6 +32,8 @@
 #include "odroid_overlay.h"
 #include "gw_malloc.h"
 #include "rg_storage.h"
+#include "rg_frogfs.h"
+#include "rg_utils.h"
 #include "main_msx.h"
 #endif
 #include <stdlib.h>
@@ -106,7 +108,7 @@ error:
 #error "Roms compression is not supported on SD Card"
 #else
             uint32_t src_size = *size;
-            uint8_t *src;
+            const uint8_t *src;
             uint8_t *rom_data;
             rg_frogfs_get_file_data(fileName, &src, &src_size);
 
