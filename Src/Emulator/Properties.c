@@ -461,7 +461,7 @@ Properties* propCreate(int useDefault, int langType, PropKeyboardLanguage kbdLan
 #ifndef TARGET_GNW
     properties = malloc(sizeof(Properties));
 #else
-    properties = ahb_malloc(sizeof(Properties));
+    properties = globalProperties;
 #endif
 
     if (globalProperties == NULL)
