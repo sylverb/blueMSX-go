@@ -54,7 +54,8 @@ void vdpForceSync();
 
 #ifdef TARGET_GNW
 #if SD_CARD == 1 || SD_CARD == 0
-extern Pixel16 msxYjkColor[1][1][1];
+Pixel16 msxYjkColorAt(int y, int J, int K);
+void msxYjkColorInit(void);
 #elif defined(LINUX_EMU)
 extern Pixel16 msxYjkColor[32][64][64];
 #else

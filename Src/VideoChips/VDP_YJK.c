@@ -29,7 +29,7 @@
 
 #ifdef TARGET_GNW
 #if SD_CARD == 1 || SD_CARD == 0
-Pixel16 msxYjkColor[1][1][1];
+/* YJK colors: 32x32x32 AHB lookup table in VDP_YJK_gnw.c */
 #else
 #ifdef LINUX_EMU
 Pixel16 msxYjkColor[32][64][64]=
