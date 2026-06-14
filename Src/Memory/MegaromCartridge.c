@@ -315,20 +315,14 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
         // Fall through.. 
     default:
         // Load roms for Special Carts
-        if (strcmp(cart, "Sunrise IDE") == 0) {
 #ifndef TARGET_GNW
+        if (strcmp(cart, "Sunrise IDE") == 0) {
             buf = romLoad("Machines/Shared Roms/SUNRISEIDE.rom", cartZip, &size);
-#elif defined(LINUX_EMU)
-            buf = romLoad("../external/blueMSX-go/system/bluemsx/Machines/Shared Roms/SUNRISEIDE.rom", cartZip, &size);
-#else
-            buf = romLoad("/bios/msx/SUNRISEIDE.rom", cartZip, &size);
-#endif
             if (buf != 0) {
                 success &= romMapperSunriseIdeCreate(cartNo, romName, buf, size, slot, sslot, 0);
                 break;
             }
         }
-#ifndef TARGET_GNW
         // Load roms for Special Carts
         else if (strcmp(cart, "Beer IDE") == 0) {
             buf = romLoad("Machines/Shared Roms/beeride.rom", cartZip, &size);
