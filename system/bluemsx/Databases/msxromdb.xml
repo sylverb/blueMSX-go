@@ -38836,6 +38836,13 @@ This MSX games database is conceived for blueMSX, although it's 99% compatible w
 					<text>Disk 3 english</text>
 				</remark>
 			</disk>
+			<disk>
+				<type>snatcher</type>
+				<hash algo="sha1">baa956480a5d243ca75381008dffc6d3f75acd49</hash>
+				<remark>
+					<text>Snatcher HDD version</text>
+				</remark>
+			</disk>
 		</dump>
 	</software>
 	<software>
