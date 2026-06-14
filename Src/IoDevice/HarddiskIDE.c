@@ -125,15 +125,27 @@ static void executeCommand(HarddiskIde* hd, UInt8 cmd)
 	    hd->devHeadReg      = (UInt8)((sectorCount >> 24) & 0x0f);
         break;
     }
-#ifndef TARGET_GNW
+#if !defined(TARGET_GNW) || SD_CARD == 1 || defined(LINUX_EMU)
     case 0x30: { // Write Sector
+#ifndef TARGET_GNW
         int sectorNumber = getSectorNumber(hd);
+#else
+        hd->sectorNumber = getSectorNumber(hd);
+#endif
         int numSectors = getNumSectors(hd);
+#ifndef TARGET_GNW
         if ((sectorNumber + numSectors) > diskGetSectorsPerTrack(hd->diskId)) {
+#else
+        if ((hd->sectorNumber + numSectors) > diskGetSectorsPerTrack(hd->diskId)) {
+#endif
             setError(hd, 0x14);
             break;
         }
+#ifndef TARGET_GNW
         hd->transferSectorNumber = sectorNumber;
+#else
+        hd->transferSectorNumber = hd->sectorNumber;
+#endif
         hd->transferCount = 512/2 * numSectors;
         hd->sectorDataOffset = 0;
         hd->transferWrite = 1;
@@ -170,8 +182,9 @@ static void executeCommand(HarddiskIde* hd, UInt8 cmd)
             break;
         }
 #else
-        if (diskReadSector(hd->diskId, hd->sectorData, hd->sectorNumber, 0, 0, 0, NULL) != DSKE_OK) {
+        if (diskReadSector(hd->diskId, hd->sectorData, hd->sectorNumber + 1, 0, 0, 0, NULL) != DSKE_OK) {
             setError(hd, 0x44);
+            break;
         }
 #endif
 
@@ -218,7 +231,7 @@ UInt16 harddiskIdeRead(HarddiskIde* hd)
     else if (hd->sectorDataOffset == 512) {
         hd->sectorDataOffset = 0;
         hd->sectorNumber++;
-        diskReadSector(hd->diskId, hd->sectorData, hd->sectorNumber, 0, 0, 0, NULL);
+        diskReadSector(hd->diskId, hd->sectorData, hd->sectorNumber + 1, 0, 0, 0, NULL);
     }
 #endif
     return value;
@@ -242,7 +255,7 @@ UInt16 harddiskIdePeek(HarddiskIde* hd)
 
 void harddiskIdeWrite(HarddiskIde* hd, UInt16 value)
 {
-#ifndef TARGET_GNW
+#if !defined(TARGET_GNW) || SD_CARD == 1 || defined(LINUX_EMU)
     if (!hd->transferWrite || !diskPresent(hd->diskId)) {
         return;
     }
@@ -356,7 +369,7 @@ void harddiskIdeLoadState(HarddiskIde* ide)
 #ifdef TARGET_GNW
     ide->sectorNumber           = saveStateGet(state, "sectorNumber",           0);
     if (ide->sectorNumber >= 0) {
-        diskReadSector(ide->diskId, ide->sectorData, ide->sectorNumber, 0, 0, 0, NULL);
+        diskReadSector(ide->diskId, ide->sectorData, ide->sectorNumber + 1, 0, 0, 0, NULL);
     }
 #endif
 

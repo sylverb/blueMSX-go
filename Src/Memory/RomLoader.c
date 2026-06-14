@@ -28,7 +28,7 @@
 #include "RomLoader.h"
 #ifndef TARGET_GNW
 #include "ziphelper.h"
-#else
+#elif !defined(LINUX_EMU)
 #include "odroid_overlay.h"
 #include "gw_malloc.h"
 #include "rg_storage.h"

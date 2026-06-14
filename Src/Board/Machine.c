@@ -1071,7 +1071,13 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
     void* jisyoRom   = NULL;
     int jisyoRomSize = 0;
 #endif
+#if defined(TARGET_GNW)
+    /* Single HD at drive 1 = diskGetHdDriveId(0, 0). FIRST_INTERNAL_HD_INDEX (1)
+     * would map to drive 2, which does not exist when MAXDRIVES == 2. */
+    int hdId = 0;
+#else
     int hdId = FIRST_INTERNAL_HD_INDEX;
+#endif
     UInt8* buf;
     int size;
     int i;

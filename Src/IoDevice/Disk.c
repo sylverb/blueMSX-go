@@ -650,7 +650,7 @@ static void diskUpdateInfo(int driveId)
     }
 }
 
-#if !defined(TARGET_GNW) || SD_CARD == 1
+#if !defined(TARGET_GNW) || SD_CARD == 1 || defined(LINUX_EMU)
 UInt8 diskWrite(int driveId, UInt8 *buffer, int sector)
 {
     if (!diskPresent(driveId)) {
@@ -762,7 +762,7 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
 
     /* Close previous disk image */
     if(drives[driveId] != NULL) { 
-#if !defined(TARGET_GNW) || SD_CARD == 1
+#if !defined(TARGET_GNW) || SD_CARD == 1 || defined(LINUX_EMU)
         fclose(drives[driveId]);
 #endif
         drives[driveId] = NULL; 

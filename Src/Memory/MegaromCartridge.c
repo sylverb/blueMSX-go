@@ -318,6 +318,8 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
         if (strcmp(cart, "Sunrise IDE") == 0) {
 #ifndef TARGET_GNW
             buf = romLoad("Machines/Shared Roms/SUNRISEIDE.rom", cartZip, &size);
+#elif defined(LINUX_EMU)
+            buf = romLoad("../external/blueMSX-go/system/bluemsx/Machines/Shared Roms/SUNRISEIDE.rom", cartZip, &size);
 #else
             buf = romLoad("/bios/msx/SUNRISEIDE.rom", cartZip, &size);
 #endif
