@@ -81,6 +81,9 @@ static int   changed[MAXDRIVES];
 static int   diskType[MAXDRIVES];
 static int   maxSector[MAXDRIVES];
 static char* drivesErrors[MAXDRIVES];
+#if defined(TARGET_GNW) && SD_CARD == 1
+static char drivePaths[MAXDRIVES][PROP_MAXPATH];
+#endif
 static const char svi328Cpm80track[] = "CP/M-80";
 static void diskHdUpdateInfo(int driveId);
 static void diskReadHdIdentifySector(int driveId, UInt8* buffer);
@@ -784,6 +787,9 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
     }
 
     if(!fileName) {
+#if defined(TARGET_GNW) && SD_CARD == 1
+        drivePaths[driveId][0] = '\0';
+#endif
         return 1;
     }
 
@@ -842,6 +848,11 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
         return 0;
     }
 
+#if defined(TARGET_GNW) && SD_CARD == 1
+    strncpy(drivePaths[driveId], fileName, PROP_MAXPATH - 1);
+    drivePaths[driveId][PROP_MAXPATH - 1] = '\0';
+#endif
+
     fname = makeErrorsFileName(fileName);
     if( fname != NULL ) {
         FILE *f = fopen(fname, "rb");
@@ -869,6 +880,28 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
 
     return 1;
 }
+
+#if defined(TARGET_GNW) && SD_CARD == 1
+UInt8 diskReopenDrive(int driveId)
+{
+    if (driveId >= MAXDRIVES || drivePaths[driveId][0] == '\0')
+        return 0;
+
+    if (drives[driveId] != NULL) {
+        fclose(drives[driveId]);
+        drives[driveId] = NULL;
+    }
+
+    drives[driveId] = fopen(drivePaths[driveId], "r+b");
+    RdOnly[driveId] = 0;
+    if (drives[driveId] == NULL) {
+        drives[driveId] = fopen(drivePaths[driveId], "rb");
+        RdOnly[driveId] = 1;
+    }
+
+    return drives[driveId] != NULL;
+}
+#endif
 
 /* Harddisk IDE HD */
 

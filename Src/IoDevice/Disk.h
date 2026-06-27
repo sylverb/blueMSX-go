@@ -44,7 +44,7 @@
 #else
 #define MAX_FDC_COUNT            1
 
-#define MAX_HD_COUNT             1
+#define MAX_HD_COUNT             2
 #define FIRST_INTERNAL_HD_INDEX  1
 #define MAX_DRIVES_PER_HD        1
 
@@ -59,6 +59,9 @@ typedef enum {
 } DSKE;
 
 UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile);
+#if defined(TARGET_GNW) && SD_CARD == 1
+UInt8 diskReopenDrive(int driveId);
+#endif
 void diskSetInfo(int driveId, char* fileName, const char* fileInZipFile);
 void  diskEnable(int driveId, int enable);
 UInt8 diskEnabled(int driveId);
