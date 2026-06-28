@@ -110,6 +110,10 @@ void sunriseIdeWrite(SunriseIde* ide, UInt16 value)
 {
 #ifndef TARGET_GNW
     harddiskIdeWrite(ide->hdide[ide->currentDevice], value);
+#elif SD_CARD == 1 && !defined(LINUX_EMU)
+    if (ide->currentDevice == 0) {
+        harddiskIdeWrite(ide->hdide[0], value);
+    }
 #endif
 }
 

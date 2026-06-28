@@ -139,7 +139,7 @@ static void executeCommand(HarddiskIde* hd, UInt8 cmd)
 	    hd->devHeadReg      = (UInt8)((sectorCount >> 24) & 0x0f);
         break;
     }
-#if !defined(TARGET_GNW) || SD_CARD == 1 || defined(LINUX_EMU)
+#if !defined(TARGET_GNW) || (SD_CARD == 1 && !defined(LINUX_EMU))
     case 0x30: { // Write Sector
 #ifndef TARGET_GNW
         int sectorNumber = getSectorNumber(hd);
@@ -278,7 +278,7 @@ UInt16 harddiskIdePeek(HarddiskIde* hd)
 
 void harddiskIdeWrite(HarddiskIde* hd, UInt16 value)
 {
-#if !defined(TARGET_GNW) || SD_CARD == 1 || defined(LINUX_EMU)
+#if !defined(TARGET_GNW) || (SD_CARD == 1 && !defined(LINUX_EMU))
     if (!hd->transferWrite || !diskPresent(hd->diskId)) {
         return;
     }
