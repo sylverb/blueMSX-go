@@ -38255,6 +38255,15 @@ This MSX games database is conceived for blueMSX, although it's 99% compatible w
 				</remark>
 			</disk>
 		</dump>
+		<dump>
+			<original value="false" />
+			<disk>
+				<hash algo="sha1">20ab0382e4c8452fd0feb4a6b4c0e7a99e9c1b24</hash>
+				<remark>
+					<text>HDD version (sha1 720ko)</text>
+				</remark>
+			</disk>
+		</dump>
 	</software>
 	<software>
 		<title xml:lang="en">Ys III: Wanderers from Ys</title>
@@ -38843,7 +38852,15 @@ This MSX games database is conceived for blueMSX, although it's 99% compatible w
 					<text>Snatcher HDD version</text>
 				</remark>
 			</disk>
+			<disk>
+				<type>snatcher</type>
+				<hash algo="sha1">1d2e385698477af2435c8edff2bee79added042e</hash>
+				<remark>
+					<text>Snatcher HDD version (sha1 720ko)</text>
+				</remark>
+			</disk>
 		</dump>
+		
 	</software>
 	<software>
 		<title xml:lang="en">Undeadline</title>
