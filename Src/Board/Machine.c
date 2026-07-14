@@ -65,6 +65,8 @@
 #include "romMapperMegaRAM.h"
 #include "romMapperASCII8.h"
 #include "romMapperASCII16.h"
+#include "romMapperASCII16X.h"
+#include "romMapperNEO16.h"
 #include "romMapperDisk.h"
 #include "romMapperTC8566AF.h"
 #include "romMapperMicrosol.h"
@@ -1625,6 +1627,14 @@ int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UI
 
         case ROM_ASCII16:
             success &= romMapperASCII16Create(romName, buf, size, slot, subslot, startPage);
+            break;
+
+        case ROM_ASCII16X:
+            success &= romMapperASCII16XCreate(romName, buf, size, slot, subslot, 0);
+            break;
+
+        case ROM_NEO16:
+            success &= romMapperNEO16Create(romName, buf, size, slot, subslot, 0);
             break;
 
         case ROM_PANASONIC8:
