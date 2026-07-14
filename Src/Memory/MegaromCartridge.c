@@ -40,6 +40,8 @@
 #include "romMapperKonami4.h"
 #include "romMapperASCII8.h"
 #include "romMapperASCII16.h"
+#include "romMapperASCII16X.h"
+#include "romMapperNEO16.h"
 #include "romMapperGameMaster2.h"
 #include "romMapperASCII8sram.h"
 #include "romMapperASCII16sram.h"
@@ -595,6 +597,14 @@ int cartridgeInsert(int cartNo, RomType romType, const char* cart, const char* c
 #endif
         case ROM_ASCII16:
             success &= romMapperASCII16Create(romName, buf, size, slot, sslot, 2);
+            break;
+
+        case ROM_ASCII16X:
+            success &= romMapperASCII16XCreate(romName, buf, size, slot, sslot, 0);
+            break;
+
+        case ROM_NEO16:
+            success &= romMapperNEO16Create(romName, buf, size, slot, sslot, 0);
             break;
 
 #ifndef TARGET_GNW

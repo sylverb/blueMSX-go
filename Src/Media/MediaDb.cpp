@@ -230,6 +230,8 @@ RomType mediaDbStringToType(const char* romName)
     if (iequals(name, "kbdmaster"))    return ROM_KONAMKBDMAS;
     if (iequals(name, "majutsushi"))   return ROM_MAJUTSUSHI;
     if (iequals(name, "ascii16"))      return ROM_ASCII16;
+    if (iequals(name, "ascii16x"))     return ROM_ASCII16X;
+    if (iequals(name, "neo16"))        return ROM_NEO16;
     if (iequals(name, "gamemaster2"))  return ROM_GAMEMASTER2;
     if (iequals(name, "ascii8sram"))   return ROM_ASCII8SRAM;
     if (iequals(name, "koei"))         return ROM_KOEI;
@@ -594,6 +596,8 @@ extern "C" const char* romTypeToString(RomType romType)
     case ROM_KONAMI4:     return langRomTypeKonami();
     case ROM_ASCII8:      return langRomTypeAscii8();
     case ROM_ASCII16:     return langRomTypeAscii16();
+    case ROM_ASCII16X:    return "ASCII 16-X";
+    case ROM_NEO16:       return "NEO-16";
     case ROM_GAMEMASTER2: return langRomTypeGameMaster2();
     case ROM_ASCII8SRAM:  return langRomTypeAscii8Sram();
     case ROM_ASCII16SRAM: return langRomTypeAscii16Sram();
@@ -772,6 +776,8 @@ extern "C" const char* romTypeToShortString(RomType romType)
     case ROM_KONAMI4:     return "KONAMI";
     case ROM_ASCII8:      return "ASCII8";
     case ROM_ASCII16:     return "ASCII16";
+    case ROM_ASCII16X:    return "ASCII16X";
+    case ROM_NEO16:       return "NEO16";
     case ROM_GAMEMASTER2: return "GMASTER2";
     case ROM_ASCII8SRAM:  return "ASCII8SRAM";
     case ROM_ASCII16SRAM: return "ASCII16SRAM";
@@ -997,6 +1003,8 @@ int romTypeIsMegaRom(RomType romType) {
     case ROM_KONAMI4:     return 1;
     case ROM_ASCII8:      return 1;
     case ROM_ASCII16:     return 1;
+    case ROM_ASCII16X:    return 1;
+    case ROM_NEO16:       return 1;
     case ROM_GAMEMASTER2: return 1;
     case ROM_ASCII8SRAM:  return 1;
     case ROM_TC8566AF:    return 1;

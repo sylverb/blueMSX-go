@@ -26,6 +26,8 @@
 ******************************************************************************
 */
 #include "romMapper.h"
+#include "romMapperASCII16X.h"
+#include "romMapperNEO16.h"
 #include "msxTypes.h"
 #include "TokenExtract.h"
 #include <stdio.h>
@@ -134,6 +136,8 @@ RomType romMapperTypeFromString(const char* name)
     if (0 == strcmpnocase(name, "konamisynth"))  return ROM_KONAMISYNTH;
     if (0 == strcmpnocase(name, "majutsushi"))   return ROM_MAJUTSUSHI;
     if (0 == strcmpnocase(name, "ascii16"))      return ROM_ASCII16;
+    if (0 == strcmpnocase(name, "ascii16x"))    return ROM_ASCII16X;
+    if (0 == strcmpnocase(name, "neo16"))       return ROM_NEO16;
     if (0 == strcmpnocase(name, "gamemaster2"))  return ROM_GAMEMASTER2;
     if (0 == strcmpnocase(name, "ascii8sram"))   return ROM_ASCII8SRAM;
     if (0 == strcmpnocase(name, "koei"))         return ROM_KOEI;
@@ -268,6 +272,14 @@ RomType romMapperGuessRom(const void *buffer, int size, int guess, char* extende
 
     if (size < 128) {
         return romdbDefaultType;
+    }
+
+    if (romMapperIsASCII16XRom(romData, size)) {
+        return ROM_ASCII16X;
+    }
+
+    if (romMapperIsNEO16Rom(romData, size)) {
+        return ROM_NEO16;
     }
 
     romType = romMapperRomFromFile(romData, size, extendedName);
