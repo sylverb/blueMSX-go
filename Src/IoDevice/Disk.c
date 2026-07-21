@@ -882,15 +882,26 @@ UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile)
 }
 
 #if defined(TARGET_GNW) && SD_CARD == 1
+void diskCloseDrive(int driveId)
+{
+    if (driveId >= MAXDRIVES)
+        return;
+    if (drives[driveId] != NULL) {
+        fclose(drives[driveId]);
+        drives[driveId] = NULL;
+    }
+    /* drivePaths[] intentionally kept for diskReopenDrive after remount. */
+}
+
 UInt8 diskReopenDrive(int driveId)
 {
     if (driveId >= MAXDRIVES || drivePaths[driveId][0] == '\0')
         return 0;
 
-    if (drives[driveId] != NULL) {
-        fclose(drives[driveId]);
-        drives[driveId] = NULL;
-    }
+    /* Never fclose here: after sdcard remount the old FIL is dangling and
+     * fclose would corrupt FatFs.
+     * Caller must diskCloseDrive() before unmount. */
+    drives[driveId] = NULL;
 
     drives[driveId] = fopen(drivePaths[driveId], "r+b");
     RdOnly[driveId] = 0;

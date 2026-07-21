@@ -61,6 +61,8 @@ typedef enum {
 UInt8 diskChange(int driveId, const char* fileName, const char* fileInZipFile);
 #if defined(TARGET_GNW) && SD_CARD == 1
 UInt8 diskReopenDrive(int driveId);
+/* fclose while FatFs is still mounted; keeps drivePaths for diskReopenDrive. */
+void diskCloseDrive(int driveId);
 #endif
 void diskSetInfo(int driveId, char* fileName, const char* fileInZipFile);
 void  diskEnable(int driveId, int enable);
