@@ -63,9 +63,17 @@ void ym2413LoadState(YM_2413* ref)
 {
     YM_2413* ym2413 = (YM_2413*)ref;
     SaveState* state = saveStateOpenForRead("msxmusic");
+    OPLL* opll = ym2413->ym2413;
+    /* sizeof(OPLL) includes absolute pointers (slot->patch, wave_table, conv).
+     * refresh the values for these pointers.
+     */
+    OPLL_RateConv* conv = opll->conv;
 
-    saveStateGetBuffer(state, "regs", ym2413->ym2413, sizeof(OPLL));
-    ym2413->address = saveStateGet(state, "address",0);
+    saveStateGetBuffer(state, "regs", opll, sizeof(OPLL));
+    ym2413->address = saveStateGet(state, "address", 0);
+
+    opll->conv = conv;
+    OPLL_forceRefresh(opll);
 
     saveStateClose(state);
 }
