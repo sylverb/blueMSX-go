@@ -513,7 +513,11 @@ static void scheduleHint(VDP* vdp)
         (vdp->firstLine + ((vdp->vdpRegs[19] - vdp->vdpRegs[23]) & 0xff)) * HPERIOD + 
         vdp->leftBorder + vdp->displayArea;
     vdp->timeHintEn = 1;
-    boardTimerAdd(vdp->timerHint, vdp->timeHint + 20);
+    /* Fire at right-border (HR rises). Was +20 into HBLANK; with the old ±30
+     * HR window that still read HR=0, some games could skip the IE1 tick.
+     * Asym HR (displayArea-10) + border-timed HINT keeps SR#2.HR=1 when the
+     * Z80 reads status in the IE1 hook. */
+    boardTimerAdd(vdp->timerHint, vdp->timeHint);
 }
 
 static void scheduleVint(VDP* vdp)
@@ -1111,8 +1115,20 @@ static UInt8 peekStatus(VDP* vdp, UInt16 ioPort)
             if (vdp->drawArea || (frameTime - ((vdp->firstLine - 1) * HPERIOD + vdp->leftBorder - 10) < 4 * HPERIOD)) {
                 vdpStatus &= ~0x40;
             }
-            if (frameTime % HPERIOD - vdp->leftBorder - 30 < (UInt32)vdp->displayArea + 30) {
+            /* HR (SR#2 bit5): keep blueMSX's left-side margin (-30) but do
+             * not extend +30 past the right border. HINT fires at
+             * leftBorder+displayArea; the old +30 window still reported
+             * HR=0 into early HBLANK, so some games's IE1 hook
+             * skipped its frame tick and froze waiting on (D643). */
+            if (frameTime % HPERIOD - vdp->leftBorder - 30 < (UInt32)vdp->displayArea - 10) {
                 vdpStatus &= ~0x20;
+            }
+            /* If IE1 is pending, the Z80 often reaches this read only after
+             * wrapping into the next line's active display (HR would be 0).
+             * Keep HR=1 while IE1 is outstanding — matches the game's
+             * expectation that HINT ⇒ HBLANK. */
+            if (boardGetInt(INT_IE1)) {
+                vdpStatus |= 0x20;
             }
         }
         break;
@@ -1180,8 +1196,20 @@ static UInt8 readStatus(void *vdpv, UInt16 ioPort)
             if (vdp->drawArea || (frameTime - ((vdp->firstLine - 1) * HPERIOD + vdp->leftBorder - 10) < 4 * HPERIOD)) {
                 vdpStatus &= ~0x40;
             }
-            if (frameTime % HPERIOD - vdp->leftBorder - 30 < (UInt32)vdp->displayArea + 30) {
+            /* HR (SR#2 bit5): keep blueMSX's left-side margin (-30) but do
+             * not extend +30 past the right border. HINT fires at
+             * leftBorder+displayArea; the old +30 window still reported
+             * HR=0 into early HBLANK, so some games's IE1 hook
+             * skipped its frame tick and froze waiting on (D643). */
+            if (frameTime % HPERIOD - vdp->leftBorder - 30 < (UInt32)vdp->displayArea - 10) {
                 vdpStatus &= ~0x20;
+            }
+            /* If IE1 is pending, the Z80 often reaches this read only after
+             * wrapping into the next line's active display (HR would be 0).
+             * Keep HR=1 while IE1 is outstanding — matches the game's
+             * expectation that HINT ⇒ HBLANK. */
+            if (boardGetInt(INT_IE1)) {
+                vdpStatus |= 0x20;
             }
         }
         break;
@@ -1696,7 +1724,7 @@ static void loadState(VDP* vdp)
         boardTimerAdd(vdp->timerScrModeChange, vdp->timeScrMode);
     }
     if (vdp->timeHintEn) {
-        boardTimerAdd(vdp->timerHint, vdp->timeHint + 20);
+        boardTimerAdd(vdp->timerHint, vdp->timeHint);
     }
     if (vdp->timeVintEn) {
         boardTimerAdd(vdp->timerVint, vdp->timeVint);
@@ -1935,7 +1963,7 @@ static void loadState(void* vdpv)
         boardTimerAdd(vdp->timerScrModeChange, vdp->timeScrMode);
     }
     if (vdp->timeHintEn) {
-        boardTimerAdd(vdp->timerHint, vdp->timeHint + 20);
+        boardTimerAdd(vdp->timerHint, vdp->timeHint);
     }
     if (vdp->timeVintEn) {
         boardTimerAdd(vdp->timerVint, vdp->timeVint);
