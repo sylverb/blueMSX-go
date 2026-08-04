@@ -2326,6 +2326,10 @@ UInt8 vdpGetScreenMode() {
     return theVdp->screenMode;
 }
 
+int vdpCommandPortLatchPending(void) {
+    return theVdp != NULL && theVdp->vdpKey != 0;
+}
+
 void vdpSetSyncMode(VdpSyncMode sync) {
     if (sync == VDP_SYNC_AUTO) {
         theVdp->palMask  = ~0;

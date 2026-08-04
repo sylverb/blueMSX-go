@@ -48,6 +48,8 @@ int  vdpGetDisplayEnable();
 #ifdef TARGET_GNW
 UInt8 vdpGetScreenMode();
 void vdpSetSyncMode(VdpSyncMode sync);
+/* Non-zero while the VDP 0x99 port awaits the second byte of a reg/addr pair. */
+int vdpCommandPortLatchPending(void);
 #endif
 
 void vdpForceSync();

@@ -36,6 +36,13 @@
 #ifdef TARGET_GNW
 #include "gw_malloc.h"
 #endif
+#include "VDP_MSX.h"
+/* Defer maskable IRQ while the VDP command port has latched the first byte of
+ * a register/address pair. An ISR that reads VDP status clears vdpKey and would
+ * otherwise turn the following OUT (reg|80h) into a data latch — desyncing
+ * RG8SAV (FFE7) from the real R8. */
+ #define R800_IRQ_PENDING(r) \
+     ((r)->intState == INT_LOW && (r)->regs.iff1 && !vdpCommandPortLatchPending())
 
 typedef void (*Opcode)(R800*);
 typedef void (*OpcodeNn)(R800*, UInt16);
@@ -6097,7 +6104,7 @@ void r800Execute(R800* r800) {
 			continue;
 		}
 
-        if (! ((r800->intState==INT_LOW && r800->regs.iff1)||r800->nmiEdge) ) {
+        if (! (R800_IRQ_PENDING(r800) || r800->nmiEdge) ) {
 			continue;
         }
 
@@ -6187,7 +6194,7 @@ void r800ExecuteUntil(R800* r800, UInt32 endTime) {
             r800->regs.iff1 >>= iff1;
         }
 
-        if (! ((r800->intState==INT_LOW && r800->regs.iff1)||r800->nmiEdge) ) {
+        if (! (R800_IRQ_PENDING(r800) || r800->nmiEdge) ) {
             continue;
         }
 
@@ -6275,7 +6282,7 @@ void r800ExecuteInstruction(R800* r800) {
         r800->regs.iff1 >>= iff1;
     }
 
-        if (! ((r800->intState==INT_LOW && r800->regs.iff1)||r800->nmiEdge) ) {
+        if (! (R800_IRQ_PENDING(r800) || r800->nmiEdge) ) {
         return;
     }
 
