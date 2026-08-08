@@ -135,7 +135,7 @@ int romMapperStandardCreate(const char* filename, UInt8* romData,
 #ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperStandard));
 #else
-    rm = itc_malloc(sizeof(RomMapperStandard));
+    rm = dtcm_arena_malloc(sizeof(RomMapperStandard));
 #endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_STANDARD, &callbacks, rm);

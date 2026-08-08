@@ -166,7 +166,7 @@ int romMapperNEO16Create(const char* filename, UInt8* romData,
 #ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperNEO16));
 #else
-    rm = itc_malloc(sizeof(RomMapperNEO16));
+    rm = dtcm_arena_malloc(sizeof(RomMapperNEO16));
 #endif
 
     if (rm == NULL) {

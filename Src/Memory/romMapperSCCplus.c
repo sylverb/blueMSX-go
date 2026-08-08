@@ -305,7 +305,7 @@ int romMapperSCCplusCreate(const char* filename, UInt8* romData,
 #ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperSCCplus));
 #else
-    rm = itc_malloc(sizeof(RomMapperSCCplus));
+    rm = dtcm_arena_malloc(sizeof(RomMapperSCCplus));
 #endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_SCCEXTENDED, &callbacks, rm);

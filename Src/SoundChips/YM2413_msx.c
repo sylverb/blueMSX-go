@@ -122,7 +122,7 @@ YM_2413* ym2413Create(Mixer* mixer)
 #ifndef TARGET_GNW
     ym2413 = (YM_2413*)calloc(1, sizeof(YM_2413));
 #else
-    ym2413 = (YM_2413*)itc_calloc(1, sizeof(YM_2413));
+    ym2413 = (YM_2413*)dtcm_arena_calloc(1, sizeof(YM_2413));
 #endif
 
     ym2413->ym2413 = OPLL_new(3579545, mixerGetSampleRate(mixer));

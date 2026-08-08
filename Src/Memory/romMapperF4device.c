@@ -122,7 +122,7 @@ int romMapperF4deviceCreate(int inverted)
 
     RomMapperF4device* rm = malloc(sizeof(RomMapperF4device));
 #else
-    RomMapperF4device* rm = itc_malloc(sizeof(RomMapperF4device));
+    RomMapperF4device* rm = dtcm_arena_malloc(sizeof(RomMapperF4device));
 #endif
 
     rm->inverted   = inverted;

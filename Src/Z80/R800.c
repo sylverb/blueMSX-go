@@ -5848,7 +5848,7 @@ R800* r800Create(UInt32 cpuFlags,
 #ifndef TARGET_GNW
     R800* r800 = calloc(1, sizeof(R800));
 #else
-    R800* r800 = itc_calloc(1, sizeof(R800));
+    R800* r800 = dtcm_arena_calloc(1, sizeof(R800));
 #endif
     
     r800->cpuFlags    = cpuFlags;

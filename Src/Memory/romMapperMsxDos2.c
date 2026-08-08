@@ -136,7 +136,7 @@ int romMapperMsxDos2Create(const char* filename, UInt8* romData,
 #ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperMsxDos2));
 #else
-    rm = itc_malloc(sizeof(RomMapperMsxDos2));
+    rm = dtcm_arena_malloc(sizeof(RomMapperMsxDos2));
 #endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_MSXDOS2, &callbacks, rm);

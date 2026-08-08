@@ -137,7 +137,7 @@ int romMapperASCII16Create(const char* filename, UInt8* romData,
 #ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperASCII16));
 #else
-    rm = itc_malloc(sizeof(RomMapperASCII16));
+    rm = dtcm_arena_malloc(sizeof(RomMapperASCII16));
 #endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_ASCII16, &callbacks, rm);

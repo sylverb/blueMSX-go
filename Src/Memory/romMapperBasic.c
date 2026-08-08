@@ -72,7 +72,7 @@ int romMapperBasicCreate(const char* filename, UInt8* romData,
 #ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperBasic));
 #else
-    rm = itc_malloc(sizeof(RomMapperBasic));
+    rm = dtcm_arena_malloc(sizeof(RomMapperBasic));
 #endif
 
 #ifndef MSX_NO_MALLOC

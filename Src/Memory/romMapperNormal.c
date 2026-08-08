@@ -75,7 +75,7 @@ int romMapperNormalCreate(const char* filename, UInt8* romData,
 #ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperNormal));
 #else
-    rm = itc_malloc(sizeof(RomMapperNormal));
+    rm = dtcm_arena_malloc(sizeof(RomMapperNormal));
 #endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_NORMAL, &callbacks, rm);

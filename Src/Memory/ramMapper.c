@@ -202,7 +202,7 @@ int ramMapperCreate(int size, int slot, int sslot, int startPage, UInt8** ramPtr
     rm = malloc(sizeof(RamMapper));
     rm->ramData  = malloc(size);
 #else
-    rm = itc_malloc(sizeof(RamMapper));
+    rm = dtcm_arena_malloc(sizeof(RamMapper));
     rm->ramData = (UInt8 *)ram_malloc(size);
 #endif
 

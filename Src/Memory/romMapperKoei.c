@@ -197,7 +197,7 @@ int romMapperKoeiCreate(const char* filename, UInt8* romData,
 #ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperKoei));
 #else
-    rm = itc_malloc(sizeof(RomMapperKoei));
+    rm = dtcm_arena_malloc(sizeof(RomMapperKoei));
 #endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_KOEI, &callbacks, rm);

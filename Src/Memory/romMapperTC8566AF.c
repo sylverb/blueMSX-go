@@ -249,7 +249,7 @@ int romMapperTC8566AFCreate(const char* filename, UInt8* romData,
 #ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperTC8566AF));
 #else
-    rm = itc_malloc(sizeof(RomMapperTC8566AF));
+    rm = dtcm_arena_malloc(sizeof(RomMapperTC8566AF));
 #endif
 
     rm->deviceHandle = deviceManagerRegister(romType, &callbacks, rm);

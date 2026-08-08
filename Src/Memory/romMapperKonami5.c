@@ -204,7 +204,7 @@ int romMapperKonami5Create(const char* filename, UInt8* romData,
 #ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperKonami5));
 #else
-    rm = itc_malloc(sizeof(RomMapperKonami5));
+    rm = dtcm_arena_malloc(sizeof(RomMapperKonami5));
 #endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_KONAMI5, &callbacks, rm);

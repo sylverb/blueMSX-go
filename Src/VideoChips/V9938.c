@@ -947,7 +947,7 @@ VdpCmdState* vdpCmdCreate(int vramSize, UInt8* vramPtr, UInt32 systemTime)
 #ifndef TARGET_GNW
     VdpCmdState* vdpCmd = calloc(1, sizeof(VdpCmdState));
 #else
-    VdpCmdState* vdpCmd = itc_calloc(1, sizeof(VdpCmdState));
+    VdpCmdState* vdpCmd = dtcm_arena_calloc(1, sizeof(VdpCmdState));
 #endif
     vdpCmd->systemTime = systemTime;
     vdpCmd->vramBase = vramPtr;

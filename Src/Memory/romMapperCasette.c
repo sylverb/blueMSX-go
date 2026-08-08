@@ -78,7 +78,7 @@ int romMapperCasetteCreate(const char* filename, UInt8* romData,
 #ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperCasette));
 #else
-    rm = itc_malloc(sizeof(RomMapperCasette));
+    rm = dtcm_arena_malloc(sizeof(RomMapperCasette));
 #endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_CASPATCH, &callbacks, rm);

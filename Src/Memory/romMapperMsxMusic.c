@@ -144,7 +144,7 @@ int romMapperMsxMusicCreate(const char* filename, UInt8* romData,
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, NULL, NULL };
     MsxMusic* rm = malloc(sizeof(MsxMusic));
 #else
-    MsxMusic* rm = itc_malloc(sizeof(MsxMusic));
+    MsxMusic* rm = dtcm_arena_malloc(sizeof(MsxMusic));
 #endif
     int pages = size / 0x2000 + ((size & 0x1fff) ? 1 : 0);
     int i;

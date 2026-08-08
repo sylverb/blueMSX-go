@@ -210,7 +210,7 @@ int romMapperSunriseIdeCreate(int hdId, const char* filename, UInt8* romData,
 #ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperSunriseIde));
 #else
-    rm = itc_malloc(sizeof(RomMapperSunriseIde));
+    rm = dtcm_arena_malloc(sizeof(RomMapperSunriseIde));
 #endif
     rm->deviceHandle = deviceManagerRegister(ROM_SUNRISEIDE, &callbacks, rm);
 #ifndef TARGET_GNW

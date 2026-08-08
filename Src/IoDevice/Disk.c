@@ -337,7 +337,7 @@ DSKE diskReadSector(int driveId, UInt8* buffer, int sector, int side, int track,
                     }
 
                     if (lzmaCompBuffer[driveId] == NULL) {
-                        lzmaCompBuffer[driveId] = itc_malloc(8*1024); // 9*512 = 4608 bytes should be enough
+                        lzmaCompBuffer[driveId] = dtcm_arena_malloc(8*1024); // 9*512 = 4608 bytes should be enough
                     }
                     compBuffer = (UInt8 *)lzmaCompBuffer[driveId];
                     if (compBuffer == NULL || lzmaDataSize > 8*1024) {
@@ -367,7 +367,7 @@ DSKE diskReadSector(int driveId, UInt8* buffer, int sector, int side, int track,
                             return DSKE_NO_DATA;
                         }
                         if (lzmaCompBuffer[driveId] == NULL) {
-                            lzmaCompBuffer[driveId] = itc_malloc(8*1024);
+                            lzmaCompBuffer[driveId] = dtcm_arena_malloc(8*1024);
                         }
                         compBuffer = (UInt8 *)lzmaCompBuffer[driveId];
                         if (compBuffer == NULL || lzmaDataSize > 8*1024) {
@@ -465,7 +465,7 @@ static void diskUpdateInfo(int driveId)
             }
 
             if (fileSize[driveId] <= 2 * 1024 * 1024 && ramTrackBuffer[driveId] == NULL) {
-                ramTrackBuffer[driveId] = itc_malloc(512 * 9); // one track buffer
+                ramTrackBuffer[driveId] = dtcm_arena_malloc(512 * 9); // one track buffer
             }
         }
     }

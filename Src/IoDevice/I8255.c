@@ -70,7 +70,7 @@ I8255* i8255Create(I8255Read peekA,   I8255Read readA,   I8255Write writeA,
 #ifndef TARGET_GNW
     I8255* i8255 = calloc(1, sizeof(I8255));
 #else
-    I8255* i8255 = itc_calloc(1, sizeof(I8255));
+    I8255* i8255 = dtcm_arena_calloc(1, sizeof(I8255));
 #endif
     i8255->peekA    = peekA    ? peekA    : readDummy;
     i8255->readA    = readA    ? readA    : readDummy;

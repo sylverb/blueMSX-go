@@ -329,7 +329,7 @@ RTC* rtcCreate(int enable, char* cmosName)
 #else
     struct tm* tm;
     time_t t;
-    RTC* rtc = (RTC*)itc_calloc(1, sizeof(RTC));
+    RTC* rtc = (RTC*)dtcm_arena_calloc(1, sizeof(RTC));
 #endif
 
     rtc->modeReg = MODE_TIMERENABLE;

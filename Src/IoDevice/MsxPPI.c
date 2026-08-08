@@ -233,7 +233,7 @@ void msxPPICreate(int ignoreKeyboard)
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, NULL, NULL };
     MsxPPI* ppi = malloc(sizeof(MsxPPI));
 #else
-    MsxPPI* ppi = itc_malloc(sizeof(MsxPPI));
+    MsxPPI* ppi = dtcm_arena_malloc(sizeof(MsxPPI));
 #endif
 
     ppi->deviceHandle = deviceManagerRegister(RAM_MAPPER, &callbacks, ppi);

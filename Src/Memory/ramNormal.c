@@ -138,7 +138,7 @@ int ramNormalCreate(int size, int slot, int sslot, int startPage, UInt8** ramPtr
 #ifndef TARGET_GNW
     rm = malloc(sizeof(RamNormal));
 #else
-    rm = itc_malloc(sizeof(RamNormal));
+    rm = dtcm_arena_malloc(sizeof(RamNormal));
 #endif
 
     rm->slot      = slot;
