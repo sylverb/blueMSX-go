@@ -167,7 +167,7 @@ int ramMapperIoCreate()
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, NULL, NULL };
     rm = malloc(sizeof(RamMapperIo));
 #else
-    rm = dtcm_arena_malloc(sizeof(RamMapperIo));
+    rm = ahb_malloc(sizeof(RamMapperIo));
 #endif
     rm->count = 0;
     rm->mask  = 0;

@@ -110,7 +110,7 @@ int romMapperLodeRunnerCreate(const char* filename, UInt8* romData,
 #ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperLodeRunner));
 #else
-    rm = dtcm_arena_malloc(sizeof(RomMapperLodeRunner));
+    rm = ahb_malloc(sizeof(RomMapperLodeRunner));
 #endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_LODERUNNER, &callbacks, rm);

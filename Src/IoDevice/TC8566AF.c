@@ -548,7 +548,7 @@ TC8566AF* tc8566afCreate()
 #ifndef TARGET_GNW
     TC8566AF* tc = malloc(sizeof(TC8566AF));
 #else
-    TC8566AF* tc = dtcm_arena_malloc(sizeof(TC8566AF));
+    TC8566AF* tc = ahb_malloc(sizeof(TC8566AF));
 #endif
 
 #ifndef TARGET_GNW

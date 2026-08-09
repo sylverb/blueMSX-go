@@ -272,7 +272,7 @@ OPLL_RateConv *OPLL_RateConv_new(double f_inp, double f_out, int ch) {
 #ifndef TARGET_GNW
   OPLL_RateConv *conv = malloc(sizeof(OPLL_RateConv));
 #else
-  OPLL_RateConv *conv = dtcm_arena_malloc(sizeof(OPLL_RateConv));
+  OPLL_RateConv *conv = ahb_malloc(sizeof(OPLL_RateConv));
 #endif
   int i;
 
@@ -287,13 +287,13 @@ OPLL_RateConv *OPLL_RateConv_new(double f_inp, double f_out, int ch) {
   /* create sinc_table for positive 0 <= x < LW/2 */
   conv->sinc_table = malloc(sizeof(conv->sinc_table[0]) * SINC_RESO * LW / 2);
 #else
-  conv->buf = dtcm_arena_malloc(sizeof(void *) * ch);
+  conv->buf = ahb_malloc(sizeof(void *) * ch);
   for (i = 0; i < ch; i++) {
-    conv->buf[i] = dtcm_arena_malloc(sizeof(conv->buf[0][0]) * LW);
+    conv->buf[i] = ahb_malloc(sizeof(conv->buf[0][0]) * LW);
   }
 
   /* create sinc_table for positive 0 <= x < LW/2 */
-  conv->sinc_table = dtcm_arena_malloc(sizeof(conv->sinc_table[0]) * SINC_RESO * LW / 2);
+  conv->sinc_table = ahb_malloc(sizeof(conv->sinc_table[0]) * SINC_RESO * LW / 2);
 #endif
   for (i = 0; i < SINC_RESO * LW / 2; i++) {
     const double x = (double)i / SINC_RESO;
@@ -1137,7 +1137,7 @@ OPLL *OPLL_new(uint32_t clk, uint32_t rate) {
   if (opll == NULL)
     return NULL;
 #else
-  opll = (OPLL *)dtcm_arena_calloc(sizeof(OPLL), 1);
+  opll = (OPLL *)ahb_calloc(sizeof(OPLL), 1);
 #endif
   for (i = 0; i < 19 * 2; i++)
     memcpy(&opll->patch[i], &null_patch, sizeof(OPLL_PATCH));

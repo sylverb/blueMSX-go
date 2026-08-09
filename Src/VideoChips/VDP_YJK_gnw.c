@@ -44,7 +44,7 @@ void msxYjkColorInit(void)
     int jq;
     int kq;
 
-    msxYjkColorLo = ahb_only_malloc(MSX_YJK_LO_SIZE);
+    msxYjkColorLo = ahb_malloc(MSX_YJK_LO_SIZE);
     if (msxYjkColorLo == NULL)
         return;
 

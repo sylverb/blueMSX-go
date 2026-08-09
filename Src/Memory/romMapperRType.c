@@ -131,7 +131,7 @@ int romMapperRTypeCreate(const char* filename, UInt8* romData,
 #ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperRType));
 #else
-    rm = dtcm_arena_malloc(sizeof(RomMapperRType));
+    rm = ahb_malloc(sizeof(RomMapperRType));
 #endif
 
     rm->deviceHandle = deviceManagerRegister(ROM_RTYPE, &callbacks, rm);

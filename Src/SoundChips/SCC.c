@@ -393,7 +393,7 @@ SCC* sccCreate(Mixer* mixer)
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, NULL, NULL };
     SCC* scc = (SCC*)calloc(1, sizeof(SCC));
 #else
-    SCC* scc = (SCC*)dtcm_arena_calloc(1, sizeof(SCC));
+    SCC* scc = (SCC*)ahb_calloc(1, sizeof(SCC));
 #endif
 
     scc->mixer = mixer;

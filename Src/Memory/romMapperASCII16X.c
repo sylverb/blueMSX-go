@@ -193,7 +193,7 @@ int romMapperASCII16XCreate(const char* filename, UInt8* romData,
 #ifndef TARGET_GNW
     rm = malloc(sizeof(RomMapperASCII16X));
 #else
-    rm = dtcm_arena_malloc(sizeof(RomMapperASCII16X));
+    rm = ahb_malloc(sizeof(RomMapperASCII16X));
 #endif
 
     if (rm == NULL) {

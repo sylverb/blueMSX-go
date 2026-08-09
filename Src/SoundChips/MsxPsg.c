@@ -313,7 +313,7 @@ MsxPsg* msxPsgCreate(PsgType type, int stereo, int* pan, int maxPorts)
 #ifndef TARGET_GNW
     MsxPsg* msxPsg = (MsxPsg*)calloc(1, sizeof(MsxPsg));
 #else
-    MsxPsg* msxPsg = (MsxPsg*)dtcm_arena_calloc(1, sizeof(MsxPsg));
+    MsxPsg* msxPsg = (MsxPsg*)ahb_calloc(1, sizeof(MsxPsg));
 #endif
 
     msxPsg->ay8910 = ay8910Create(boardGetMixer(), AY8910_MSX, type, stereo, (Int32 *)pan);

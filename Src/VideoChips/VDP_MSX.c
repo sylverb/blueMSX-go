@@ -2391,7 +2391,7 @@ void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int
     VDP* vdp = (VDP*)calloc(1, sizeof(VDP));
     vdp->vram = malloc(VRAM_SIZE);
 #else
-    VDP* vdp = (VDP*)dtcm_arena_calloc(1, sizeof(VDP));
+    VDP* vdp = (VDP*)ahb_calloc(1, sizeof(VDP));
     vdp->vram = vram_global;
 #endif
 

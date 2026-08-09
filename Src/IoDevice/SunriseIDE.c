@@ -54,7 +54,7 @@ SunriseIde* sunriseIdeCreate(int hdId)
 #ifndef TARGET_GNW
     SunriseIde* ide = malloc(sizeof(SunriseIde));
 #else
-    SunriseIde* ide = dtcm_arena_malloc(sizeof(SunriseIde));
+    SunriseIde* ide = ahb_malloc(sizeof(SunriseIde));
 #endif
 
     ide->hdide[0] = harddiskIdeCreate(diskGetHdDriveId(hdId, 0));

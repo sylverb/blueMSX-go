@@ -242,7 +242,7 @@ AY8910* ay8910Create(Mixer* mixer, Ay8910Connector connector, PsgType type, Int3
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, dbgWriteRegister, NULL };
     AY8910* ay8910 = (AY8910*)calloc(1, sizeof(AY8910));
 #else
-    AY8910* ay8910 = (AY8910*)dtcm_arena_calloc(1, sizeof(AY8910));
+    AY8910* ay8910 = (AY8910*)ahb_calloc(1, sizeof(AY8910));
 #endif
     int i;
 

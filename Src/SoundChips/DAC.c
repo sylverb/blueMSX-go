@@ -81,7 +81,7 @@ DAC* dacCreate(Mixer* mixer, DacMode mode)
 #ifndef TARGET_GNW
     DAC* dac = (DAC*)calloc(1, sizeof(DAC));
 #else
-    DAC* dac = (DAC*)dtcm_arena_calloc(1,sizeof(DAC));
+    DAC* dac = (DAC*)ahb_calloc(1,sizeof(DAC));
 #endif
 
     dac->mixer = mixer;

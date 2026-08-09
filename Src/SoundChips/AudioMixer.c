@@ -359,7 +359,7 @@ Mixer* mixerCreate(void)
 #ifndef TARGET_GNW
     Mixer* mixer        = (Mixer*)calloc(1, sizeof(Mixer));
 #else
-    Mixer* mixer        = (Mixer*)dtcm_arena_calloc(1, sizeof(Mixer));
+    Mixer* mixer        = (Mixer*)ahb_calloc(1, sizeof(Mixer));
 #endif
 
     mixer->fragmentSize = 512;
